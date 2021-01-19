@@ -10,6 +10,7 @@ from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import LibFunctions as lib
 
 from AgentOptimal import OptimalAgent
+from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
@@ -26,6 +27,31 @@ def RunOptimalAgent():
     env = ForestSim(env_map)
 
     agent = OptimalAgent()
+
+    env_map.reset_map()
+    done, state, score = False, env.reset(), 0.0
+    wpts = agent.init_agent(env_map)
+    env.render(wait=True)
+    # env.render(True, wpts)
+    while not done:
+        action = agent.act(state)
+        s_p, r, done, _ = env.step(action)
+        score += r
+        state = s_p
+
+        # env.render(True, wpts)
+        # env.env_map.render_map(4, True)
+        # env.render(False, wpts)
+
+    print(f"Score: {score}")
+    # env.show_history()
+    env.render(wait=True)
+
+def RunMpcAgent():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    agent = AgentMPC()
 
     env_map.reset_map()
     done, state, score = False, env.reset(), 0.0
@@ -206,7 +232,8 @@ def timing():
 if __name__ == "__main__":
 
     # RunModAgent()
-    RunOptimalAgent()
+    # RunOptimalAgent()
+    RunMpcAgent()
 
     # timing()
 
