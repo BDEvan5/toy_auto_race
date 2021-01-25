@@ -103,7 +103,7 @@ class BaseGenAgent:
         self.pind = 1
 
 
-class GenVehicleTrainV(BaseGenAgent):
+class GenVehicle(BaseGenAgent):
     def __init__(self, name, load, h_size, n_beams):
         BaseGenAgent.__init__(self, name, n_beams)
 
@@ -147,8 +147,7 @@ class GenVehicleTrainV(BaseGenAgent):
 
 
 """Full Vehicles  """
-
-class GenTrainDisV(GenVehicleTrainV):
+class GenTrainStd(GenVehicle):
     def __init__(self, name, load, h_size, n_beams):
         super().__init__(name, load, h_size, n_beams)
 
@@ -180,17 +179,26 @@ class GenTrainDisV(GenVehicleTrainV):
         return new_reward
 
 
-class GenTrainSteerV(GenVehicleTrainV):
+class GenTrainStr(GenVehicle):
     def __init__(self, name, load, h_size, n_beams):
         super().__init__(name, load, h_size, n_beams)
 
+        self.s1 = None
+        self.s2 = None
+        self.s3 = None
+
+    def init_reward(self, s1, s2, s3):
+        self.s1 = s1
+        self.s2 = s2
+        self.s3 = s3
+
     def update_reward(self, reward, s_prime):
-        beta = 1
-        gamma = 0
         if reward == -1:
             new_reward = -1
         else:
-            new_reward = 1 - abs(s_prime[4]) * beta
+            del_norm = (abs(s_prime[4]) / self.max_d) ** 2
+            v_norm = s_prime[3] / self.max_v
+            new_reward = self.s1 - del_norm * self.s2 + self.s3 * v_norm
 
         self.reward_history.append(new_reward)
 
@@ -198,31 +206,7 @@ class GenTrainSteerV(GenVehicleTrainV):
 
 
 """Test Vehicles"""
-class GenVehicleTest(BaseGenAgent):
-    def __init__(self, name):
-        path = 'Vehicles/' + name + ''
-        self.agent = TD3(1, 1, 1, name)
-        self.agent.load(directory=path)
-
-        print(f"NN: {self.agent.actor.type}")
-
-        nn_size = self.agent.actor.l1.in_features
-        n_beams = nn_size - 3
-        BaseGenAgent.__init__(self, name, n_beams)
-
-        self.current_v_ref = None
-        self.current_phi_ref = None
-
-    def act(self, obs):
-        nn_obs = self.transform_obs(obs)
-        nn_action = self.agent.act(nn_obs)
-
-        v_ref, d_ref = self.generate_references(nn_action, obs)
-
-        return [v_ref, d_ref]
-
-
-class GenVehicleTestV(BaseGenAgent):
+class GenTest(BaseGenAgent):
     def __init__(self, name):
         path = 'Vehicles/' + name + ''
         self.agent = TD3(1, 1, 1, name)
