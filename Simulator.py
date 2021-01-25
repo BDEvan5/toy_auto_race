@@ -251,7 +251,7 @@ class BaseSim:
         if self.steps > 100:
             self.done = True
             self.done_reason = f"Max steps"
-        if abs(self.car.theta) > 0.95*np.pi:
+        if abs(self.car.theta) > 0.66*np.pi:
             self.done = True
             self.done_reason = f"Vehicle turned around"
             self.reward = -1

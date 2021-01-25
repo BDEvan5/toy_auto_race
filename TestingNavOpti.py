@@ -113,73 +113,25 @@ def TrainVehicle(agent_name, vehicle):
 
 
 """Testing Function"""
-class TestVehicles:
-    def __init__(self, eval_name) -> None:
-        self.eval_name = eval_name
-        self.vehicle_list = []
-        self.N = None
-
+class TestData:
+    def __init__(self) -> None:
         self.endings = None
         self.crashes = None
         self.completes = None
         self.lap_times = None
 
-    def add_vehicle(self, vehicle):
-        self.vehicle_list.append(vehicle)
+        self.names = []
 
-    def run_eval(self, laps=100):
-        N = self.N = len(self.vehicle_list)
+        self.N = None
 
-        env_map = ForestMap(forest_name)
-        env = ForestSim(env_map)    
-
+    def init_arrays(self, N):
         self.completes = np.zeros((N))
         self.crashes = np.zeros((N))
         self.lap_times = np.zeros((laps, N))
         self.endings = np.zeros((laps, N)) #store env reward
         self.lap_times = [[] for i in range(N)]
-
-        for i in range(laps):
-        # if add_obs:
-            # env_map.reset_map()
-            for j in range(N):
-                vehicle = self.vehicle_list[j]
-
-                r, steps = self.run_lap(vehicle, env, False)
-                # r, steps = RunVehicleLap(vehicle, env, True)
-                print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
-                self.endings[i, j] = r
-                if r == -1 or r == 0:
-                    self.crashes[j] += 1
-                else:
-                    self.completes[j] += 1
-                    self.lap_times[j].append(steps)
-
-        self.print_results()
-        self.save_txt_results()
-        self.save_csv_results()
-
-    def run_lap(self, vehicle, env, show=False):
-        vehicle.reset_lap()
-        wpts = vehicle.init_agent(env.env_map)
-        done, state, score = False, env.reset(), 0.0
-        # env.render(wait=True)
-        while not done:
-            a = vehicle.act(state)
-            s_p, r, done, _ = env.step(a)
-            state = s_p
-            # env.render(False, wpts)
-
-        if show:
-            # vehicle.show_vehicle_history()
-            # env.show_history()
-            env.history.show_history()
-            # env.render(wait=False)
-            env.render(wait=True)
-
-        return r, env.steps
-
-
+        self.N = N
+ 
     def save_txt_results(self):
         test_name = 'Vehicles/Evals' + self.eval_name + '.txt'
         with open(test_name, 'w') as file_obj:
@@ -221,6 +173,79 @@ class TestVehicles:
         with open(test_name, 'w') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerows(data)
+
+    # def load_csv_data(self, eval_name):
+    #     file_name = 'Vehicles/Evals' + eval_name + '.csv'
+
+    #     with open(file_name, 'r') as csvfile:
+    #         csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+            
+    #         for lines in csvFile:  
+    #             self.
+    #             rewards.append(lines)
+
+
+    # def plot_eval(self):
+    #     pass
+
+
+class TestVehicles(TestData):
+    def __init__(self, eval_name) -> None:
+        self.eval_name = eval_name
+        self.vehicle_list = []
+        self.N = None
+
+        TestData.__init__()
+
+
+    def add_vehicle(self, vehicle):
+        self.vehicle_list.append(vehicle)
+
+    def run_eval(self, laps=100, show=False):
+        N = self.N = len(self.vehicle_list)
+
+        env_map = ForestMap(forest_name)
+        env = ForestSim(env_map)    
+
+        for i in range(laps):
+        # if add_obs:
+            # env_map.reset_map()
+            for j in range(N):
+                vehicle = self.vehicle_list[j]
+
+                r, steps = self.run_lap(vehicle, env, show)
+                print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
+                self.endings[i, j] = r
+                if r == -1 or r == 0:
+                    self.crashes[j] += 1
+                else:
+                    self.completes[j] += 1
+                    self.lap_times[j].append(steps)
+
+        self.print_results()
+        self.save_txt_results()
+        self.save_csv_results()
+
+    def run_lap(self, vehicle, env, show=False):
+        vehicle.reset_lap()
+        wpts = vehicle.init_agent(env.env_map)
+        done, state, score = False, env.reset(), 0.0
+        # env.render(wait=True)
+        while not done:
+            a = vehicle.act(state)
+            s_p, r, done, _ = env.step(a)
+            state = s_p
+            # env.render(False, wpts)
+
+        if show:
+            # vehicle.show_vehicle_history()
+            # env.show_history()
+            env.history.show_history()
+            # env.render(wait=False)
+            env.render(wait=True)
+
+        return r, env.steps
+
 
 
 
@@ -481,22 +506,22 @@ def test_m():
 def train_s1():
     load = False
 
-    agent_name = "Str_01_01_02"
+    # agent_name = "Str_01_01_02"
+    # vehicle = GenTrainStr(agent_name, load, 200, 10)
+    # vehicle.init_reward(0.1, 0.1, 0.2)
+    # TrainVehicle(agent_name, vehicle)
+
+    agent_name = "Str_01_01_08"
     vehicle = GenTrainStr(agent_name, load, 200, 10)
-    vehicle.init_reward(0.1, 0.1, 0.2)
+    vehicle.init_reward(0.1, 0.1, 0.8)
     TrainVehicle(agent_name, vehicle)
 
-    # agent_name = "Str_0_1"
+    # agent_name = "Str_01_01_02"
     # vehicle = GenTrainStr(agent_name, load, 200, 10)
     # vehicle.init_reward(0, 1)
     # TrainVehicle(agent_name, vehicle)
 
-    # agent_name = "Str_0_1"
-    # vehicle = GenTrainStr(agent_name, load, 200, 10)
-    # vehicle.init_reward(0, 1)
-    # TrainVehicle(agent_name, vehicle)
-
-    # agent_name = "Str_0_1"
+    # agent_name = "Str_01_01_02"
     # vehicle = GenTrainStr(agent_name, load, 200, 10)
     # vehicle.init_reward(0, 1)
     # TrainVehicle(agent_name, vehicle)
@@ -504,12 +529,16 @@ def train_s1():
 def test_s():
     test = TestVehicles("test_s_1")
 
-    agent_name = "Str_01_01_02"
+    # agent_name = "Str_01_01_02"
+    # vehicle = GenTest(agent_name)
+    # test.add_vehicle(vehicle)
+
+    agent_name = "Str_01_01_08"
     vehicle = GenTest(agent_name)
     test.add_vehicle(vehicle)
 
 
-    test.run_eval(10)
+    test.run_eval(10, False)
 
 
 """Under development still"""
@@ -575,8 +604,9 @@ if __name__ == "__main__":
 
     # test_m()
 
-    # train_s1()
+    train_s1()
     # train_s2()
+    # train_s3()
 
     test_s()
 
