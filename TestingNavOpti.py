@@ -128,7 +128,7 @@ def TrainModVehicle(agent_name, vehicle):
     done, state = False, env.reset()
     wpts = vehicle.init_agent(env_map)
 
-    for n in range(2500):
+    for n in range(50000):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
@@ -408,7 +408,7 @@ def test_m():
 
 
 
-    test_vehicles(vehicle_list, 10, "Mod_m1m2" , True)
+    test_vehicles(vehicle_list, 1000, "Mod_m1m2" , True)
 
 
 
@@ -472,8 +472,8 @@ if __name__ == "__main__":
     # train_gen_disV_b2()
     # test_b2()
 
-    # train_m1()
-    # train_m2()
+    train_m1()
+    train_m2()
 
     test_m()
 
