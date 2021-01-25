@@ -64,8 +64,8 @@ def testVehicle(vehicle, show=False, obs=True):
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
-"""RefGen Train"""
-def TrainGenVehicle(agent_name, vehicle):
+"""Train"""
+def TrainVehicle(agent_name, vehicle):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
@@ -110,53 +110,6 @@ def TrainGenVehicle(agent_name, vehicle):
     t_his.save_csv_data()
 
     return t_his.rewards
-
-"""Training functions: PURE MOD"""
-def TrainModVehicle(agent_name, vehicle):
-    path = 'Vehicles/' + agent_name
-    buffer = ReplayBufferTD3()
-
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
-
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
-
-    t_his = TrainHistory(agent_name)
-    print_n = 500
-
-    done, state = False, env.reset()
-    wpts = vehicle.init_agent(env_map)
-
-    for n in range(50000):
-        a = vehicle.act(state)
-        s_prime, r, done, _ = env.step(a)
-
-        new_r = vehicle.add_memory_entry(r, done, s_prime, buffer)
-        t_his.add_step_data(new_r)
-
-        state = s_prime
-        vehicle.agent.train(buffer, 2)
-        
-        # env.render(False)
-
-        if n % print_n == 0 and n > 0:
-            t_his.print_update()
-            vehicle.agent.save(directory=path)
-        
-        if done:
-            t_his.lap_done()
-            # vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
-
-            vehicle.reset_lap()
-            state = env.reset()
-
-
-    vehicle.agent.save(directory=path)
-
-    t_his.save_csv_data()
-
 
 
 
@@ -237,7 +190,7 @@ def test_vehicles(vehicle_list, laps, eval_name, add_obs):
         print(f"-----------------------------------------------------")
 
 
-"""b2 tests"""
+"""Std functions"""
 def train_gen_disV_b2():
     load = False
 
@@ -327,7 +280,7 @@ def test_b2():
     test_vehicles(vehicle_list, 100, "OptiV_b1" , True)
 
 
-"""Mod tests"""
+"""Mod functions"""
 def train_m1():
     load = False
 
@@ -411,7 +364,14 @@ def test_m():
     test_vehicles(vehicle_list, 1000, "Mod_m1m2" , True)
 
 
+"""Steer functions"""
+def train_s1():
+    load = False
 
+    agent_name = "Str_0_02"
+    vehicle = StrVehicleTrain(agent_name, load, 200, 10)
+    vehicle.init_reward(0, 0.2)
+    TrainStrVehicle(agent_name, vehicle)
 
 
 """Under development still"""
@@ -472,10 +432,10 @@ if __name__ == "__main__":
     # train_gen_disV_b2()
     # test_b2()
 
-    train_m1()
-    train_m2()
+    # train_m1()
+    # train_m2()
 
-    test_m()
+    # test_m()
 
 
 
