@@ -1,5 +1,4 @@
 import numpy as np 
-import random
 from matplotlib import pyplot as plt
 
 from ModelsRL import TD3
@@ -162,6 +161,13 @@ class ModVehicleTrain(BaseModAgent):
         self.agent = TD3(state_space, 1, 1, name)
         self.agent.try_load(load, h_size)
 
+        self.m1 = None
+        self.m2 = None
+
+    def init_reward(self, m1, m2):
+        self.m1 = m1
+        self.m2 = m2
+
     def act(self, obs):
         v_ref, d_ref = self.get_target_references(obs)
 
@@ -181,11 +187,10 @@ class ModVehicleTrain(BaseModAgent):
         return [v_ref, d_ref]
 
     def update_reward(self, reward, action):
-        beta = 0.2
         if reward == -1:
             new_reward = -1
         else:
-            new_reward = 0.2 - abs(action[0]) * beta
+            new_reward = self.m1 - abs(action[0]) * self.m2
             # new_reward =  - abs(action[0]) * beta
 
         self.reward_history.append(new_reward)
@@ -239,3 +244,5 @@ class ModVehicleTest(BaseModAgent):
         self.steps += 1
 
         return [v_ref, d_ref]
+
+

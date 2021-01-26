@@ -51,11 +51,11 @@ class CarModel:
 
     def get_car_state(self):
         state = []
-        state.append(self.x)
+        state.append(self.x) #0
         state.append(self.y)
-        state.append(self.theta)
-        state.append(self.velocity)
-        state.append(self.steering)
+        state.append(self.theta) # 2
+        state.append(self.velocity) #3
+        state.append(self.steering)  #4
 
         return state
 
@@ -197,6 +197,7 @@ class BaseSim:
 
     def base_reset(self):
         self.done = False
+        self.done_reason = "Null"
         self.action_memory = []
         self.steps = 0
         
@@ -250,7 +251,7 @@ class BaseSim:
         if self.steps > 100:
             self.done = True
             self.done_reason = f"Max steps"
-        if abs(self.car.theta) > 0.95*np.pi:
+        if abs(self.car.theta) > 0.66*np.pi:
             self.done = True
             self.done_reason = f"Vehicle turned around"
             self.reward = -1
@@ -402,6 +403,8 @@ class TrackSim(BaseSim):
         self.car.steering = 0
         self.car.theta = np.pi/2
 
+        #TODO: combine with reset lap that it can be called every lap and do the right thing
+
         return self.base_reset()
 
 
@@ -413,6 +416,7 @@ class ForestSim(BaseSim):
         BaseSim.__init__(self, env_map)
 
     def step(self, action):
+        # self.env_map.update_obs_cars(self.timestep)
         self.base_step(action)
 
         self.check_done_forest()
@@ -430,6 +434,9 @@ class ForestSim(BaseSim):
         self.car.velocity = 0
         self.car.steering = 0
         self.car.theta = 0
+
+        self.env_map.reset_dynamic_map(4)
+        self.env_map.reset_static_map(5)
 
         return self.base_reset()
 
