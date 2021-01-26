@@ -12,7 +12,7 @@ import LibFunctions as lib
 from AgentOptimal import OptimalAgent
 from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenVehicleTest, GenVehicleTestV, GenVehicleTrainDistance, GenVehicleTrainSteering, GenVehicleTrainVelocity
+from RefGen import GenTrainStd, GenTrainStr, GenTest
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
 name = names[5]
@@ -54,7 +54,6 @@ def RunMpcAgent():
 
     agent = AgentMPC()
 
-    env_map.reset_map()
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)
     env.render(wait=True)
@@ -265,10 +264,12 @@ def timing():
 if __name__ == "__main__":
 
     # RunModAgent()
-    RunGenAgent()
+    # RunGenAgent()
     # RunOptimalAgent()
 
     # timing()
+
+    RunMpcAgent()
 
 
 

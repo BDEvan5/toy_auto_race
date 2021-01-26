@@ -135,11 +135,16 @@ def find_true_widths(pts, nvecs, ws, check_scan_location):
                 if not check_scan_location(p_pt):
                     nws.append(-j*(1+sf))
                     pws.append(opws[i])
+                    print(f"PosPt NewW: [{-j*(1+sf)}, {opws[i]}]")
                     break
                 elif not check_scan_location(n_pt):
                     pws.append(-j*(1+sf))
                     nws.append(onws[i])
+                    print(f"PosPt NewW: [{-j*(1+sf)}, {onws[i]}]")
                     break 
+                if j == onws[i]:
+                    print(f"Problem - no space found")
+
 
     nws, pws = np.array(nws), np.array(pws)
     ws = np.concatenate([nws[:, None], pws[:, None]], axis=-1)

@@ -83,6 +83,7 @@ class MapBase:
         self.width = self.scan_map.shape[1]
         self.height = self.scan_map.shape[0]
 
+
     def convert_position(self, pt):
         x = pt[0] / self.resolution
         y =  pt[1] / self.resolution

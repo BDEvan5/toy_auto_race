@@ -159,7 +159,7 @@ class ForestGenerator(MapBase):
     def __init__(self, map_name='forest'):
         self.name = map_name
 
-        self.f_map = np.zeros((120, 500)).T # same as other maps
+        self.f_map = np.zeros((120, 600)).T # same as other maps
         self.track = None
 
         self.gen_path()
@@ -179,13 +179,14 @@ class ForestGenerator(MapBase):
 
     def save_map(self):
         np.save('Maps/forest.npy', self.f_map)  
+        print(f"Track Saved in File: 'Maps/forest.npy'")
 
-        filename = 'Maps/' + self.name + '.csv'
-        with open(filename, 'w') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerows(self.track)
+        # filename = 'Maps/' + self.name + '.csv'
+        # with open(filename, 'w') as csvfile:
+        #     csvwriter = csv.writer(csvfile)
+        #     csvwriter.writerows(self.track)
 
-        print(f"Track Saved in File: {filename}")
+        # print(f"Track Saved in File: {filename}")
         
 
 
@@ -534,17 +535,19 @@ class MapConverter(MapBase):
         print(f"Track Saved in File: {filename}")
 
 
-def test_map_converter():
-    names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
-    name = names[5]
-    myConv = MapConverter(name)
-    myConv.run_conversion()
+# def test_map_converter():
+#     names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
+#     name = names[5]
+#     myConv = MapConverter(name)
+#     myConv.run_conversion()
 
     # t = SimMap(name)
     # t.get_min_curve_path()
     # t.render_map(wait=True)
 
 
-# def forest_gen():
-#     f = ForestGenerator()
-#     f.save_map()
+def forest_gen():
+    f = ForestGenerator()
+    f.save_map()
+
+forest_gen()
