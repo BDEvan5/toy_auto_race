@@ -27,16 +27,8 @@ class AgentMPC:
         self.env_map = env_map
 
         self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
- 
-        self.env_map.render_map(1, wait=False)
+
         self.wpts = self.env_map.get_optimal_path()
-        self.env_map.render_map(1, wait=True)
-
-        plt.figure(1)
-        plt.plot(self.wpts[:, 0], self.wpts[:, 1])
-        plt.show()
-
-
         # self.wpts = self.env_map.get_reference_path()
 
         r_line = self.wpts
