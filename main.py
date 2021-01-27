@@ -18,6 +18,7 @@ names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
 name = names[5]
 myMap = 'TrackMap1000'
 forest_name = 'forest'
+bfg = 'BigForest'
 
 
 def RunOptimalAgent():
@@ -71,6 +72,15 @@ def RunMpcAgent():
     print(f"Score: {score}")
     # env.show_history()
     env.render(wait=True)
+
+def test_mapping():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    for i in range(100):
+        env.reset()
+        env_map.get_optimal_path()
+        env.render(wait=True)
 
 
 """Training functions: PURE MOD"""
@@ -269,7 +279,8 @@ if __name__ == "__main__":
 
     # timing()
 
-    RunMpcAgent()
+    # RunMpcAgent()
+    test_mapping()
 
 
 

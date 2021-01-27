@@ -156,37 +156,44 @@ class MapBase:
 
 
 class ForestGenerator(MapBase):
-    def __init__(self, map_name='forest'):
+    def __init__(self, map_name='forest', length=30, width=6):
         self.name = map_name
 
-        self.f_map = np.zeros((120, 600)).T # same as other maps
+        self.resolution = 0.05
+        self.length = length
+        self.width = width
+
+        x = int(self.width/self.resolution)
+        y = int(self.length/self.resolution)
+        self.f_map = np.zeros((x, y)).T 
         self.track = None
 
         self.gen_path()
 
-    def gen_path(self, N=60):
-        tx = 3 # centre line
+    def gen_path(self, N=120):
+        tx = self.width/2 # centre line
         txs = np.ones(N) * tx 
         txs = txs[:, None]
-        tys = np.linspace(1, 29, N)
+        tys = np.linspace(1, self.length-1, N)
         tys = tys[:, None]
 
-        widths = np.ones((N, 2)) * 2.5
+        widths = np.ones((N, 2)) * self.width/2
 
         nvecs = np.array([np.ones(N), np.zeros(N)]).T
 
         self.track = np.concatenate([txs, tys, nvecs, widths], axis=-1)
 
     def save_map(self):
-        np.save('Maps/forest.npy', self.f_map)  
-        print(f"Track Saved in File: 'Maps/forest.npy'")
+        f_name = f'Maps/{self.name}.npy'
+        np.save(f_name, self.f_map)  
+        print(f"Track Saved in File: {f_name}")
 
-        # filename = 'Maps/' + self.name + '.csv'
-        # with open(filename, 'w') as csvfile:
-        #     csvwriter = csv.writer(csvfile)
-        #     csvwriter.writerows(self.track)
+        filename = 'Maps/' + self.name + '.csv'
+        with open(filename, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(self.track)
 
-        # print(f"Track Saved in File: {filename}")
+        print(f"Track Saved in File: {filename}")
         
 
 
@@ -547,7 +554,8 @@ class MapConverter(MapBase):
 
 
 def forest_gen():
-    f = ForestGenerator()
+    # f = ForestGenerator("BigForest")
+    f = ForestGenerator("forest")
     f.save_map()
 
 forest_gen()
