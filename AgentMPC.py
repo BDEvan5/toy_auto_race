@@ -1,6 +1,11 @@
-import numpy as np 
-import casadi as ca 
-from matplotlib import pyplot as plt
+from rockit import *
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+from numpy import pi, cos, sin, tan, square
+from casadi import vertcat, horzcat, sumsqr
+
+
 
 
 import LibFunctions as lib
@@ -8,9 +13,111 @@ from TrajectoryPlanner import MinCurvatureTrajectory
 from Simulator import ScanSimulator
 
 
-class AgentMPC:
+Nsim    = 30            # how much samples to simulate
+L       = 0.5             # bicycle model length
+nx      = 3             # the system is composed of 3 states
+nu      = 2             # the system has 2 control inputs
+N       = 10            # number of control intervals
+
+class RockitMPC:
+    def __init__(self) -> None:
+        self.ocp = Ocp(T=FreeTime(10.0))
+
+        # Define states
+        self.x     = self.ocp.state()
+        self.y     = self.ocp.state()
+        self.theta = self.ocp.state()
+        self.X = vertcat(self.x, self.y, self.theta)
+
+        # Defince controls
+        self.delta = self.ocp.control()
+        self.V     = self.ocp.control(order=0)
+
+        # Define physical path parameter
+        self.waypoints = self.ocp.parameter(2, grid='control')
+        self.waypoint_last = self.ocp.parameter(2)
+        self.p = vertcat(self.x, self.y)
+
+        # Define parameter
+        self.X_0 = self.ocp.parameter(nx)
+
+        self.init_mpc()
+
+    def init_mpc(self):
+        # Specify ODE
+        self.ocp.set_der(self.x,      self.V*cos(self.theta))
+        self.ocp.set_der(self.y,      self.V*sin(self.theta))
+        self.ocp.set_der(self.theta,  self.V/L*tan(self.delta))
+
+        # Initial constraints
+        self.ocp.subject_to(self.ocp.at_t0(self.X) == self.X_0)
+
+        # Initial guess
+        self.ocp.set_initial(self.x,      0)
+        self.ocp.set_initial(self.y,      0)
+        self.ocp.set_initial(self.theta,  0)
+
+        self.ocp.set_initial(self.V,    0.5)
+
+        # Path constraints
+        max_v = 5
+        self.ocp.subject_to( 0 <= (self.V <= max_v) )
+        #ocp.subject_to( -0.3 <= (ocp.der(V) <= 0.3) )
+        self.ocp.subject_to( -pi/6 <= (self.delta <= pi/6) )
+
+        # Minimal time
+        self.ocp.add_objective(0.50*self.ocp.T)
+
+        self.ocp.add_objective(self.ocp.sum(sumsqr(self.p-self.waypoints), grid='control'))
+        self.ocp.add_objective(sumsqr(self.ocp.at_tf(self.p)-self.waypoint_last))
+
+        # Pick a solution method
+        options = {"ipopt": {"print_level": 0}}
+        options["expand"] = True
+        options["print_time"] = False
+        self.ocp.solver('ipopt', options)
+
+        # Make it concrete for this ocp
+        self.ocp.method(MultipleShooting(N=N, M=1, intg='rk', grid=FreeGrid(min=0.05, max=2)))
+
+    def set_current_waypoints(self, current_waypoints):
+        self.ocp.set_value(self.waypoints,current_waypoints[:,:-1])
+        self.ocp.set_value(self.waypoint_last,current_waypoints[:,-1])
+
+    def set_x0(self, current_X):
+        self.ocp.set_value(self.X_0, current_X)
+
+    def solve(self):
+        sol = self.ocp.solve()
+
+        t_sol, x_sol     = sol.sample(self.x,     grid='control')
+        t_sol, y_sol     = sol.sample(self.y,     grid='control')
+        t_sol, theta_sol = sol.sample(self.theta, grid='control')
+        t_sol, delta_sol = sol.sample(self.delta, grid='control')
+        t_sol, V_sol     = sol.sample(self.V,     grid='control')
+
+        err = sol.value(self.ocp.objective)
+
+        self.ocp.set_initial(self.x, x_sol)
+        self.ocp.set_initial(self.y, y_sol)
+        self.ocp.set_initial(self.theta, theta_sol)
+        self.ocp.set_initial(self.delta, delta_sol)
+        self.ocp.set_initial(self.V, V_sol)
+
+        t = np.array(t_sol)
+        x = np.array(x_sol)
+        y = np.array(y_sol)
+        th = np.array(theta_sol)
+        d = np.array(delta_sol)
+        v = np.array(V_sol)
+
+        return t, x, y, th, d, v, err
+
+
+
+class AgentMPC(RockitMPC):
     def __init__(self):
-        self.name = "Optimal Agent: Following target references"
+        self.name = "Optimal Agent:  MPC "
         self.env_map = None
         self.path_name = None
         self.wpts = None
@@ -19,9 +126,9 @@ class AgentMPC:
         self.target = None
         self.steps = 0
 
-        self.current_v_ref = None
-        self.current_phi_ref = None
+        self.tracking_error = []
 
+        RockitMPC.__init__(self)
 
     def init_agent(self, env_map):
         self.env_map = env_map
@@ -29,77 +136,29 @@ class AgentMPC:
         self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
 
         self.wpts = self.env_map.get_optimal_path()
-        # self.wpts = self.env_map.get_reference_path()
-
-        r_line = self.wpts
-        ths = [lib.get_bearing(r_line[i], r_line[i+1]) for i in range(len(r_line)-1)]
-        alphas = [lib.sub_angles_complex(ths[i+1], ths[i]) for i in range(len(ths)-1)]
-        lds = [lib.get_distance(r_line[i], r_line[i+1]) for i in range(1, len(r_line)-1)]
-
-        self.deltas = np.arctan(2*0.33*np.sin(alphas)/lds)
-
-        self.pind = 1
 
         return self.wpts
 
     def act(self, obs):
-        # scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
-
-        v_ref, d_ref = self.get_target_references(obs)
-
-        # possibly clip if needed, but shouldn't change much.
-
-        return [v_ref, d_ref]
-
-    def get_corridor_references(self, obs):
-        ranges = obs[5:]
-        max_range = np.argmax(ranges)
-        dth = np.pi / 9
-        theta_dot = dth * max_range - np.pi/2
-
-        L = 0.33
-        delta_ref = np.arctan(theta_dot * L / (obs[3]+0.001))
-
-        v_ref = 6
-
-        return v_ref, delta_ref
-
-    def get_target_references(self, obs):
-        self._set_target(obs)
-
-        target = self.wpts[self.pind]
-        th_target = lib.get_bearing(obs[0:2], target)
-        alpha = lib.sub_angles_complex(th_target, obs[2])
-
-        # pure pursuit
-        ld = lib.get_distance(obs[0:2], target)
-        delta_ref = np.arctan(2*0.33*np.sin(alpha)/ld)
-
-        ds = self.deltas[min(self.pind, len(self.deltas)-1)]
-        max_d = abs(ds)
-
-        max_friction_force = 3.74 * 9.81 * 0.523 *0.6
-        d_plan = max(abs(delta_ref), abs(obs[4]), max_d)
-        theta_dot = abs(obs[3] / 0.33 * np.tan(d_plan))
-        v_ref = max_friction_force / (3.74 * max(theta_dot, 0.01)) 
-        v_ref = min(v_ref, 8.5)
-        # v_ref = 3
-
-        return v_ref, delta_ref
-
-    def control_system(self, obs):
-        v_ref = self.current_v_ref
-        d_ref = self.current_phi_ref
-
-        kp_a = 10
-        a = (v_ref - obs[3]) * kp_a
+        current_waypoints = self.get_current_wpts(obs)
+        self.set_current_waypoints(current_waypoints)
+        current_X = vertcat(obs[0], obs[1], obs[2])
+        self.set_x0(current_X)
         
-        kp_delta = 40
-        d_dot = (d_ref - obs[4]) * kp_delta
+        t, x, y, th, d, v, err = self.solve()
 
-        return a, d_dot
+        v_ref = v[0]
+        d_ref = d[0]
 
-    def _set_target(self, obs):
+        self.tracking_error.append(err)
+        print(f'Tracking error f: {err}' )
+
+        pts = np.concatenate([x[:, None], y[:, None]], axis=-1)
+
+        return [v_ref, d_ref], pts, t, current_waypoints.T
+
+
+    def get_current_wpts(self, obs):
         dis_cur_target = lib.get_distance(self.wpts[self.pind], obs[0:2])
         shift_distance = 1
         while dis_cur_target < shift_distance: # how close to say you were there
@@ -108,6 +167,8 @@ class AgentMPC:
                 dis_cur_target = lib.get_distance(self.wpts[self.pind], obs[0:2])
             else:
                 self.pind = 0
+
+        return self.wpts[self.pind + 1:self.pind + N +2].T
 
     def reset_lap(self):
         # for testing

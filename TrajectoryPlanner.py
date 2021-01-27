@@ -70,8 +70,8 @@ def MinCurvatureTrajectory(pts, nvecs, ws):
     
     }
 
-    S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':5}})
-    # S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':0}})
+    # S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':5}})
+    S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':0}})
 
     ones = np.ones(N)
     n0 = ones*0

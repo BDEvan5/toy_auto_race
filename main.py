@@ -57,17 +57,17 @@ def RunMpcAgent():
 
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)
-    env.render(wait=True)
+    # env.render(wait=True)
     # env.render(True, wpts)
     while not done:
-        action = agent.act(state)
-        s_p, r, done, _ = env.step(action)
+        action, pts, t, cwpts = agent.act(state)
+        s_p, r, done, _ = env.step(action, dt=t)
         score += r
         state = s_p
 
         # env.render(True, wpts)
         # env.env_map.render_map(4, True)
-        # env.render(False, wpts)
+        env.render(True, pts1=pts, pts2=cwpts)
 
     print(f"Score: {score}")
     # env.show_history()
@@ -279,8 +279,8 @@ if __name__ == "__main__":
 
     # timing()
 
-    # RunMpcAgent()
-    test_mapping()
+    RunMpcAgent()
+    # test_mapping()
 
 
 
