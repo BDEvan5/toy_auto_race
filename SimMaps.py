@@ -300,6 +300,8 @@ class ForestMap(MapBase):
     def get_velocity(self):
         vels = Max_velocity(self.wpts)
 
+        return vels
+
 
     def get_reference_path(self):
         self.wpts = self.track_pts

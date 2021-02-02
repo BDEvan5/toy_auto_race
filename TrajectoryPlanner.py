@@ -342,7 +342,7 @@ def Max_velocity(pts, show=False):
                     ca.sqrt(ca.power(f_long, 2) + ca.power(f_lat, 2)),
 
                     # boundary constraints
-                    dx[0], dy[0]
+                    # dx[0], dy[0]
                 ) \
     }
 
@@ -367,8 +367,8 @@ def Max_velocity(pts, show=False):
     ubx = [max_v] * N + [max_v] * N + [10] * N1 + [f_long_max] * N1 + [f_max] * N1
 
     #make lbg, ubg
-    lbg = [0] * N1 + [0] * N + [0] * 2 * N1 + [0] * N1 + [0] * 2 
-    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [f_max] * N1 + [0] * 2 
+    lbg = [0] * N1 + [0] * N + [0] * 2 * N1 + [0] * N1 #+ [0] * 2 
+    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [f_max] * N1 #+ [0] * 2 
 
     r = S(x0=x0, lbg=lbg, ubg=ubg, lbx=lbx, ubx=ubx)
 
