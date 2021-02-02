@@ -1,4 +1,4 @@
-from casadi.casadi import fmax
+from casadi.casadi import PrintableCommon, fmax
 import numpy as np
 import casadi as ca 
 from matplotlib import pyplot as plt 
@@ -312,28 +312,34 @@ def Max_velocity(pts):
 
     s_i, th_i = convert_pts_s_th(pts)
     th_i_1 = th_i[:-1]
+    s_i_1 = s_i[:-1]
     N = len(s_i)
     N1 = len(s_i) - 1
 
     # setup possible casadi functions
+    d_x = ca.MX.sym('d_x', N-1)
+    d_y = ca.MX.sym('d_y', N-1)
+    vel = ca.Function('vel', [d_x, d_y], [ca.sqrt(ca.power(d_x, 2) + ca.power(d_y, 2))])
 
     dx = ca.MX.sym('dx', N)
     dy = ca.MX.sym('dy', N)
-    dt = ca.MX.sym('t', N)
+    dt = ca.MX.sym('t', N-1)
     f_long = ca.MX.sym('f_long', N-1)
     f_lat = ca.MX.sym('f_lat', N-1)
 
     nlp = {\
         'x': ca.vertcat(dx, dy, dt, f_long, f_lat),
         'f': ca.sum1(dt), 
-        # 'f': ca.sumsqr(dt), 
         'g': ca.vertcat(
                     # dynamic constraints
-                    # dt - ca.sqrt(ca.power(dx, 2) + ca.power(dy, 2)) * s_i,
-                    dt - s_i / ca.sqrt(ca.power(dx, 2) + ca.power(dy, 2)) ,
-                    ca.arctan2(dx, dy) - th_i,
-                    dx[1:] - dx[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt[:-1]  / m,
-                    dy[1:] - dy[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt[:-1]  / m,
+                    dt - s_i_1 / ((vel(dx[:-1], dy[:-1]) + vel(dx[1:], dy[1:])) / 2 ),
+                    # ca.arctan2(dy, dx) - th_i,
+                    dx/dy - ca.tan(th_i),
+                    dx[1:] - (dx[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt  / m),
+                    dy[1:] - (dy[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt  / m),
+
+                    # dx[1:] - (dx[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt  / m),
+                    # dy[1:] - (dy[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt  / m),
 
                     # path constraints
                     ca.sqrt(ca.power(f_long, 2) + ca.power(f_lat, 2)),
@@ -349,7 +355,7 @@ def Max_velocity(pts):
     v0 = np.ones(N) * max_v/2
     dx0 = v0 * np.sin(th_i)
     dy0 = v0 * np.cos(th_i)
-    dt0 = ca.sqrt(ca.power(dx0, 2) + ca.power(dy0, 2)) * s_i
+    dt0 = s_i_1 / ca.sqrt(ca.power(dx0[:-1], 2) + ca.power(dy0[:-1], 2)) 
     f_long0 = np.zeros(N-1)
     ddx0 = dx0[1:] - dx0[:-1]
     ddy0 = dy0[1:] - dy0[:-1]
@@ -359,12 +365,13 @@ def Max_velocity(pts):
     x0 = ca.vertcat(dx0, dy0, dt0, f_long0, f_lat0)
 
     # make lbx, ubx
-    lbx = [-max_v] * N + [-max_v] * N + [0] * N + [-f_long_max] * N1 + [-f_max] * N1
-    ubx = [max_v] * N + [max_v] * N + [10] * N + [f_long_max] * N1 + [f_max] * N1
+    # lbx = [-max_v] * N + [-max_v] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
+    lbx = [-max_v] * N + [0] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
+    ubx = [max_v] * N + [max_v] * N + [10] * N1 + [f_long_max] * N1 + [f_max] * N1
 
     #make lbg, ubg
-    lbg = [0] * N *2 + [0] * 2 * N1 + [0] * N1 + [0] * 2 
-    ubg = [0] * N *2 + [0] * 2 * N1 + [f_max] * N1 + [0] * 2 
+    lbg = [0] * N1 + [0] * N + [0] * 2 * N1 + [0] * N1 + [0] * 2 
+    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [f_max] * N1 + [0] * 2 
 
     r = S(x0=x0, lbg=lbg, ubg=ubg, lbx=lbx, ubx=ubx)
 
@@ -372,20 +379,52 @@ def Max_velocity(pts):
 
     dx = np.array(x_opt[:N])
     dy = np.array(x_opt[N:N*2])
-    dt = np.array(x_opt[2*N:N*3])
-    f_long = np.array(x_opt[3*N:3*N + N1])
+    dt = np.array(x_opt[2*N:N*2 + N1])
+    f_long = np.array(x_opt[2*N+N1:2*N + N1*2])
     f_lat = np.array(x_opt[-N1:])
 
-    print(f"Dt: {dt.T}")
-    dt = np.cumsum(dt)
-    print(f"Dt: {dt.T}")
-    print(f"Dx: {dx.T}")
-    print(f"Dy: {dy.T}")
+    f_t = (f_long**2 + f_lat**2)**0.5
+
+    # print(f"Dt: {dt.T}")
+    print(f"DT0: {dt[0]}")
+    t = np.cumsum(dt)
+    t = np.insert(t, 0, 0)
+    # print(f"Dt: {dt.T}")
+    # print(f"Dx: {dx.T}")
+    # print(f"Dy: {dy.T}")
 
     vs = (dx**2 + dy**2)**0.5
 
     plt.figure(1)
-    plt.plot(dt, vs)
+    plt.title("Velocity vs dt")
+    plt.plot(t, vs)
+    plt.plot(t, dx)
+    plt.plot(t, dy)
+    plt.legend(['v', 'dx', 'dy'])
+    plt.plot(t, np.ones_like(t) * max_v, '--')
+
+    plt.figure(2)
+    plt.title("F_long, F_lat vs t")
+    plt.plot(t[:-1], f_long)
+    plt.plot(t[:-1], f_lat)
+    plt.plot(t[:-1], f_t)
+    plt.plot(t, np.ones_like(t) * f_max, '--')
+    plt.plot(t, np.ones_like(t) * -f_max, '--')
+    plt.plot(t, np.ones_like(t) * f_long_max, '--')
+    plt.plot(t, np.ones_like(t) * -f_long_max, '--')
+
+    plt.legend(['Flong', "f_lat", "f_t"])
+
+    plt.figure(3)
+    plt.title("Theta vs t")
+    plt.plot(t, th_i)
+    # plt.plot(t, np.abs(th_i))
+
+    plt.figure(5)
+    plt.title(f"t vs dt")
+    plt.plot(t[1:], dt)
+    plt.plot(t[1:], dt, '+')
+
 
     return vs
 
