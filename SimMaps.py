@@ -5,7 +5,7 @@ import yaml
 import csv
 
 import LibFunctions as lib
-from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj
+from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj, Max_velocity
 
 
 class MapBase:
@@ -297,6 +297,10 @@ class ForestMap(MapBase):
 
         return self.wpts
 
+    def get_velocity(self):
+        vels = Max_velocity(self.wpts)
+
+
     def get_reference_path(self):
         self.wpts = self.track_pts
 
@@ -307,6 +311,7 @@ class ForestMap(MapBase):
 
         # obs_size = [0.4, 0.6]
         obs_size = [1.2, 1.2]
+        # obs_size = [1.2, 1.2]
         xlim = (6 - obs_size[0]) / 2
 
         x, y = self.convert_int_position(obs_size)

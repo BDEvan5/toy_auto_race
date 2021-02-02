@@ -73,14 +73,7 @@ def RunMpcAgent():
     # env.show_history()
     env.render(wait=True)
 
-def test_mapping():
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
 
-    for i in range(100):
-        env.reset()
-        env_map.get_optimal_path()
-        env.render(wait=True)
 
 
 """Training functions: PURE MOD"""
@@ -263,6 +256,21 @@ def testOptimal():
     testVehicle(agent, obs=False, show=True)
 
 
+
+# Development functions
+
+def test_mapping():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    for i in range(100):
+        env.reset()
+        env_map.get_optimal_path()
+        env.render(wait=False)
+        env_map.get_velocity()
+        env.render(wait=True)
+        
+
 def timing():
     # t = timeit.timeit(stmt=RunModAgent, number=1)
     # print(f"Time: {t}")
@@ -279,8 +287,8 @@ if __name__ == "__main__":
 
     # timing()
 
-    RunMpcAgent()
-    # test_mapping()
+    # RunMpcAgent()
+    test_mapping()
 
 
 

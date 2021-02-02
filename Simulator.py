@@ -451,7 +451,7 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        # self.env_map.reset_static_map(8)
+        self.env_map.reset_static_map(8)
 
         return self.base_reset()
 
