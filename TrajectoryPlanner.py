@@ -298,7 +298,7 @@ def ShortestTraj(pts, nvecs, ws, check_scan_location):
 
 
 """Find the max velocity """
-def Max_velocity(pts):
+def Max_velocity(pts, show=False):
     mu = 0.743
     m = 3.47
     g = 9.81
@@ -337,9 +337,6 @@ def Max_velocity(pts):
                     dx/dy - ca.tan(th_i),
                     dx[1:] - (dx[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt  / m),
                     dy[1:] - (dy[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt  / m),
-
-                    # dx[1:] - (dx[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt  / m),
-                    # dy[1:] - (dy[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt  / m),
 
                     # path constraints
                     ca.sqrt(ca.power(f_long, 2) + ca.power(f_lat, 2)),
@@ -395,35 +392,36 @@ def Max_velocity(pts):
 
     vs = (dx**2 + dy**2)**0.5
 
-    plt.figure(1)
-    plt.title("Velocity vs dt")
-    plt.plot(t, vs)
-    plt.plot(t, dx)
-    plt.plot(t, dy)
-    plt.legend(['v', 'dx', 'dy'])
-    plt.plot(t, np.ones_like(t) * max_v, '--')
+    if show:
+        plt.figure(1)
+        plt.title("Velocity vs dt")
+        plt.plot(t, vs)
+        plt.plot(t, dx)
+        plt.plot(t, dy)
+        plt.legend(['v', 'dx', 'dy'])
+        plt.plot(t, np.ones_like(t) * max_v, '--')
 
-    plt.figure(2)
-    plt.title("F_long, F_lat vs t")
-    plt.plot(t[:-1], f_long)
-    plt.plot(t[:-1], f_lat)
-    plt.plot(t[:-1], f_t)
-    plt.plot(t, np.ones_like(t) * f_max, '--')
-    plt.plot(t, np.ones_like(t) * -f_max, '--')
-    plt.plot(t, np.ones_like(t) * f_long_max, '--')
-    plt.plot(t, np.ones_like(t) * -f_long_max, '--')
+        plt.figure(2)
+        plt.title("F_long, F_lat vs t")
+        plt.plot(t[:-1], f_long)
+        plt.plot(t[:-1], f_lat)
+        plt.plot(t[:-1], f_t)
+        plt.plot(t, np.ones_like(t) * f_max, '--')
+        plt.plot(t, np.ones_like(t) * -f_max, '--')
+        plt.plot(t, np.ones_like(t) * f_long_max, '--')
+        plt.plot(t, np.ones_like(t) * -f_long_max, '--')
 
-    plt.legend(['Flong', "f_lat", "f_t"])
+        plt.legend(['Flong', "f_lat", "f_t"])
 
-    plt.figure(3)
-    plt.title("Theta vs t")
-    plt.plot(t, th_i)
-    # plt.plot(t, np.abs(th_i))
+        plt.figure(3)
+        plt.title("Theta vs t")
+        plt.plot(t, th_i)
+        # plt.plot(t, np.abs(th_i))
 
-    plt.figure(5)
-    plt.title(f"t vs dt")
-    plt.plot(t[1:], dt)
-    plt.plot(t[1:], dt, '+')
+        plt.figure(5)
+        plt.title(f"t vs dt")
+        plt.plot(t[1:], dt)
+        plt.plot(t[1:], dt, '+')
 
 
     return vs
