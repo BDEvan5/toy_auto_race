@@ -5,7 +5,7 @@ import yaml
 import csv
 
 import LibFunctions as lib
-from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj
+from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj, Max_velocity
 
 
 class MapBase:
@@ -82,6 +82,7 @@ class MapBase:
 
         self.width = self.scan_map.shape[1]
         self.height = self.scan_map.shape[0]
+
 
     def convert_position(self, pt):
         x = pt[0] / self.resolution
@@ -285,7 +286,8 @@ class ForestMap(MapBase):
         MapBase.__init__(self, map_name)
 
         self.obs_map = np.zeros_like(self.scan_map)
-        self.end = [3, 23]
+        self.end = [3, 28] #TODO: move this to the yaml file
+        #TODO: generally relook at the yaml file
         self.obs_cars = []
 
     def get_optimal_path(self):
@@ -295,6 +297,10 @@ class ForestMap(MapBase):
 
         return self.wpts
 
+    def get_velocity(self):
+        vels = Max_velocity(self.wpts)
+
+
     def get_reference_path(self):
         self.wpts = self.track_pts
 
@@ -303,14 +309,17 @@ class ForestMap(MapBase):
     def reset_static_map(self, n=6):
         self.obs_map = np.zeros_like(self.obs_map)
 
-        obs_size = [1.5, 1]
+        # obs_size = [0.4, 0.6]
+        obs_size = [1.2, 1.2]
+        # obs_size = [1.2, 1.2]
         xlim = (6 - obs_size[0]) / 2
 
         x, y = self.convert_int_position(obs_size)
         obs_size = [x, y]
 
-        tys = np.linspace(4, 20, n)
-        txs = np.random.normal(xlim, 1, size=n)
+        tys = np.linspace(4, 26, n)
+        # txs = np.random.normal(xlim, 0.6, size=n)
+        txs = np.random.uniform(1, 4.8, size=n)
         txs = np.clip(txs, 0, 4)
         obs_locs = np.array([txs, tys]).T
 

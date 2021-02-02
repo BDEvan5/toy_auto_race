@@ -10,13 +10,15 @@ from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import LibFunctions as lib
 
 from AgentOptimal import OptimalAgent
+from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenVehicleTest, GenVehicleTestV, GenVehicleTrainDistance, GenVehicleTrainSteering, GenVehicleTrainVelocity
+from RefGen import GenTrainStd, GenTrainStr, GenTest
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
 name = names[5]
 myMap = 'TrackMap1000'
 forest_name = 'forest'
+bfg = 'BigForest'
 
 
 def RunOptimalAgent():
@@ -46,6 +48,31 @@ def RunOptimalAgent():
     print(f"Score: {score}")
     # env.show_history()
     env.render(wait=True)
+
+def RunMpcAgent():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    agent = AgentMPC()
+
+    done, state, score = False, env.reset(), 0.0
+    wpts = agent.init_agent(env_map)
+    # env.render(wait=True)
+    # env.render(True, wpts)
+    while not done:
+        action, pts, t, cwpts = agent.act(state)
+        s_p, r, done, _ = env.step(action, dt=t)
+        score += r
+        state = s_p
+
+        # env.render(True, wpts)
+        # env.env_map.render_map(4, True)
+        env.render(True, pts1=pts, pts2=cwpts)
+
+    print(f"Score: {score}")
+    # env.show_history()
+    env.render(wait=True)
+
 
 
 
@@ -229,6 +256,21 @@ def testOptimal():
     testVehicle(agent, obs=False, show=True)
 
 
+
+# Development functions
+
+def test_mapping():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    for i in range(100):
+        env.reset()
+        env_map.get_optimal_path()
+        env.render(wait=False)
+        env_map.get_velocity()
+        env.render(wait=True)
+        
+
 def timing():
     # t = timeit.timeit(stmt=RunModAgent, number=1)
     # print(f"Time: {t}")
@@ -240,10 +282,13 @@ def timing():
 if __name__ == "__main__":
 
     # RunModAgent()
-    RunGenAgent()
+    # RunGenAgent()
     # RunOptimalAgent()
 
     # timing()
+
+    # RunMpcAgent()
+    test_mapping()
 
 
 
