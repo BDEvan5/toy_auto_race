@@ -9,7 +9,7 @@ from SimMaps import  ForestMap
 from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import LibFunctions as lib
 
-from AgentOptimal import OptimalAgent
+from AgentOptimal import OptimalAgent, TunerCar
 from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
 from RefGen import GenTrainStd, GenTrainStr, GenTest
@@ -29,11 +29,11 @@ def RunOptimalAgent():
     env = ForestSim(env_map)
 
     agent = OptimalAgent()
+    agent = TunerCar()
 
-    env_map.reset_map()
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)
-    env.render(wait=True)
+    env.render(wait=False)
     # env.render(True, wpts)
     while not done:
         action = agent.act(state)
@@ -43,10 +43,10 @@ def RunOptimalAgent():
 
         # env.render(True, wpts)
         # env.env_map.render_map(4, True)
-        # env.render(False, wpts)
+        env.render(False)
 
     print(f"Score: {score}")
-    # env.show_history()
+    env.history.show_history()
     env.render(wait=True)
 
 def RunMpcAgent():
@@ -283,12 +283,12 @@ if __name__ == "__main__":
 
     # RunModAgent()
     # RunGenAgent()
-    # RunOptimalAgent()
+    RunOptimalAgent()
 
     # timing()
 
     # RunMpcAgent()
-    test_mapping()
+    # test_mapping()
 
 
 
