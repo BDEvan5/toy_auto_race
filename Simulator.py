@@ -51,11 +51,11 @@ class CarModel:
 
     def get_car_state(self):
         state = []
-        state.append(self.x)
+        state.append(self.x) #0
         state.append(self.y)
-        state.append(self.theta)
-        state.append(self.velocity)
-        state.append(self.steering)
+        state.append(self.theta) # 2
+        state.append(self.velocity) #3
+        state.append(self.steering)  #4
 
         return state
 
@@ -251,7 +251,7 @@ class BaseSim:
         if self.steps > 100:
             self.done = True
             self.done_reason = f"Max steps"
-        if abs(self.car.theta) > 0.95*np.pi:
+        if abs(self.car.theta) > 0.66*np.pi:
             self.done = True
             self.done_reason = f"Vehicle turned around"
             self.reward = -1
@@ -262,7 +262,7 @@ class BaseSim:
             self.reward = 1
             self.done_reason = f"Lap complete"
 
-    def render(self, wait=False, scan_sim=None, save=False):
+    def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
         fig = plt.figure(4)
 
@@ -283,8 +283,20 @@ class BaseSim:
             x, y = self.env_map.convert_position(pos)
             xs.append(x)
             ys.append(y)
-            # plt.plot(x, y, 'x', markersize=6)
         plt.plot(xs, ys, 'r', linewidth=3)
+        x, y = self.env_map.convert_position([self.car.x, self.car.y])
+        plt.plot(x, y, 'x', markersize=20)
+
+        if pts1 is not None:
+            for i, pt in enumerate(pts1):
+                x, y = self.env_map.convert_position(pt)
+                plt.text(x, y, f"{i}")
+                plt.plot(x, y, 'x', markersize=10)
+
+        if pts2 is not None:
+            for pt in pts2:
+                x, y = self.env_map.convert_position(pt)
+                plt.plot(x, y, 'o', markersize=6)
 
         text_x = self.env_map.scan_map.shape[1] + 10
         text_y = self.env_map.scan_map.shape[0] / 10
@@ -415,7 +427,10 @@ class ForestSim(BaseSim):
     def __init__(self, env_map):
         BaseSim.__init__(self, env_map)
 
-    def step(self, action):
+    def step(self, action, dt=None):
+        if dt is not None:
+            self.dt = dt / 10 # 10 is the current frequency ratio
+
         # self.env_map.update_obs_cars(self.timestep)
         self.base_step(action)
 
@@ -435,8 +450,8 @@ class ForestSim(BaseSim):
         self.car.steering = 0
         self.car.theta = 0
 
-        self.env_map.reset_dynamic_map(4)
-        self.env_map.reset_static_map(5)
+        # self.env_map.reset_dynamic_map(4)
+        self.env_map.reset_static_map(8)
 
         return self.base_reset()
 

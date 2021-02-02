@@ -15,7 +15,7 @@ class BaseGenAgent:
         self.env_map = None
         self.wpts = None
 
-        self.path_name = None
+        self.path_name = 'Vehicles/%s' % self.name
         self.pind = 1
         self.target = None
 
@@ -74,7 +74,8 @@ class BaseGenAgent:
         cur_d = [obs[4]/self.max_d]
 
         th_target = lib.get_bearing(obs[0:2], self.env_map.end)
-        th_scale = [(th_target)*2/np.pi]
+        alpha = lib.sub_angles_complex(th_target, obs[2])
+        th_scale = [(alpha)*2/np.pi]
 
         scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
 
@@ -102,15 +103,13 @@ class BaseGenAgent:
         self.pind = 1
 
 
-class GenVehicleTrainDistance(BaseGenAgent):
+class GenVehicle(BaseGenAgent):
     def __init__(self, name, load, h_size, n_beams):
         BaseGenAgent.__init__(self, name, n_beams)
 
-        self.prev_dist_target = 0
-
         state_space = 3 + self.n_beams
-        self.agent = TD3(state_space, 1, 1, name)
-        self.agent.try_load(load, h_size)
+        self.agent = TD3(state_space, 2, 1, name)
+        self.agent.try_load(load, h_size, path=self.path_name)
 
     def act(self, obs):
         nn_obs = self.transform_obs(obs)
@@ -127,115 +126,112 @@ class GenVehicleTrainDistance(BaseGenAgent):
 
         return [v_ref, d_ref]
 
+    def add_memory_entry(self, reward, done, s_prime, buffer):
+        new_reward = self.update_reward(reward, s_prime)
+        self.prev_nn_act = self.state_action[1][0]
+
+        nn_s_prime = self.transform_obs(s_prime)
+        # done_mask = 0.0 if done else 1.0
+
+        mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
+
+        buffer.add(mem_entry)
+
+        return new_reward
+
+    def generate_references(self, nn_action, space=None):
+        d_ref = nn_action[0] * self.max_d
+        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
+
+        return v_ref, d_ref
+
+
+"""Full Vehicles  """
+class GenTrainStd(GenVehicle):
+    def __init__(self, name, load, h_size, n_beams):
+        super().__init__(name, load, h_size, n_beams)
+
+        self.prev_dist_target = 0
+        self.b1 = None
+        self.b2 = None
+        self.b3 = None
+
+    def init_reward(self, b1, b2, b3):
+        self.b1 = b1
+        self.b2 = b2
+        self.b3 = b3
+
     def update_reward(self, reward, s_prime):
-        beta = 1
         if reward == -1:
             new_reward = -1
             self.prev_dist_target = lib.get_distance(self.env_map.start, self.env_map.end)
         else:
             dist_target = lib.get_distance(s_prime[0:2], self.env_map.end)
-            new_reward = (self.prev_dist_target - dist_target) * beta
+            d_dis = self.prev_dist_target - dist_target
+            vel = s_prime[2] / self.max_v
+
+            new_reward = self.b1 + d_dis * self.b2 + vel * self.b3
+
             self.prev_dist_target = dist_target
 
         self.reward_history.append(new_reward)
 
         return new_reward
 
-    def add_memory_entry(self, reward, done, s_prime, buffer):
-        new_reward = self.update_reward(reward, s_prime)
-        self.prev_nn_act = self.state_action[1][0]
 
-        nn_s_prime = self.transform_obs(s_prime)
-        # done_mask = 0.0 if done else 1.0
-
-        mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
-
-        buffer.add(mem_entry)
-
-        return new_reward
-
-
-class GenVehicleTrainSteering(BaseGenAgent):
+class GenTrainStr(GenVehicle):
     def __init__(self, name, load, h_size, n_beams):
-        BaseGenAgent.__init__(self, name, n_beams)
+        super().__init__(name, load, h_size, n_beams)
 
-        self.prev_dist_target = 0
+        self.s1 = None
+        self.s2 = None
+        self.s3 = None
 
-        state_space = 3 + self.n_beams
-        self.agent = TD3(state_space, 1, 1, name)
-        self.agent.try_load(load, h_size)
-
-    def act(self, obs):
-        nn_obs = self.transform_obs(obs)
-        nn_action = self.agent.act(nn_obs)
-        self.cur_nn_act = nn_action
-
-        self.mod_history.append(self.cur_nn_act[0])
-        self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
-
-        v_ref, d_ref = self.generate_references(self.cur_nn_act, obs)
-
-        self.steps += 1
-
-        return [v_ref, d_ref]
+    def init_reward(self, s1, s2, s3):
+        self.s1 = s1
+        self.s2 = s2
+        self.s3 = s3
 
     def update_reward(self, reward, s_prime):
-        beta = 2
         if reward == -1:
             new_reward = -1
-            self.prev_dist_target = lib.get_distance(self.env_map.start, self.env_map.end)
         else:
-            new_reward = 1 - abs(s_prime[4]) * beta
+            del_norm = (abs(s_prime[4]) / self.max_d) ** 2
+            v_norm = s_prime[3] / self.max_v
+            new_reward = self.s1 - del_norm * self.s2 + self.s3 * v_norm
 
         self.reward_history.append(new_reward)
 
         return new_reward
 
-    def add_memory_entry(self, reward, done, s_prime, buffer):
-        new_reward = self.update_reward(reward, s_prime)
-        self.prev_nn_act = self.state_action[1][0]
 
-        nn_s_prime = self.transform_obs(s_prime)
-        # done_mask = 0.0 if done else 1.0
-
-        mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
-
-        buffer.add(mem_entry)
-
-        return new_reward
-
-
-class GenVehicleTest(BaseGenAgent):
+"""Test Vehicles"""
+class GenTest(BaseGenAgent):
     def __init__(self, name):
         path = 'Vehicles/' + name + ''
-        state_space = 4 
-        self.agent = TD3(state_space, 1, 1, name)
+        self.agent = TD3(1, 1, 1, name)
         self.agent.load(directory=path)
 
         print(f"NN: {self.agent.actor.type}")
 
         nn_size = self.agent.actor.l1.in_features
-        n_beams = nn_size - 4
+        n_beams = nn_size - 3
         BaseGenAgent.__init__(self, name, n_beams)
 
-        self.current_v_ref = None
-        self.current_phi_ref = None
+    def generate_references(self, nn_action, space=None):
+        d_ref = nn_action[0] * self.max_d
+        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
+
+        return v_ref, d_ref
 
     def act(self, obs):
-        v_ref, d_ref = self.get_target_references(obs)
-
         nn_obs = self.transform_obs(obs)
         nn_action = self.agent.act(nn_obs, noise=0)
-        self.cur_nn_act = nn_action
 
-        self.d_ref_history.append(d_ref)
-        self.mod_history.append(self.cur_nn_act[0])
-        self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
-
-        v_ref, d_ref = self.modify_references(self.cur_nn_act, v_ref, d_ref, obs)
-
-        self.steps += 1
+        v_ref, d_ref = self.generate_references(nn_action)
 
         return [v_ref, d_ref]
+
+
+
+

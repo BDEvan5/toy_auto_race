@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys, os, shutil
+from HistoryStructs import TrainHistory
 
 import timeit
 
@@ -10,13 +10,15 @@ from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import LibFunctions as lib
 
 from AgentOptimal import OptimalAgent
+from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenVehicleTrainDistance, GenVehicleTrainSteering
+from RefGen import GenTrainStd, GenTrainStr, GenTest
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
 name = names[5]
 myMap = 'TrackMap1000'
 forest_name = 'forest'
+bfg = 'BigForest'
 
 
 def RunOptimalAgent():
@@ -47,49 +49,31 @@ def RunOptimalAgent():
     # env.show_history()
     env.render(wait=True)
 
-class TrainHistory():
-    def __init__(self, agent_name) -> None:
-        self.agent_name = agent_name
+def RunMpcAgent():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
 
-        # training data
-        self.lengths = []
-        self.rewards = [] 
-        self.t_counter = 0 # total steps
-        
-        # espisode data
-        self.ep_counter = 0 # ep steps
-        self.ep_reward = 0
+    agent = AgentMPC()
 
-        self.init_file_struct()
+    done, state, score = False, env.reset(), 0.0
+    wpts = agent.init_agent(env_map)
+    # env.render(wait=True)
+    # env.render(True, wpts)
+    while not done:
+        action, pts, t, cwpts = agent.act(state)
+        s_p, r, done, _ = env.step(action, dt=t)
+        score += r
+        state = s_p
 
-    def init_file_struct(self):
-        path = 'Vehicles/' + self.agent_name 
+        # env.render(True, wpts)
+        # env.env_map.render_map(4, True)
+        env.render(True, pts1=pts, pts2=cwpts)
 
-        if os.path.exists(path):
-            try:
-                os.rmdir(path)
-            except:
-                shutil.rmtree(path)
-        os.mkdir(path)
+    print(f"Score: {score}")
+    # env.show_history()
+    env.render(wait=True)
 
-    def add_step_data(self, new_r):
-        self.ep_reward += new_r
-        self.ep_counter += 1
-        self.t_counter += 1 
 
-    def lap_done(self):
-        self.lengths.append(self.ep_counter)
-        self.rewards.append(self.ep_reward)
-
-        self.ep_counter = 0
-        self.ep_reward = 0
-
-    def print_update(self):
-        mean = np.mean(self.rewards)
-        score = self.rewards[-1]
-        print(f"Run: {self.t_counter} --> Score: {score:.2f} --> Mean: {mean:.2f} --> ")
-        
-        lib.plot(self.rewards, figure_n=2)
 
 
 """Training functions: PURE MOD"""
@@ -140,6 +124,7 @@ def TrainModVehicle(agent_name, load=True):
 
     return t_his.rewards
 
+
 """General test function"""
 def testVehicle(vehicle, show=False, obs=True):
     # env_map = SimMap(name)
@@ -156,8 +141,8 @@ def testVehicle(vehicle, show=False, obs=True):
     done, state, score = False, env.reset(), 0.0
     for i in range(100): # 10 laps
         print(f"Running lap: {i}")
-        if obs:
-            env_map.reset_map()
+        # if obs:
+        #     env_map.reset_map()
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
@@ -176,7 +161,8 @@ def testVehicle(vehicle, show=False, obs=True):
             lap_times.append(env.steps)
         state = env.reset()
         
-        env.reset_lap()
+        # env.reset_lap()
+        env.reset()
         vehicle.reset_lap()
         done = False
 
@@ -197,6 +183,8 @@ def TrainGenVehicle(agent_name, load):
 
     # vehicle = GenVehicleTrainDistance(agent_name, load, 200, 10)
     vehicle = GenVehicleTrainSteering(agent_name, load, 200, 10)
+    # vehicle = GenVehicleTrainVelocity(agent_name, load, 200, 10)
+
 
     t_his = TrainHistory(agent_name)
     print_n = 500
@@ -245,13 +233,21 @@ def RunModAgent():
     # TrainModVehicle(agent_name, True)
 
     # vehicle = ModVehicleTest(agent_name)
+
     # testVehicle(vehicle, obs=True, show=True)
     # testVehicle(vehicle, obs=False, show=True)
 
 def RunGenAgent():
-    agent_name = "TestingGen"
+    agent_name = "TestingGenD"
+    # agent_name = "TestingGenV"
 
-    TrainGenVehicle(agent_name, False)
+    # TrainGenVehicle(agent_name, False)
+
+    vehicle = GenVehicleTest(agent_name)
+    # vehicle = GenVehicleTestV(agent_name)
+
+    testVehicle(vehicle, obs=True, show=True)
+    # testVehicle(vehicle, obs=False, show=True)
 
 
 def testOptimal():
@@ -259,6 +255,21 @@ def testOptimal():
 
     testVehicle(agent, obs=False, show=True)
 
+
+
+# Development functions
+
+def test_mapping():
+    env_map = ForestMap(forest_name)
+    env = ForestSim(env_map)
+
+    for i in range(100):
+        env.reset()
+        env_map.get_optimal_path()
+        env.render(wait=False)
+        env_map.get_velocity()
+        env.render(wait=True)
+        
 
 def timing():
     # t = timeit.timeit(stmt=RunModAgent, number=1)
@@ -271,10 +282,13 @@ def timing():
 if __name__ == "__main__":
 
     # RunModAgent()
-    RunGenAgent()
+    # RunGenAgent()
     # RunOptimalAgent()
 
     # timing()
+
+    # RunMpcAgent()
+    test_mapping()
 
 
 
