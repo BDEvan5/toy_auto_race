@@ -13,6 +13,7 @@ lims:
   max_a: 8.5
   max_steer: 0.4
   max_d_dot: 3.2
+  dis_scale: 0.5
 
 map:
   name: "forest"
@@ -28,8 +29,12 @@ map:
 sim:
   timestep: 0.02
   update_f: 10
+  beams: 10
 
 pp:
   lookahead: 2
   v_gain: 0.9
+
+nn:
+  h: 200
 

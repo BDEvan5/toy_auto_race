@@ -67,7 +67,11 @@ def RunOptimalAgent():
     ra.show_rewards()
     # env.history.show_history(vs=env_map.vs)
     # env.history.show_forces()
+
     env.render(wait=True)
+
+
+
 
 
 

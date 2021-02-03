@@ -31,9 +31,14 @@ def get_tiangle_h(a, b, c):
     return h
 
 class StdNavReward:
-    def __init__(self, config) -> None:
+    def __init__(self, config, b1, b2, b3) -> None:
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
-        self.beta = config['reward']['b1']
+        self.max_v = config['lims']['max_v']
+        self.dis_scale = config['lims']["dis_scale"]
+
+        self.b1 = b1
+        self.b2 = b2
+        self.b3 = b3
 
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -42,18 +47,21 @@ class StdNavReward:
             prev_dist = lib.get_distance(s[0:2], self.end)
             cur_dist = lib.get_distance(s_p[0:2], self.end)
 
-            new_r = (prev_dist - cur_dist) * self.beta
+            v_sc = s_p[2] / self.max_v
+            d_dis = (prev_dist - cur_dist) / self.dis_scale
+
+            new_r = self.b1 + d_dis * self.b2 + self.b3 * v_sc
             return new_r
 
 
 class CrossTrackHeadingReward:
-    def __init__(self, config, pts, vs) -> None:
+    def __init__(self, config, pts, vs, t1, t2, t3) -> None:
         self.pts = pts 
         self.vs = vs
 
-        self.t1 = config['reward']['t1']
-        self.t2 = config['reward']['t2']
-        self.t3 = config['reward']['t3']
+        self.t1 = t1
+        self.t2 = t2
+        self.t3 = t3
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -74,9 +82,9 @@ class CrossTrackHeadingReward:
             return new_r
 
 class OnlineSteering:
-    def __init__(self, config) -> None:
-        self.s1 = config['reward']['s1']
-        self.s2 = config['reward']['s2']
+    def __init__(self, config, s1, s2) -> None:
+        self.s1 = s1
+        self.s2 = s2
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -87,11 +95,11 @@ class OnlineSteering:
             return new_r
 
 class ModStdTimeReward:
-    def __init__(self, config) -> None:
-        self.m1 = config['reward']['m1']
-        self.m2 = config['reward']['m2']
+    def __init__(self, config, m1, m2, mt) -> None:
+        self.m1 = m1
+        self.m2 = m2
 
-        self.mt = config['reward']['mt']
+        self.mt = mt
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -102,12 +110,10 @@ class ModStdTimeReward:
             return new_r
 
 class ModHeadingReward:
-    def __init__(self, config, pts, vs) -> None:
-        self.m1 = config['reward']['m1']
-        self.m2 = config['reward']['m2']
-        self.m3 = config['reward']['m3']
-        self.m4 = config['reward']['m4']
-        self.mt = config['reward']['mt']
+    def __init__(self, config, pts, vs, m1, m3, m4) -> None:
+        self.m1 = m1
+        self.m3 = m3
+        self.m4 = m4
         
         
     def __call__(self, s, a, s_p, r) -> float:
