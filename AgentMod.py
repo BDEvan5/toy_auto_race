@@ -9,7 +9,8 @@ from Simulator import ScanSimulator
 
 
 class BaseModAgent:
-    def __init__(self, name, n_beams):
+    def __init__(self, config, name):
+        self.config = config
         self.name = name
         self.env_map = None
         self.wpts = None
@@ -25,14 +26,15 @@ class BaseModAgent:
         self.critic_history = []
         self.steps = 0
 
-        self.max_v = 7.5
-        self.max_d = 0.4
+        self.max_v = config['lims']['max_v']
+        self.max_d = config['lims']['max_steer']
 
         # agent stuff 
         self.state_action = None
         self.cur_nn_act = None
         self.prev_nn_act = 0
 
+        n_beams = config['sim']['beams']
         self.scan_sim = ScanSimulator(n_beams, np.pi)
         self.n_beams = n_beams
 
@@ -43,6 +45,7 @@ class BaseModAgent:
 
         # self.wpts = self.env_map.get_min_curve_path()
         self.wpts = self.env_map.get_reference_path()
+        # vs = self.env_map.get_velocity()
 
         r_line = self.wpts
         ths = [lib.get_bearing(r_line[i], r_line[i+1]) for i in range(len(r_line)-1)]
@@ -151,22 +154,23 @@ class BaseModAgent:
 
 
 class ModVehicleTrain(BaseModAgent):
-    def __init__(self, name, load, h_size, n_beams):
-        BaseModAgent.__init__(self, name, n_beams)
+    def __init__(self, config, name, load):
+        BaseModAgent.__init__(self, config, name)
 
         self.current_v_ref = None
         self.current_phi_ref = None
 
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, name)
+        h_size = config['nn']['h']
         self.agent.try_load(load, h_size)
 
         self.m1 = None
         self.m2 = None
 
-    def init_reward(self, m1, m2):
-        self.m1 = m1
-        self.m2 = m2
+    # def init_reward(self, m1, m2):
+    #     self.m1 = m1
+    #     self.m2 = m2
 
     def act(self, obs):
         v_ref, d_ref = self.get_target_references(obs)
@@ -197,8 +201,8 @@ class ModVehicleTrain(BaseModAgent):
 
     #     return new_reward
 
-    def add_memory_entry(self, reward, done, s_prime, buffer):
-        new_reward = self.update_reward(reward, self.state_action[1])
+    def add_memory_entry(self, new_reward, done, s_prime, buffer):
+        # new_reward = self.update_reward(reward, self.state_action[1])
         self.prev_nn_act = self.state_action[1][0]
 
         nn_s_prime = self.transform_obs(s_prime)
@@ -208,11 +212,10 @@ class ModVehicleTrain(BaseModAgent):
 
         buffer.add(mem_entry)
 
-        return new_reward
 
 
 class ModVehicleTest(BaseModAgent):
-    def __init__(self, name):
+    def __init__(self, config, name):
         path = 'Vehicles/' + name + ''
         state_space = 4 
         self.agent = TD3(state_space, 1, 1, name)
@@ -222,7 +225,7 @@ class ModVehicleTest(BaseModAgent):
 
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 4
-        BaseModAgent.__init__(self, name, n_beams)
+        BaseModAgent.__init__(self, config, name)
 
         self.current_v_ref = None
         self.current_phi_ref = None

@@ -64,6 +64,8 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=200):
     vehicle.agent.save(directory=path)
     t_his.save_csv_data()
 
+    print(f"Finished Training: {agent_name}")
+
     return t_his.rewards
 
 
@@ -80,7 +82,7 @@ class TestData:
 
         self.N = None
 
-    def init_arrays(self, N):
+    def init_arrays(self, N, laps):
         self.completes = np.zeros((N))
         self.crashes = np.zeros((N))
         self.lap_times = np.zeros((laps, N))
@@ -89,7 +91,7 @@ class TestData:
         self.N = N
  
     def save_txt_results(self):
-        test_name = 'Vehicles/Evals' + self.eval_name + '.txt'
+        test_name = 'Evals/' + self.eval_name + '.txt'
         with open(test_name, 'w') as file_obj:
             file_obj.write(f"\nTesting Complete \n")
             file_obj.write(f"Map name: {name} \n")
@@ -116,9 +118,9 @@ class TestData:
             print(f"-----------------------------------------------------")
         
     def save_csv_results(self):
-        test_name = 'Vehicles/Evals/'  + self.eval_name + '.csv'
+        test_name = 'Evals/'  + self.eval_name + '.csv'
 
-        data = ["#", "Name", "%Complete", "AvgTime"]
+        data = [["#", "Name", "%Complete", "AvgTime"]]
         for i in range(self.N):
             v_data = [i]
             v_data.append(self.vehicle_list[i].name)
@@ -146,20 +148,22 @@ class TestData:
 
 
 class TestVehicles(TestData):
-    def __init__(self, eval_name) -> None:
+    def __init__(self, config, eval_name) -> None:
+        self.config = config
         self.eval_name = eval_name
         self.vehicle_list = []
         self.N = None
 
-        TestData.__init__()
+        TestData.__init__(self)
 
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
     def run_eval(self, laps=100, show=False):
         N = self.N = len(self.vehicle_list)
+        self.init_arrays(N, laps)
 
-        env_map = ForestMap(forest_name)
+        env_map = ForestMap(self.config)
         env = ForestSim(env_map)    
 
         for i in range(laps):
@@ -275,48 +279,50 @@ def train_mod_cth():
 
 def test_compare():
     config = load_config("std_config")
-    test = TestVehicles('RaceComparison_t1')
+    test = TestVehicles(config, 'RaceComparison_t1')
 
     agent_name = "GenStd_0_02_0"
-    vehicle = GenTest(config, name)
+    vehicle = GenTest(config, agent_name)
     test.add_vehicle(vehicle)
 
     agent_name = "GenCth_1_1_1"
-    vehicle = GenTest(config, name)
-    test.add_vehicle(vehicle)
+    # vehicle = GenTest(config, agent_name)
+    # test.add_vehicle(vehicle)
 
     agent_name = "GenSteer_02_02"
-    vehicle = GenTest(config, name)
+    vehicle = GenTest(config, agent_name)
     test.add_vehicle(vehicle)
 
     agent_name = "ModStd_04_02_0"
-    vehicle = ModVehicleTest(config, name)
+    vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
     agent_name = "ModTime_01_01_1"
-    vehicle = ModVehicleTest(config, name)
+    vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
     agent_name = "ModCth_1_1_1"
-    vehicle = GenTest(config, name)
-    test.add_vehicle(vehicle)
+    # vehicle = GenTest(config, agent_name)
+    # test.add_vehicle(vehicle)
 
 
 
-    test.run_eval(10, False)
+    test.run_eval(1, False)
 
 
+def train():
+    pass
+    # train_gen_std()
+    # train_gen_steer()
+    # train_gen_cth()
+
+    # train_mod_std()
+    # train_mod_cth()
+    train_mod_time()
 
 
 if __name__ == "__main__":
-
-    train_gen_std()
-    train_gen_steer()
-    train_gen_cth()
-
-    train_mod_std()
-    train_mod_cth()
-    train_mod_time()
+    # train()
 
     test_compare()
 

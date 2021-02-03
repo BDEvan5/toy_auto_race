@@ -149,7 +149,7 @@ class GenVehicle(BaseGenAgent):
 
 """Test Vehicles"""
 class GenTest(BaseGenAgent):
-    def __init__(self, name):
+    def __init__(self, config, name):
         path = 'Vehicles/' + name + ''
         self.agent = TD3(1, 1, 1, name)
         self.agent.load(directory=path)
@@ -158,7 +158,7 @@ class GenTest(BaseGenAgent):
 
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 3
-        BaseGenAgent.__init__(self, name, n_beams)
+        BaseGenAgent.__init__(self, config, name)
 
     def generate_references(self, nn_action, space=None):
         d_ref = nn_action[0] * self.max_d

@@ -40,6 +40,9 @@ class StdNavReward:
         self.b2 = b2
         self.b3 = b3
 
+    def init_reward(self, pts, vs):
+        pass
+
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
             return r 
@@ -55,9 +58,9 @@ class StdNavReward:
 
 
 class CrossTrackHeadingReward:
-    def __init__(self, config, pts, vs, t1, t2, t3) -> None:
-        self.pts = pts 
-        self.vs = vs
+    def __init__(self, config, t1, t2, t3) -> None:
+        self.pts = None 
+        self.vs = None
 
         self.t1 = t1
         self.t2 = t2
@@ -65,6 +68,10 @@ class CrossTrackHeadingReward:
 
         self.max_v = config['lims']['max_v']
         self.dis_scale = config['lims']["dis_scale"]
+
+    def init_reward(self, pts, vs):
+        self.pts = pts
+        self.vs = vs
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -89,6 +96,9 @@ class OnlineSteering:
     def __init__(self, config, s1, s2) -> None:
         self.s1 = s1
         self.s2 = s2
+
+    def init_reward(self, pts, vs):
+        pass
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -100,11 +110,14 @@ class OnlineSteering:
 
 class ModStdTimeReward:
     def __init__(self, config, m1, m2, mt) -> None:
-        self.max_steer = config['car']['max_steer']
+        self.max_steer = config['lims']['max_steer']
         self.m1 = m1
         self.m2 = m2
 
         self.mt = mt
+
+    def init_reward(self, pts, vs):
+        pass
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -116,10 +129,17 @@ class ModStdTimeReward:
             return new_r
 
 class ModHeadingReward:
-    def __init__(self, config, pts, vs, m1, m3, m4) -> None:
+    def __init__(self, config, m1, m3, m4) -> None:
         self.m1 = m1
         self.m3 = m3
         self.m4 = m4
+
+        self.pts = None
+        self.vs = None
+
+    def init_reward(self, pts, vs):
+        self.pts = pts
+        self.vs = vs
         
         
     def __call__(self, s, a, s_p, r) -> float:
