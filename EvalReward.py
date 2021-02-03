@@ -1,4 +1,4 @@
-from Rewards import StdNavReward
+from Rewards import ModStdTimeReward, OnlineSteering, StdNavReward
 import numpy as np
 import matplotlib.pyplot as plt
 from HistoryStructs import RewardAnalyser, TrainHistory
@@ -14,7 +14,7 @@ import LibFunctions as lib
 from AgentOptimal import OptimalAgent, TunerCar
 from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenTrainStd, GenTrainStr, GenTest
+from RefGen import GenVehicle, GenTest
 
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
@@ -44,7 +44,13 @@ def RunOptimalAgent():
     agent = TunerCar(config)
 
     ra = RewardAnalyser()
-    reward = StdNavReward(config)
+
+    # reward = StdNavReward(config, 0, 0.2, 0)
+    # reward = OnlineSteering(config, 0.2, 0.2)
+    # reward = ModStdTimeReward(config, 0.4, 0.2, 0)
+    reward = ModStdTimeReward(config, 0.1, 0.1, 1)
+
+
 
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)

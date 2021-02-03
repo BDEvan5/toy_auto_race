@@ -56,6 +56,9 @@ class TrainHistory():
             csvwriter = csv.writer(csvfile)
             csvwriter.writerows(data)
 
+        plt.figure(2)
+        plt.savefig(self.path + "/training_rewards.png")
+
 
 class RewardAnalyser:
     def __init__(self) -> None:
@@ -69,6 +72,7 @@ class RewardAnalyser:
     def show_rewards(self, show=False):
         plt.figure(6)
         plt.plot(self.rewards, '-*')
+        plt.ylim([-1, 1])
         plt.title('Reward History')
         if show:
             plt.show()

@@ -19,7 +19,7 @@ forest_name = 'forest'
 
 
 """Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=200):
+def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
@@ -298,8 +298,8 @@ def test_compare():
     test.add_vehicle(vehicle)
 
     agent_name = "ModTime_01_01_1"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
+    # vehicle = ModVehicleTest(config, agent_name)
+    # test.add_vehicle(vehicle)
 
     agent_name = "ModCth_1_1_1"
     # vehicle = GenTest(config, agent_name)
@@ -307,22 +307,22 @@ def test_compare():
 
 
 
-    test.run_eval(1, False)
+    test.run_eval(1000, False)
 
 
 def train():
     pass
-    # train_gen_std()
-    # train_gen_steer()
+    train_gen_std()
+    train_gen_steer()
     # train_gen_cth()
 
-    # train_mod_std()
+    train_mod_std()
     # train_mod_cth()
-    train_mod_time()
+    # train_mod_time()
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     test_compare()
 

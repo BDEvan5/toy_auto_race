@@ -168,10 +168,6 @@ class ModVehicleTrain(BaseModAgent):
         self.m1 = None
         self.m2 = None
 
-    # def init_reward(self, m1, m2):
-    #     self.m1 = m1
-    #     self.m2 = m2
-
     def act(self, obs):
         v_ref, d_ref = self.get_target_references(obs)
 
@@ -190,23 +186,10 @@ class ModVehicleTrain(BaseModAgent):
 
         return [v_ref, d_ref]
 
-    # def update_reward(self, reward, action):
-    #     if reward == -1:
-    #         new_reward = -1
-    #     else:
-    #         new_reward = self.m1 - abs(action[0]) * self.m2
-    #         # new_reward =  - abs(action[0]) * beta
-
-    #     self.reward_history.append(new_reward)
-
-    #     return new_reward
-
     def add_memory_entry(self, new_reward, done, s_prime, buffer):
-        # new_reward = self.update_reward(reward, self.state_action[1])
         self.prev_nn_act = self.state_action[1][0]
 
         nn_s_prime = self.transform_obs(s_prime)
-        # done_mask = 0.0 if done else 1.0
 
         mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
 

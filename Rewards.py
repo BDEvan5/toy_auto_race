@@ -119,11 +119,11 @@ class ModStdTimeReward:
     def init_reward(self, pts, vs):
         pass
         
-    def __call__(self, s, a, s_p, r) -> float:
+    def __call__(self, s, a, s_p, r, time=0) -> float:
         if r == -1:
             return r
         else:
-            time = 0
+            # time = 0
             steer = abs(a[1]) / self.max_steer
             new_r = self.m1 - self.m2 * steer + self.mt * time
             return new_r
