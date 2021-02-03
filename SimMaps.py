@@ -282,12 +282,13 @@ class ForestMap(MapBase):
     get_reference_path
         Returns a straight reference to follow
     """
-    def __init__(self, map_name="forest"):
+    def __init__(self, config):
+        self.config = config
+        map_name = config['map']['name']
         MapBase.__init__(self, map_name)
 
         self.obs_map = np.zeros_like(self.scan_map)
-        self.end = [3, 28] #TODO: move this to the yaml file
-        #TODO: generally relook at the yaml file
+        self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
 
     def get_optimal_path(self):
@@ -298,7 +299,7 @@ class ForestMap(MapBase):
         return self.wpts
 
     def get_velocity(self):
-        vels = Max_velocity(self.wpts)
+        vels = Max_velocity(self.wpts, self.config)
 
         return vels
 

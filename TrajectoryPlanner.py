@@ -298,17 +298,17 @@ def ShortestTraj(pts, nvecs, ws, check_scan_location):
 
 
 """Find the max velocity """
-def Max_velocity(pts, show=False):
-    mu = 0.523
-    m = 3.47
-    g = 9.81
-    l_f = 0.158
-    l_r = 0.17
+def Max_velocity(pts, config, show=False):
+    mu = config['car']['mu']
+    m = config['car']['m']
+    g = config['car']['g']
+    l_f = config['car']['l_f']
+    l_r = config['car']['l_r']
     f_max = mu * m * g
     f_long_max = l_f / (l_r + l_f) * f_max
     # f_lat_max = 
-    max_v = 7
-    max_a = 7.5
+    max_v = config['lims']['max_v']
+    max_a = config['lims']['max_a']
 
     s_i, th_i = convert_pts_s_th(pts)
     th_i_1 = th_i[:-1]

@@ -120,7 +120,8 @@ class OptimalAgent:
 
 
 class TunerCar:
-    def __init__(self) -> None:
+    def __init__(self, config) -> None:
+        self.config = config
         self.name = "TunerCar Agent: Following PP references"
         self.env_map = None
         self.path_name = None
@@ -128,9 +129,9 @@ class TunerCar:
         self.wpts = None
         self.vs = None
 
-        self.lookahead = 2
-        self.vgain = 0.9
-        self.wheelbase =  0.17145+0.15875
+        self.lookahead = config['pp']['lookahead']
+        self.vgain = config['pp']['v_gain']
+        self.wheelbase =  config['car']['l_f'] + config['car']['l_r']
 
     def init_agent(self, env_map):
         self.env_map = env_map

@@ -6,7 +6,8 @@ import LibFunctions as lib
 
 
 class CarModel:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.x = 0
         self.y = 0
         self.theta = 0
@@ -16,20 +17,14 @@ class CarModel:
 
         self.prev_loc = 0
 
-        self.wheelbase = 0.33
-        self.mass = 3.74
-        self.len_cg_rear = 0.17
-        self.I_z = 0.047
-        self.mu = 0.523
-        self.height_cg = 0.074
-        self.cs_f = 4.718
-        self.cs_r = 5.45
+        self.wheelbase = config['car']['l_f'] + config['car']['l_r']
+        self.mass = config['car']['m']
+        self.mu = config['car']['mu']
 
-        self.max_d_dot = 3.2
-        self.max_steer = 0.4
-        self.max_a = 7.5
-        self.max_decel = -8.5
-        self.max_v = 7.5
+        self.max_d_dot = config['lims']['max_d_dot']
+        self.max_steer = config['lims']['max_steer']
+        self.max_a = config['lims']['max_a']
+        self.max_v = config['lims']['max_v']
         self.max_friction_force = self.mass * self.mu * 9.81
 
     def update_kinematic_state(self, a, d_dot, dt):
@@ -40,7 +35,7 @@ class CarModel:
         dth = theta_dot * dt
         self.theta = lib.add_angles_complex(self.theta, dth)
 
-        a = np.clip(a, self.max_decel, self.max_a)
+        a = np.clip(a, -self.max_a, self.max_a)
         d_dot = np.clip(d_dot, -self.max_d_dot, self.max_d_dot)
 
         self.steering = self.steering + d_dot * dt
@@ -100,7 +95,8 @@ class ScanSimulator:
 
 
 class SimHistory:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.positions = []
         self.steering = []
         self.velocities = []
@@ -142,11 +138,11 @@ class SimHistory:
         plt.pause(0.001)
 
     def show_forces(self):
-        mu = 0.743
-        m = 3.47
-        g = 9.81
-        l_f = 0.158
-        l_r = 0.17
+        mu = self.config['car']['mu']
+        m = self.config['car']['m']
+        g = self.config['car']['g']
+        l_f = self.config['car']['l_f']
+        l_r = self.config['car']['l_r']
         f_max = mu * m * g
         f_long_max = l_f / (l_r + l_f) * f_max
 
@@ -154,7 +150,7 @@ class SimHistory:
         self.thetas = np.array(self.thetas)
 
         # divide by time taken for change to get per second
-        t = 0.2
+        t = self.config['sim']['timestep'] * self.config['sim']['update_f']
         v_dot = (self.velocities[1:] - self.velocities[:-1]) / t
         oms = (self.thetas[1:] - self.thetas[:-1]) / t
 
@@ -180,12 +176,14 @@ class BaseSim:
     Base simulator class
     """
     def __init__(self, env_map):
-        self.timestep = 0.02
+        self.env_map = env_map
+        self.config = self.env_map.config
+
+        self.timestep = self.config['sim']['timestep']
         self.eps = 0
 
-        self.env_map = env_map
 
-        self.car = CarModel()
+        self.car = CarModel(self.config)
 
         self.done = False
         self.reward = 0
@@ -193,7 +191,7 @@ class BaseSim:
         self.action_memory = []
         self.steps = 0
 
-        self.history = SimHistory()
+        self.history = SimHistory(self.config)
         self.done_reason = ""
         self.y_forces = []
 

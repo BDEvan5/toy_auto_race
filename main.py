@@ -35,11 +35,11 @@ def RunOptimalAgent():
     config = load_config("std_config")
 
 
-    env_map = ForestMap(forest_name)
+    env_map = ForestMap(config)
     env = ForestSim(env_map)
 
-    agent = OptimalAgent()
-    agent = TunerCar()
+    # agent = OptimalAgent()
+    agent = TunerCar(config)
 
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)

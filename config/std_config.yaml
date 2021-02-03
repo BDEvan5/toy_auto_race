@@ -11,8 +11,26 @@ car:
 lims:
   max_v: 7
   max_a: 8.5
+  max_steer: 0.4
+  max_d_dot: 3.2
 
 map:
   name: "forest"
   obs_size: 1.5
   n_obs: 8
+  # start: 
+  #   x: 
+  #   y: 
+  end:
+    x: 3
+    y: 28
+
+sim:
+  timestep: 0.02
+  update_f: 10
+
+pp:
+  lookahead: 2
+  v_gain: 0.9
+  
+
