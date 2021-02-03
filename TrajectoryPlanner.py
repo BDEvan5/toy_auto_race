@@ -299,7 +299,7 @@ def ShortestTraj(pts, nvecs, ws, check_scan_location):
 
 """Find the max velocity """
 def Max_velocity(pts, show=False):
-    mu = 0.743
+    mu = 0.523
     m = 3.47
     g = 9.81
     l_f = 0.158
@@ -346,7 +346,8 @@ def Max_velocity(pts, show=False):
                 ) \
     }
 
-    S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':5}})
+    S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':0}})
+    # S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':5}})
 
     # make init sol
     v0 = np.ones(N) * max_v/2

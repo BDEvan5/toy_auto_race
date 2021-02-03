@@ -160,7 +160,6 @@ class TunerCar:
         elif nearest_dist < 20:
             return np.append(self.wpts[i], self.vs[i])
 
-
     def act(self, obs):
         pose_th = obs[2]
         pos = np.array(obs[0:2], dtype=np.float)
@@ -173,7 +172,7 @@ class TunerCar:
         speed, steering_angle = get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
         speed = self.vgain * speed
 
-        print(f"Speed: {speed} --> Steer: {steering_angle}")
+        # print(f"Speed: {speed} --> Steer: {steering_angle}")
 
         return [speed, steering_angle]
 

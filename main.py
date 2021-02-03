@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from HistoryStructs import TrainHistory
 
 import timeit
+import yaml
 
 from Simulator import ForestSim
 from SimMaps import  ForestMap
@@ -20,10 +21,19 @@ myMap = 'TrackMap1000'
 forest_name = 'forest'
 bfg = 'BigForest'
 
+def load_config(fname):
+    with open('config/' + fname + '.yaml') as file:
+        conf_dict = yaml.load(file, Loader=yaml.FullLoader)
+
+    return conf_dict
+
 
 def RunOptimalAgent():
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
+
+    config = load_config("std_config")
+
 
     env_map = ForestMap(forest_name)
     env = ForestSim(env_map)
@@ -43,10 +53,11 @@ def RunOptimalAgent():
 
         # env.render(True, wpts)
         # env.env_map.render_map(4, True)
-        env.render(False)
+        # env.render(False)
 
     print(f"Score: {score}")
     env.history.show_history()
+    env.history.show_forces()
     env.render(wait=True)
 
 def RunMpcAgent():
