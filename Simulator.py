@@ -103,6 +103,7 @@ class SimHistory:
         self.obs_locations = []
         self.thetas = []
 
+
         self.ctr = 0
 
     def save_history(self):
@@ -126,7 +127,7 @@ class SimHistory:
 
         self.ctr += 1
 
-    def show_history(self):
+    def show_history(self, vs=None):
         plt.figure(1)
         plt.title("Steer history")
         plt.plot(self.steering)
@@ -135,6 +136,9 @@ class SimHistory:
         plt.figure(2)
         plt.title("Velocity history")
         plt.plot(self.velocities)
+        if vs is not None:
+            plt.plot(vs)
+            plt.legend(['Actual', 'Planned'])
         plt.pause(0.001)
 
     def show_forces(self):

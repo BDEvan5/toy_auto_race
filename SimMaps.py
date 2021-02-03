@@ -37,6 +37,7 @@ class MapBase:
 
         self.start = None
         self.wpts = []
+        self.vs = None
 
         self.height = None
         self.width = None
@@ -291,6 +292,7 @@ class ForestMap(MapBase):
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
 
+
     def get_optimal_path(self):
         n_set = ObsAvoidTraj(self.track_pts, self.nvecs, self.ws, self.check_scan_location)
         deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
@@ -300,6 +302,7 @@ class ForestMap(MapBase):
 
     def get_velocity(self):
         vels = Max_velocity(self.wpts, self.config)
+        self.vs = vels
 
         return vels
 

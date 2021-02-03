@@ -32,5 +32,6 @@ sim:
 pp:
   lookahead: 2
   v_gain: 0.9
-  
 
+reward:
+  beta: 0.2

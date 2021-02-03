@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from HistoryStructs import TrainHistory
+from HistoryStructs import RewardAnalyser, TrainHistory
 
 import timeit
 import yaml
@@ -27,6 +27,18 @@ def load_config(fname):
 
     return conf_dict
 
+def evaluate_reward(config, s, s_p, r):
+    end = [config['map']['end']['x'], config['map']['end']['y']]
+    beta = 0.2
+    if r == -1:
+        return r 
+    else:
+        prev_dist = lib.get_distance(s[0:2], end)
+        cur_dist = lib.get_distance(s_p[0:2], end)
+
+        new_r = (prev_dist - cur_dist) * beta
+        return new_r
+
 
 def RunOptimalAgent():
     # env_map = SimMap(name)
@@ -40,6 +52,7 @@ def RunOptimalAgent():
 
     # agent = OptimalAgent()
     agent = TunerCar(config)
+    ra = RewardAnalyser()
 
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)
@@ -49,14 +62,19 @@ def RunOptimalAgent():
         action = agent.act(state)
         s_p, r, done, _ = env.step(action)
         score += r
+        new_r = evaluate_reward(config, state, s_p, r)
+        ra.add_reward(new_r)
+        
         state = s_p
+
 
         # env.render(True, wpts)
         # env.env_map.render_map(4, True)
         # env.render(False)
 
     print(f"Score: {score}")
-    env.history.show_history()
+    ra.show_rewards()
+    env.history.show_history(vs=env_map.vs)
     env.history.show_forces()
     env.render(wait=True)
 

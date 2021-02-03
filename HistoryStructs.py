@@ -2,6 +2,7 @@ import LibFunctions as lib
 import os, shutil
 import csv
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class TrainHistory():
@@ -55,3 +56,19 @@ class TrainHistory():
             csvwriter = csv.writer(csvfile)
             csvwriter.writerows(data)
 
+
+class RewardAnalyser:
+    def __init__(self) -> None:
+        self.rewards = []
+        self.t = 0
+
+    def add_reward(self, new_r):
+        self.rewards.append(new_r)
+        self.t += 1
+
+    def show_rewards(self, show=False):
+        plt.figure(6)
+        plt.plot(self.rewards, '-*')
+        plt.title('Reward History')
+        if show:
+            plt.show()
