@@ -50,7 +50,7 @@ class StdNavReward:
             v_sc = s_p[2] / self.max_v
             d_dis = (prev_dist - cur_dist) / self.dis_scale
 
-            new_r = self.b1 + d_dis * self.b2 + self.b3 * v_sc
+            new_r = self.b1 + d_dis * self.b2 + self.b3 * v_sc + r
             return new_r
 
 
@@ -62,6 +62,9 @@ class CrossTrackHeadingReward:
         self.t1 = t1
         self.t2 = t2
         self.t3 = t3
+
+        self.max_v = config['lims']['max_v']
+        self.dis_scale = config['lims']["dis_scale"]
         
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
@@ -69,15 +72,16 @@ class CrossTrackHeadingReward:
         else:
             pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.pts)
             d = lib.get_distance(pt_i, pt_ii)
-            d_c = get_tiangle_h(pt_i, pt_ii, d)
+            h = get_tiangle_h(pt_i, pt_ii, d) 
+            d_c = h / self.dis_scale
 
             th_ref = lib.get_bearing(pt_i, pt_ii)
             th = s_p[2]
             d_th = abs(lib.sub_angles_complex(th_ref, th))
 
-            v = s_p[3]
+            v = s_p[3] / self.max_v
 
-            new_r = v*(np.cos(d_th) + abs(np.sin(d_th) + d_c))
+            new_r = self.t1 * v*(np.cos(d_th) * self.t2 + self.t3 * d_c)
 
             return new_r
 
@@ -96,6 +100,7 @@ class OnlineSteering:
 
 class ModStdTimeReward:
     def __init__(self, config, m1, m2, mt) -> None:
+        self.max_steer = config['car']['max_steer']
         self.m1 = m1
         self.m2 = m2
 
@@ -106,7 +111,8 @@ class ModStdTimeReward:
             return r
         else:
             time = 0
-            new_r = self.m1 - self.m2 * a[0] + self.mt * time
+            steer = abs(a[1]) / self.max_steer
+            new_r = self.m1 - self.m2 * steer + self.mt * time
             return new_r
 
 class ModHeadingReward:

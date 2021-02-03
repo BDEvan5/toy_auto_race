@@ -462,7 +462,7 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        self.env_map.reset_static_map(8)
+        self.env_map.reset_static_map(6)
 
         return self.base_reset()
 
@@ -477,7 +477,7 @@ class ForestSim(BaseSim):
         if horizontal_force > self.car.max_friction_force:
             self.done = True
             self.reward = -1
-            print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
+            # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
             self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
         if self.steps > 100:
             self.done = True
@@ -490,6 +490,7 @@ class ForestSim(BaseSim):
         car = [self.car.x, self.car.y]
         if lib.get_distance(car, self.env_map.end) < 2 and self.steps > 10:
             self.done = True
+            #TODO: add in a simple y lim line to go past
             self.reward = 1
             self.done_reason = f"Lap complete"
 

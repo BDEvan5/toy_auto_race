@@ -1,4 +1,4 @@
-from Rewards import StdNavReward
+from Rewards import CrossTrackHeadingReward, ModHeadingReward, ModStdTimeReward, OnlineSteering, StdNavReward
 import numpy as np
 import csv, yaml
 
@@ -18,54 +18,8 @@ myMap = 'TrackMap1000'
 forest_name = 'forest'
 
 
-
-"""General test function"""
-def testVehicle(vehicle, show=False, obs=True):
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
-
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
-
-    crashes = 0
-    completes = 0
-    lap_times = []
-
-    wpts = vehicle.init_agent(env_map)
-    done, state, score = False, env.reset(), 0.0
-    for i in range(100): # 10 laps
-        print(f"Running lap: {i}")
-        # if obs:
-        #     env_map.reset_map()
-        while not done:
-            a = vehicle.act(state)
-            s_p, r, done, _ = env.step(a)
-            state = s_p
-            # env.render(False, vehicle.scan_sim)
-        print(f"Lap time updates: {env.steps}")
-        if show:
-            # vehicle.show_vehicle_history()
-            env.render(wait=False)
-            # env.render(wait=True)
-
-        if r == -1:
-            crashes += 1
-        else:
-            completes += 1
-            lap_times.append(env.steps)
-        state = env.reset()
-        
-        # env.reset_lap()
-        env.reset()
-        vehicle.reset_lap()
-        done = False
-
-    print(f"Crashes: {crashes}")
-    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
-    print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
-
 """Train"""
-def TrainVehicle(config, agent_name, vehicle, reward):
+def TrainVehicle(config, agent_name, vehicle, reward, steps=200):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
@@ -81,7 +35,7 @@ def TrainVehicle(config, agent_name, vehicle, reward):
     done, state = False, env.reset()
     wpts = vehicle.init_agent(env_map)
 
-    for n in range(20000):
+    for n in range(steps):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
@@ -199,7 +153,6 @@ class TestVehicles(TestData):
 
         TestData.__init__()
 
-
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
@@ -250,92 +203,15 @@ class TestVehicles(TestData):
 
 
 
-
-
-def RunVehicleLap(vehicle, env, show=False):
-    vehicle.reset_lap()
-    wpts = vehicle.init_agent(env.env_map)
-    done, state, score = False, env.reset(), 0.0
-    # env.render(wait=True)
-    while not done:
-        a = vehicle.act(state)
-        s_p, r, done, _ = env.step(a)
-        state = s_p
-        # env.render(False, wpts)
-
-    if show:
-        # vehicle.show_vehicle_history()
-        # env.show_history()
-        env.history.show_history()
-        # env.render(wait=False)
-        env.render(wait=True)
-
-    return r, env.steps
-
-def test_vehicles(vehicle_list, laps, eval_name, add_obs):
-    N = len(vehicle_list)
-
-    # env_map = SimMap(name)
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
-
-    completes = np.zeros((N))
-    crashes = np.zeros((N))
-    lap_times = np.zeros((laps, N))
-    endings = np.zeros((laps, N)) #store env reward
-    lap_times = [[] for i in range(N)]
-
-    for i in range(laps):
-        # if add_obs:
-            # env_map.reset_map()
-        for j in range(N):
-            vehicle = vehicle_list[j]
-
-            r, steps = RunVehicleLap(vehicle, env, False)
-            # r, steps = RunVehicleLap(vehicle, env, True)
-            print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
-            endings[i, j] = r
-            if r == -1 or r == 0:
-                crashes[j] += 1
-            else:
-                completes[j] += 1
-                lap_times[j].append(steps)
-
-    test_name = 'Vehicles/' + eval_name + '.txt'
-    with open(test_name, 'w') as file_obj:
-        file_obj.write(f"\nTesting Complete \n")
-        file_obj.write(f"Map name: {name} \n")
-        file_obj.write(f"-----------------------------------------------------\n")
-        file_obj.write(f"-----------------------------------------------------\n")
-        for i in range(N):
-            file_obj.write(f"Vehicle: {vehicle_list[i].name}\n")
-            file_obj.write(f"Crashes: {crashes[i]} --> Completes {completes[i]}\n")
-            percent = (completes[i] / (completes[i] + crashes[i]) * 100)
-            file_obj.write(f"% Finished = {percent:.2f}\n")
-            file_obj.write(f"Avg lap times: {np.mean(lap_times[i])}\n")
-            file_obj.write(f"-----------------------------------------------------\n")
-
-
-    print(f"\nTesting Complete ")
-    print(f"-----------------------------------------------------")
-    print(f"-----------------------------------------------------")
-    for i in range(N):
-        print(f"Vehicle: {vehicle_list[i].name}")
-        print(f"Crashes: {crashes[i]} --> Completes {completes[i]}")
-        percent = (completes[i] / (completes[i] + crashes[i]) * 100)
-        print(f"% Finished = {percent:.2f}")
-        print(f"Avg lap times: {np.mean(lap_times[i])}")
-        print(f"-----------------------------------------------------")
-
-
 def load_config(fname):
     with open('config/' + fname + '.yaml') as file:
         conf_dict = yaml.load(file, Loader=yaml.FullLoader)
 
     return conf_dict
 
+
 """ Training sets"""
-def train_std_nav():
+def train_gen_std():
     load = False
 
     agent_name = "GenStd_0_02_0"
@@ -345,10 +221,103 @@ def train_std_nav():
 
     TrainVehicle(config, agent_name, vehicle, reward)
 
+def train_gen_cth():
+    load = False
 
+    agent_name = "GenCth_1_1_1"
+    config = load_config("std_config")
+    vehicle = GenVehicle(config, agent_name, load)
+    reward = CrossTrackHeadingReward(config, 1, 1, 1)
+
+    TrainVehicle(config, agent_name, vehicle, reward)
+
+def train_gen_steer():
+    load = False
+
+    agent_name = "GenSteer_02_02"
+    config = load_config("std_config")
+    vehicle = GenVehicle(config, agent_name, load)
+    reward = OnlineSteering(config, 0.2, 0.2)
+
+    TrainVehicle(config, agent_name, vehicle, reward)
+
+"""Mod training"""
+def train_mod_std():
+    load = False
+
+    agent_name = "ModStd_04_02_0"
+    config = load_config("std_config")
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModStdTimeReward(config, 0.4, 0.2, 0)
+
+    TrainVehicle(config, agent_name, vehicle, reward)
+
+def train_mod_time():
+    load = False
+
+    agent_name = "ModTime_01_01_1"
+    config = load_config("std_config")
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModStdTimeReward(config, 0.1, 0.1, 1)
+
+    TrainVehicle(config, agent_name, vehicle, reward)
+
+def train_mod_cth():
+    load = False
+
+    agent_name = "ModCth_1_1_1"
+    config = load_config("std_config")
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModHeadingReward(config, 1, 1, 1)
+
+    TrainVehicle(config, agent_name, vehicle, reward)
+
+
+def test_compare():
+    config = load_config("std_config")
+    test = TestVehicles('RaceComparison_t1')
+
+    agent_name = "GenStd_0_02_0"
+    vehicle = GenTest(config, name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenCth_1_1_1"
+    vehicle = GenTest(config, name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenSteer_02_02"
+    vehicle = GenTest(config, name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModStd_04_02_0"
+    vehicle = ModVehicleTest(config, name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_01_01_1"
+    vehicle = ModVehicleTest(config, name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModCth_1_1_1"
+    vehicle = GenTest(config, name)
+    test.add_vehicle(vehicle)
+
+
+
+    test.run_eval(10, False)
 
 
 
 
 if __name__ == "__main__":
-    train_std_nav()
+
+    train_gen_std()
+    train_gen_steer()
+    train_gen_cth()
+
+    train_mod_std()
+    train_mod_cth()
+    train_mod_time()
+
+    test_compare()
+
+

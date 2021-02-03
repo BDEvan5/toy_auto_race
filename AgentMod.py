@@ -186,16 +186,16 @@ class ModVehicleTrain(BaseModAgent):
 
         return [v_ref, d_ref]
 
-    def update_reward(self, reward, action):
-        if reward == -1:
-            new_reward = -1
-        else:
-            new_reward = self.m1 - abs(action[0]) * self.m2
-            # new_reward =  - abs(action[0]) * beta
+    # def update_reward(self, reward, action):
+    #     if reward == -1:
+    #         new_reward = -1
+    #     else:
+    #         new_reward = self.m1 - abs(action[0]) * self.m2
+    #         # new_reward =  - abs(action[0]) * beta
 
-        self.reward_history.append(new_reward)
+    #     self.reward_history.append(new_reward)
 
-        return new_reward
+    #     return new_reward
 
     def add_memory_entry(self, reward, done, s_prime, buffer):
         new_reward = self.update_reward(reward, self.state_action[1])
