@@ -79,7 +79,7 @@ class CrossTrackHeadingReward:
         else:
             pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.pts)
             d = lib.get_distance(pt_i, pt_ii)
-            h = get_tiangle_h(pt_i, pt_ii, d) 
+            h = get_tiangle_h(d_i, d_ii, d) 
             d_c = h / self.dis_scale
 
             th_ref = lib.get_bearing(pt_i, pt_ii)
@@ -88,14 +88,17 @@ class CrossTrackHeadingReward:
 
             v = s_p[3] / self.max_v
 
-            new_r = self.t1 * v*(np.cos(d_th) * self.t2 + self.t3 * d_c)
+            new_r = self.t1 * v*(np.cos(d_th) * self.t2 - self.t3 * d_c)
 
             return new_r
 
 class OnlineSteering:
-    def __init__(self, config, s1, s2) -> None:
+    def __init__(self, config, s1, s2, s3) -> None:
         self.s1 = s1
         self.s2 = s2
+        self.s3 = s3
+        self.max_steer = config['lims']['max_steer']
+        self.max_velocity = config['lims']['max_v']
 
     def init_reward(self, pts, vs):
         pass
@@ -104,7 +107,9 @@ class OnlineSteering:
         if r == -1:
             return r
         else:
-            new_r = self.s1 - self.s2 * s_p[4] ** 2
+            steer = s_p[4] / self.max_steer
+            vel = s_p[3] / self.max_velocity
+            new_r = self.s1 - self.s2 * steer ** 2 + self.s3 * vel
 
             return new_r
 

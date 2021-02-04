@@ -23,18 +23,13 @@ myMap = 'TrackMap1000'
 forest_name = 'forest'
 bfg = 'BigForest'
 
-def load_config(fname):
-    with open('config/' + fname + '.yaml') as file:
-        conf_dict = yaml.load(file, Loader=yaml.FullLoader)
-
-    return conf_dict
 
 
 def RunOptimalAgent():
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
-    config = load_config("std_config")
+    config = lib.load_config("std_config")
 
 
     env_map = ForestMap(config)

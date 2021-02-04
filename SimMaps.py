@@ -298,6 +298,8 @@ class ForestMap(MapBase):
         deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
         self.wpts = self.track_pts + deviation
 
+        self.get_velocity()
+
         return self.wpts
 
     def get_velocity(self):
@@ -306,11 +308,13 @@ class ForestMap(MapBase):
 
         return vels
 
-
     def get_reference_path(self):
         self.wpts = self.track_pts
+        # self.get_velocity()
 
-        return self.wpts
+        self.vs = self.config['lims']['max_v'] * np.ones(len(self.wpts))
+
+        return self.wpts, self.vs
 
     def reset_static_map(self, n=6):
         self.obs_map = np.zeros_like(self.obs_map)
@@ -337,7 +341,9 @@ class ForestMap(MapBase):
                     y = np.clip(y+j, 0, self.height-1)
                     self.obs_map[y, x] = 1
 
-        return obs_locs
+        
+
+        return self.get_reference_path() 
 
     def reset_dynamic_map(self, n=1):
         self.obs_cars.clear()

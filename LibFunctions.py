@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import  pyplot as plt
 import math
 import cmath
+import yaml
 
 
 def add_locations(x1=[0, 0], x2=[0, 0], dx=1):
@@ -217,6 +218,14 @@ def plot_race_line(track, nset=None, wait=False):
     plt.pause(0.0001)
     if wait:
         plt.show()
+
+
+def load_config(fname):
+    with open('config/' + fname + '.yaml') as file:
+        conf_dict = yaml.load(file, Loader=yaml.FullLoader)
+
+    return conf_dict
+
 
 """Testing"""
 def test():

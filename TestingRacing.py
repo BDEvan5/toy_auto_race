@@ -312,18 +312,18 @@ def test_compare():
 
 def train():
     pass
-    train_gen_std()
+    # train_gen_std()
     train_gen_steer()
     # train_gen_cth()
 
-    train_mod_std()
+    # train_mod_std()
     # train_mod_cth()
     # train_mod_time()
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
-    test_compare()
-
+    # test_compare()
+# 
 

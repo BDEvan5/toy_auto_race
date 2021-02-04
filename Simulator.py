@@ -462,9 +462,10 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        self.env_map.reset_static_map(6)
+        wpts, vs = self.env_map.reset_static_map(6)
+        s = self.base_reset()
 
-        return self.base_reset()
+        return s, wpts, vs
 
     def check_done_forest(self):
         self.reward = 0 # normal
