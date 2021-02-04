@@ -226,7 +226,7 @@ def train_mod_std():
     load = False
 
     agent_name = "ModStd_test"
-    config = load_config("std_config")
+    config = load_config(config_sf)
     vehicle = ModVehicleTrain(config, agent_name, load)
     reward = ModStdTimeReward(config, 0.4, 0.2, 0)
 
@@ -259,6 +259,17 @@ def test_Gen():
     # agent_name = "GenCth_test"
     agent_name = "GenStd_test"
     # agent_name = "GenSteer_test"
+    
+
+    config = load_config("std_config")
+    vehicle = GenTest(config, agent_name)
+
+    testVehicle(config, vehicle, True)
+    
+def test_Mod():
+    # agent_name = "ModStd_test"
+    agent_name = "ModStd_test"
+    # agent_name = "ModStd_test"
     
 
     config = load_config("std_config")
@@ -302,11 +313,11 @@ if __name__ == "__main__":
     # train_gen_steer()
     # train_gen_cth()
 
-    # train_mod_std()
+    train_mod_std()
     # train_mod_cth()
     # train_mod_time()
 
-    test_Gen()
+    # test_Gen()
 
     # timing()
 

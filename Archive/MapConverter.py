@@ -171,7 +171,7 @@ class ForestGenerator(MapBase):
         self.gen_path()
 
     def gen_path(self):
-        N = int(self.length / 4)
+        N = int(self.length * 4)
 
         tx = self.width/2 # centre line
         txs = np.ones(N) * tx 

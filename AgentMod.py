@@ -44,7 +44,7 @@ class BaseModAgent:
         self.scan_sim.set_check_fcn(self.env_map.check_scan_location)
 
         # self.wpts = self.env_map.get_min_curve_path()
-        self.wpts = self.env_map.get_reference_path()
+        self.wpts, self.vs = self.env_map.get_reference_path()
         # vs = self.env_map.get_velocity()
 
         r_line = self.wpts
