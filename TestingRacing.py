@@ -279,11 +279,11 @@ def train_mod_cth():
 
 def test_compare():
     config = load_config("std_config")
-    test = TestVehicles(config, 'RaceComparison_t1')
+    test = TestVehicles(config, 'RaceComparison_t')
 
     agent_name = "GenStd_0_02_0"
     vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
+    # test.add_vehicle(vehicle)
 
     agent_name = "GenCth_1_1_1"
     # vehicle = GenTest(config, agent_name)
@@ -291,7 +291,7 @@ def test_compare():
 
     agent_name = "GenSteer_02_02"
     vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
+    # test.add_vehicle(vehicle)
 
     agent_name = "ModStd_04_02_0"
     vehicle = ModVehicleTest(config, agent_name)
@@ -307,7 +307,7 @@ def test_compare():
 
 
 
-    test.run_eval(1000, False)
+    test.run_eval(10, True)
 
 
 def train():
@@ -322,7 +322,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     test_compare()
 
