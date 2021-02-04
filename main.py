@@ -145,11 +145,11 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     return t_his.rewards
 
 """General test function"""
-def testVehicle(vehicle, show=False, obs=True):
+def testVehicle(config, vehicle, show=False, obs=True):
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
-    env_map = ForestMap(forest_name)
+    env_map = ForestMap(config)
     env = ForestSim(env_map)
 
     crashes = 0
@@ -157,7 +157,8 @@ def testVehicle(vehicle, show=False, obs=True):
     lap_times = []
 
     wpts = vehicle.init_agent(env_map)
-    done, state, score = False, env.reset(), 0.0
+    done, score = False, 0.0
+    state, w, v = env.reset()
     for i in range(100): # 10 laps
         print(f"Running lap: {i}")
         # if obs:
@@ -178,10 +179,8 @@ def testVehicle(vehicle, show=False, obs=True):
         else:
             completes += 1
             lap_times.append(env.steps)
-        state = env.reset()
+        state, w, v = env.reset()
         
-        # env.reset_lap()
-        env.reset()
         vehicle.reset_lap()
         done = False
 
@@ -197,8 +196,8 @@ def train_gen_std():
     agent_name = "GenStd_test"
     config = load_config(config_sf)
     vehicle = GenVehicle(config, agent_name, load)
-    # reward = StdNavReward(config, -0.02, 0.2, 0)
-    reward = StdNavReward(config, 0, 0.2, 0)
+    reward = StdNavReward(config, -0.02, 0.2, 0)
+    # reward = StdNavReward(config, 0, 0.2, 0)
 
     TrainVehicle(config, agent_name, vehicle, reward)
 
@@ -256,12 +255,16 @@ def train_mod_cth():
 
 
 """Total functions"""
-def test_GenCth():
-    agent_name = "GenCth_test"
+def test_Gen():
+    # agent_name = "GenCth_test"
+    agent_name = "GenStd_test"
+    # agent_name = "GenSteer_test"
+    
+
     config = load_config("std_config")
     vehicle = GenTest(config, agent_name)
 
-    testVehicle(vehicle, True)
+    testVehicle(config, vehicle, True)
 
 
 def testOptimal():
@@ -295,13 +298,15 @@ def timing():
 
 if __name__ == "__main__":
 
-    train_gen_std()
+    # train_gen_std()
     # train_gen_steer()
     # train_gen_cth()
 
     # train_mod_std()
     # train_mod_cth()
     # train_mod_time()
+
+    test_Gen()
 
     # timing()
 

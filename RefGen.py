@@ -88,17 +88,6 @@ class BaseGenAgent:
 
         return nn_obs
 
-    def generate_references(self, nn_action, obs):
-        d = nn_action[0] * self.max_d
-        d_ref = np.clip(d, - self.max_d, self.max_d)
-
-        d_plan = max(abs(d_ref), abs(obs[4]))
-        theta_dot = abs(obs[3] / 0.33 * np.tan(d_plan))
-        v_ref = self.max_friction_force / (3.74 * max(theta_dot, 0.01)) 
-        v_ref = min(v_ref, 8.5)
-
-        return v_ref, d_ref
-
     def reset_lap(self):
         self.steer_history.clear()
         self.vel_history.clear()
@@ -107,6 +96,13 @@ class BaseGenAgent:
         self.critic_history.clear()
         self.steps = 0
         self.pind = 1
+
+    def generate_references(self, nn_action, space=None):
+        v_ref = (nn_action[0] + 1) / 2 * self.max_v # change the min from -1 to 0
+        d_ref = nn_action[1] * self.max_d
+
+        return v_ref, d_ref
+
 
 
 class GenVehicle(BaseGenAgent):
@@ -142,11 +138,6 @@ class GenVehicle(BaseGenAgent):
 
         buffer.add(mem_entry)
 
-    def generate_references(self, nn_action, space=None):
-        v_ref = (nn_action[0] + 1) / 2 * self.max_v # change the min from -1 to 0
-        d_ref = nn_action[1] * self.max_d
-
-        return v_ref, d_ref
 
 
 """Test Vehicles"""
@@ -161,12 +152,6 @@ class GenTest(BaseGenAgent):
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 3
         BaseGenAgent.__init__(self, config, name)
-
-    def generate_references(self, nn_action, space=None):
-        d_ref = nn_action[0] * self.max_d
-        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
-
-        return v_ref, d_ref
 
     def act(self, obs):
         nn_obs = self.transform_obs(obs)

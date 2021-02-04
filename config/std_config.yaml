@@ -18,7 +18,9 @@ lims:
 map:
   name: "forest"
   obs_size: 1.5
-  n_obs: 8
+  n_obs: 6
+  obs_buf: 5
+  obs_size: 1.5
   end:
     x: 3
     y: 28
