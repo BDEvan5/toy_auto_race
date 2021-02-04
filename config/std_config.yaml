@@ -33,6 +33,7 @@ sim:
 pp:
   lookahead: 2
   v_gain: 0.9
+  force_f: 0.8
 
 nn:
   h: 200

@@ -304,10 +304,10 @@ def Max_velocity(pts, config, show=False):
     g = config['car']['g']
     l_f = config['car']['l_f']
     l_r = config['car']['l_r']
-    f_max = mu * m * g
+    safety_f = config['pp']['force_f']
+    f_max = mu * m * g * safety_f
     f_long_max = l_f / (l_r + l_f) * f_max
-    # f_lat_max = 
-    max_v = config['lims']['max_v']
+    max_v = config['lims']['max_v']  # parameter to be adapted so that optimiser isnt too fast
     max_a = config['lims']['max_a']
 
     s_i, th_i = convert_pts_s_th(pts)
@@ -406,7 +406,7 @@ def Max_velocity(pts, config, show=False):
         plt.title("F_long, F_lat vs t")
         plt.plot(t[:-1], f_long)
         plt.plot(t[:-1], f_lat)
-        plt.plot(t[:-1], f_t)
+        plt.plot(t[:-1], f_t, linewidth=3)
         plt.plot(t, np.ones_like(t) * f_max, '--')
         plt.plot(t, np.ones_like(t) * -f_max, '--')
         plt.plot(t, np.ones_like(t) * f_long_max, '--')
@@ -423,6 +423,18 @@ def Max_velocity(pts, config, show=False):
         plt.title(f"t vs dt")
         plt.plot(t[1:], dt)
         plt.plot(t[1:], dt, '+')
+    
+    plt.figure(9)
+    plt.clf()
+    plt.title("F_long, F_lat vs t")
+    plt.plot(t[:-1], f_long)
+    plt.plot(t[:-1], f_lat)
+    plt.plot(t[:-1], f_t, linewidth=3)
+    plt.plot(t, np.ones_like(t) * f_max, '--')
+    plt.plot(t, np.ones_like(t) * -f_max, '--')
+    plt.plot(t, np.ones_like(t) * f_long_max, '--')
+    plt.plot(t, np.ones_like(t) * -f_long_max, '--')
+    plt.legend(['Flong', "f_lat", "f_t"])
 
 
     return vs

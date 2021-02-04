@@ -80,6 +80,7 @@ class MapBase:
 
         self.scan_map = np.load(f'Maps/{self.name}.npy')
         self.obs_map = np.zeros_like(self.scan_map)
+        self.obs_map_plan = np.zeros_like(self.scan_map)
 
         self.width = self.scan_map.shape[1]
         self.height = self.scan_map.shape[0]
@@ -116,6 +117,19 @@ class MapBase:
         if self.scan_map[y, x]:
             return True
         if self.obs_map[y, x]:
+            return True
+        return False
+
+    def check_opt_scan(self, x_in):
+        if x_in[0] < 0 or x_in[1] < 0:
+            return True
+        x, y = self.convert_int_position(x_in)
+        if x_in[0] > self.width * self.resolution or x_in[1] > self.height * self.resolution:
+            return True
+
+        if self.scan_map[y, x]:
+            return True
+        if self.obs_map_plan[y, x]:
             return True
         return False
 
@@ -288,7 +302,8 @@ class ForestMap(MapBase):
         map_name = config['map']['name']
         MapBase.__init__(self, map_name)
 
-        self.obs_map = np.zeros_like(self.scan_map)
+        # self.obs_map = np.zeros_like(self.scan_map)
+        # self.obs_map = np.zeros_like(self.scan_map)
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
 
@@ -328,22 +343,32 @@ class ForestMap(MapBase):
         xlim = (width - obs_size[0]) / 2
 
         x, y = self.convert_int_position(obs_size)
-        obs_size = [x, y]
-
+        obs_size_normal = [x, y]
+        x, y = self.convert_int_position(np.array(obs_size)*1.2)
+        obs_size_plan = [x, y]
         
-        tys = np.linspace(obs_buf, length - obs_buf, n)
+        
+        tys = np.linspace(obs_buf, length - obs_buf - obs_size[1], n)
         # txs = np.random.normal(xlim, 0.6, size=n)
         txs = np.random.uniform(1, xlim*2-1, size=n)
         # txs = np.clip(txs, 0, 4)
         obs_locs = np.array([txs, tys]).T
 
         for obs in obs_locs:
-            for i in range(0, obs_size[0]):
-                for j in range(0, obs_size[1]):
+            for i in range(0, obs_size_normal[0]):
+                for j in range(0, obs_size_normal[1]):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.width-1)
                     y = np.clip(y+j, 0, self.height-1)
                     self.obs_map[y, x] = 1
+
+        for obs in obs_locs:
+            for i in range(0, obs_size_plan[0]):
+                for j in range(0, obs_size_plan[1]):
+                    x, y = self.convert_int_position([obs[0], obs[1]])
+                    x = np.clip(x+i, 0, self.width-1)
+                    y = np.clip(y+j, 0, self.height-1)
+                    self.obs_map_plan[y, x] = 1
 
         
 

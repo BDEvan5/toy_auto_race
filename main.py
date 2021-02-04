@@ -145,7 +145,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     return t_his.rewards
 
 """General test function"""
-def testVehicle(config, vehicle, show=False, obs=True):
+def testVehicle(config, vehicle, show=False, laps=100):
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
@@ -156,13 +156,11 @@ def testVehicle(config, vehicle, show=False, obs=True):
     completes = 0
     lap_times = []
 
-    wpts = vehicle.init_agent(env_map)
-    done, score = False, 0.0
     state, w, v = env.reset()
-    for i in range(100): # 10 laps
+    vehicle.init_agent(env_map)
+    done, score = False, 0.0
+    for i in range(laps):
         print(f"Running lap: {i}")
-        # if obs:
-        #     env_map.reset_map()
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
@@ -170,8 +168,10 @@ def testVehicle(config, vehicle, show=False, obs=True):
             # env.render(False, vehicle.scan_sim)
         print(f"Lap time updates: {env.steps}")
         if show:
-            # vehicle.show_vehicle_history()
+            # env.history.show_history(vs=env_map.vs)
+            env.history.show_forces()
             env.render(wait=False)
+            plt.pause(1)
             # env.render(wait=True)
 
         if r == -1:
@@ -264,24 +264,25 @@ def test_Gen():
     config = load_config("std_config")
     vehicle = GenTest(config, agent_name)
 
-    testVehicle(config, vehicle, True)
+    testVehicle(config, vehicle, True, 10)
     
 def test_Mod():
-    # agent_name = "ModStd_test"
     agent_name = "ModStd_test"
     # agent_name = "ModStd_test"
+    # agent_name = "ModStd_test"
     
-
     config = load_config("std_config")
-    vehicle = GenTest(config, agent_name)
+    vehicle = ModVehicleTest(config, agent_name)
 
     testVehicle(config, vehicle, True)
 
 
 def testOptimal():
-    agent = OptimalAgent()
 
-    testVehicle(agent, obs=False, show=True)
+    config = load_config(config_std)
+    vehicle = TunerCar(config)
+
+    testVehicle(config, vehicle, True, 10)
 
 
 
@@ -313,11 +314,13 @@ if __name__ == "__main__":
     # train_gen_steer()
     # train_gen_cth()
 
-    train_mod_std()
+    # train_mod_std()
     # train_mod_cth()
     # train_mod_time()
 
     # test_Gen()
+    # test_Mod()
+    testOptimal()
 
     # timing()
 

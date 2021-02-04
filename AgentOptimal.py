@@ -126,6 +126,12 @@ class TunerCar:
         self.env_map = None
         self.path_name = None
 
+        mu = config['car']['mu']
+        m = config['car']['m']
+        g = config['car']['g']
+        safety_f = config['pp']['force_f']
+        self.f_max = mu * m * g * safety_f
+
         self.wpts = None
         self.vs = None
 
@@ -137,12 +143,8 @@ class TunerCar:
         self.env_map = env_map
 
         self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
- 
-        self.wpts = self.env_map.get_optimal_path()
-        self.vs = self.env_map.get_velocity()
-        # self.wpts = self.env_map.get_reference_path()
 
-        return  self.wpts
+        self.reset_lap()
 
     def _get_current_waypoint(self, position, theta):
         nearest_pt, nearest_dist, t, i = nearest_point_on_trajectory_py2(position, self.wpts)
@@ -174,8 +176,25 @@ class TunerCar:
         speed = self.vgain * speed
 
         # print(f"Speed: {speed} --> Steer: {steering_angle}")
+        avg_speed = max(speed, obs[3])
+        steering_angle = self.limit_inputs(speed, steering_angle)
 
         return [speed, steering_angle]
+
+    def limit_inputs(self, speed, steering_angle):
+        max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2))
+        new_steer = np.clip(steering_angle, -max_steer, max_steer)
+
+        if max_steer < abs(steering_angle):
+            print(f"Problem: {max_steer}")
+
+        return new_steer
+
+    def reset_lap(self):
+        self.wpts = self.env_map.get_optimal_path()
+        self.vs = self.env_map.get_velocity()
+        # self.wpts = self.env_map.get_reference_path()
+
 
 
 # @njit(fastmath=False, cache=True)
@@ -303,6 +322,7 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
         return speed, 0.
     radius = 1/(2.0*waypoint_y/lookahead_distance**2)
     steering_angle = np.arctan(wheelbase/radius)
+
     return speed, steering_angle
 
 # def get_actuation(pose_theta, lookahead_pt, position, lookahead_distance, wheelbase):

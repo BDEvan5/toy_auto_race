@@ -124,20 +124,27 @@ class SimHistory:
         self.steering = []
         self.velocities = []
         self.obs_locations = []
+        self.thetas = []
 
         self.ctr += 1
 
     def show_history(self, vs=None):
         plt.figure(1)
+        plt.clf()
         plt.title("Steer history")
         plt.plot(self.steering)
         plt.pause(0.001)
 
         plt.figure(2)
+        plt.clf()
         plt.title("Velocity history")
         plt.plot(self.velocities)
         if vs is not None:
-            plt.plot(vs)
+            r = len(vs) / len(self.velocities)
+            new_vs = []
+            for i in range(len(self.velocities)):
+                new_vs.append(vs[int(round(r*i))])
+            plt.plot(new_vs)
             plt.legend(['Actual', 'Planned'])
         plt.pause(0.001)
 
@@ -163,6 +170,7 @@ class SimHistory:
         f_total = (f_lat**2 + f_long**2)**0.5
 
         plt.figure(3)
+        plt.clf()
         plt.title("Forces (lat, long)")
         plt.plot(f_lat)
         plt.plot(f_long)
@@ -480,7 +488,7 @@ class ForestSim(BaseSim):
             self.done = True
             self.reward = -1
             # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
-            self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
+            self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
         if self.steps > 100:
             self.done = True
             self.reward = -1
