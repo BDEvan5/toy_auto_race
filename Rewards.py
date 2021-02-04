@@ -10,7 +10,9 @@ def find_closest_pt(pt, wpts):
     dists = [lib.get_distance(pt, wpt) for wpt in wpts]
     min_i = np.argmin(dists)
     d_i = dists[min_i] 
-    if dists[min_i -1 ] > dists[min_i + 1]:
+    if min_i == len(dists) - 1:
+        min_i -= 1
+    if dists[max(min_i -1, 0) ] > dists[min_i+1]:
         p_i = wpts[min_i]
         p_ii = wpts[min_i+1]
         d_i = dists[min_i] 
@@ -88,7 +90,7 @@ class CrossTrackHeadingReward:
 
             v = s_p[3] / self.max_v
 
-            new_r = self.t1 * v*(np.cos(d_th) * self.t2 - self.t3 * d_c)
+            new_r = self.t1 * v*(np.cos(d_th) * self.t2 - self.t3 * d_c + 0.4) + 0.2
 
             return new_r
 

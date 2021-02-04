@@ -318,18 +318,22 @@ class ForestMap(MapBase):
 
     def reset_static_map(self, n=6):
         self.obs_map = np.zeros_like(self.obs_map)
+        length = self.height * self.resolution
+        width = self.width * self.resolution
+        obs_buf = self.config['map']['obs_buf']
 
         # obs_size = [0.4, 0.6]
         obs_size = [1.5, 1.5]
         # obs_size = [1.2, 1.2]
-        xlim = (6 - obs_size[0]) / 2
+        xlim = (width - obs_size[0]) / 2
 
         x, y = self.convert_int_position(obs_size)
         obs_size = [x, y]
 
-        tys = np.linspace(4, 24, n)
+        
+        tys = np.linspace(obs_buf, length - obs_buf, n)
         # txs = np.random.normal(xlim, 0.6, size=n)
-        txs = np.random.uniform(1, xlim*2, size=n)
+        txs = np.random.uniform(1, xlim*2-1, size=n)
         # txs = np.clip(txs, 0, 4)
         obs_locs = np.array([txs, tys]).T
 

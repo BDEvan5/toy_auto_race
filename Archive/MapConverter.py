@@ -170,7 +170,9 @@ class ForestGenerator(MapBase):
 
         self.gen_path()
 
-    def gen_path(self, N=120):
+    def gen_path(self):
+        N = int(self.length / 4)
+
         tx = self.width/2 # centre line
         txs = np.ones(N) * tx 
         txs = txs[:, None]
@@ -555,7 +557,7 @@ class MapConverter(MapBase):
 
 def forest_gen():
     # f = ForestGenerator("BigForest")
-    f = ForestGenerator("forest")
+    f = ForestGenerator("small_forest", 10, 6)
     f.save_map()
 
 forest_gen()

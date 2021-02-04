@@ -23,6 +23,8 @@ myMap = 'TrackMap1000'
 forest_name = 'forest'
 bfg = 'BigForest'
 
+config_sf = "small_forest"
+config_std = "std_config"
 
 
 
@@ -126,8 +128,8 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
             vehicle.agent.save(directory=path)
         
         if done:
-            t_his.lap_done()
-            # vehicle.show_vehicle_history()
+            t_his.lap_done(True)
+            vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
@@ -193,9 +195,10 @@ def train_gen_std():
     load = False
 
     agent_name = "GenStd_test"
-    config = load_config("std_config")
+    config = load_config(config_sf)
     vehicle = GenVehicle(config, agent_name, load)
-    reward = StdNavReward(config, -0.02, 0.2, 0)
+    # reward = StdNavReward(config, -0.02, 0.2, 0)
+    reward = StdNavReward(config, 0, 0.2, 0)
 
     TrainVehicle(config, agent_name, vehicle, reward)
 
@@ -203,9 +206,9 @@ def train_gen_cth():
     load = False
 
     agent_name = "GenCth_test"
-    config = load_config("std_config")
+    config = load_config(config_sf)
     vehicle = GenVehicle(config, agent_name, load)
-    reward = CrossTrackHeadingReward(config, 0.5, 1, 0.4)
+    reward = CrossTrackHeadingReward(config, 0.5, 1, 0.1)
 
     TrainVehicle(config, agent_name, vehicle, reward)
 
@@ -256,7 +259,7 @@ def train_mod_cth():
 def test_GenCth():
     agent_name = "GenCth_test"
     config = load_config("std_config")
-    vehicle = GenVehicle(config, agent_name, load)
+    vehicle = GenTest(config, agent_name)
 
     testVehicle(vehicle, True)
 
@@ -292,9 +295,9 @@ def timing():
 
 if __name__ == "__main__":
 
-    # train_gen_std()
+    train_gen_std()
     # train_gen_steer()
-    train_gen_cth()
+    # train_gen_cth()
 
     # train_mod_std()
     # train_mod_cth()

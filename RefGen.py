@@ -21,7 +21,8 @@ class BaseGenAgent:
         self.target = None
 
         # history
-        self.mod_history = []
+        self.steer_history = []
+        self.vel_history = []
         self.d_ref_history = []
         self.reward_history = []
         self.critic_history = []
@@ -57,12 +58,12 @@ class BaseGenAgent:
     def show_vehicle_history(self):
         plt.figure(1)
         plt.clf()
-        plt.title("Mod History")
+        plt.title("Steer History")
         plt.ylim([-1.1, 1.1])
-        plt.plot(self.mod_history)
-        np.save('Vehicles/mod_hist', self.mod_history)
-        # plt.plot(self.d_ref_history)
-        plt.legend(['NN'])
+        # np.save('Vehicles/mod_hist', self.steer_history)
+        plt.plot(self.steer_history)
+        plt.plot(self.vel_history)
+        plt.legend(['Steer', 'Velocity'])
 
         plt.pause(0.001)
 
@@ -99,7 +100,8 @@ class BaseGenAgent:
         return v_ref, d_ref
 
     def reset_lap(self):
-        self.mod_history.clear()
+        self.steer_history.clear()
+        self.vel_history.clear()
         self.d_ref_history.clear()
         self.reward_history.clear()
         self.critic_history.clear()
@@ -119,13 +121,13 @@ class GenVehicle(BaseGenAgent):
     def act(self, obs):
         nn_obs = self.transform_obs(obs)
         nn_action = self.agent.act(nn_obs)
-        self.cur_nn_act = nn_action
 
-        self.mod_history.append(self.cur_nn_act[0])
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
+        self.state_action = [nn_obs, nn_action]
 
-        v_ref, d_ref = self.generate_references(self.cur_nn_act, obs)
+        v_ref, d_ref = self.generate_references(nn_action, obs)
+        self.steer_history.append(d_ref/self.max_d)
+        self.vel_history.append(v_ref/self.max_v)
 
         self.steps += 1
 
@@ -141,8 +143,8 @@ class GenVehicle(BaseGenAgent):
         buffer.add(mem_entry)
 
     def generate_references(self, nn_action, space=None):
-        d_ref = nn_action[0] * self.max_d
-        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
+        v_ref = (nn_action[0] + 1) / 2 * self.max_v # change the min from -1 to 0
+        d_ref = nn_action[1] * self.max_d
 
         return v_ref, d_ref
 

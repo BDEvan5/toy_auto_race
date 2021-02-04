@@ -462,7 +462,8 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        wpts, vs = self.env_map.reset_static_map(6)
+        n_obs = self.config['map']['n_obs']
+        wpts, vs = self.env_map.reset_static_map(n_obs)
         s = self.base_reset()
 
         return s, wpts, vs
@@ -482,6 +483,7 @@ class ForestSim(BaseSim):
             self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
         if self.steps > 100:
             self.done = True
+            self.reward = -1
             self.done_reason = f"Max steps"
         if abs(self.car.theta) > 0.66*np.pi:
             self.done = True
