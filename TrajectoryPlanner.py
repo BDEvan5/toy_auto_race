@@ -384,7 +384,7 @@ def Max_velocity(pts, config, show=False):
     f_t = (f_long**2 + f_lat**2)**0.5
 
     # print(f"Dt: {dt.T}")
-    print(f"DT0: {dt[0]}")
+    # print(f"DT0: {dt[0]}")
     t = np.cumsum(dt)
     t = np.insert(t, 0, 0)
     # print(f"Dt: {dt.T}")

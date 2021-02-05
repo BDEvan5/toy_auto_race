@@ -8,7 +8,7 @@ from Simulator import ScanSimulator
 
 
 class OptimalAgent:
-    def __init__(self):
+    def __init__(self, config):
         self.name = "Optimal Agent: Following target references"
         self.env_map = None
         self.path_name = None
@@ -18,6 +18,19 @@ class OptimalAgent:
         self.pind = 1
         self.target = None
         self.steps = 0
+
+        mu = config['car']['mu']
+        self.m = config['car']['m']
+        g = config['car']['g']
+        safety_f = config['pp']['force_f']
+        self.f_max = mu * self.m * g #* safety_f
+
+        self.wpts = None
+        self.vs = None
+
+        self.lookahead = config['pp']['lookahead']
+        self.v_gain = config['pp']['v_gain']
+        self.wheelbase =  config['car']['l_f'] + config['car']['l_r']
 
         self.current_v_ref = None
         self.current_phi_ref = None
@@ -29,7 +42,8 @@ class OptimalAgent:
 
         self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
  
-        self.wpts = self.env_map.get_optimal_path()
+        self.reset_lap()
+        
         # self.wpts = self.env_map.get_reference_path()
 
         r_line = self.wpts
@@ -44,11 +58,9 @@ class OptimalAgent:
         return self.wpts
 
     def act(self, obs):
-        # scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
 
         v_ref, d_ref = self.get_target_references(obs)
 
-        # possibly clip if needed, but shouldn't change much.
 
         return [v_ref, d_ref]
 
@@ -75,6 +87,9 @@ class OptimalAgent:
         # pure pursuit
         ld = lib.get_distance(obs[0:2], target)
         delta_ref = np.arctan(2*0.33*np.sin(alpha)/ld)
+
+        # v_ref = float(self.vs[self.pind]) * self.v_gain * 0.8
+        # delta_ref = self.limit_inputs(v_ref, delta_ref)
 
         ds = self.deltas[min(self.pind, len(self.deltas)-1)]
         max_d = abs(ds)
@@ -111,12 +126,20 @@ class OptimalAgent:
                 self.pind = 0
 
     def reset_lap(self):
-        # for testing
-        pass    
+        self.wpts, self.vs = self.env_map.get_optimal_path()
+        self.pind = 0
 
     def show_vehicle_history(self):
         pass
 
+    def limit_inputs(self, speed, steering_angle):
+        max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
+        new_steer = np.clip(steering_angle, -max_steer, max_steer)
+
+        if max_steer < abs(steering_angle):
+            print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
+
+        return new_steer
 
 
 class TunerCar:
@@ -147,7 +170,8 @@ class TunerCar:
         self.reset_lap()
 
     def _get_current_waypoint(self, position, theta):
-        nearest_pt, nearest_dist, t, i = nearest_point_on_trajectory_py2(position, self.wpts)
+        # nearest_pt, nearest_dist, t, i = nearest_point_on_trajectory_py2(position, self.wpts)
+        nearest_pt, nearest_dist, t, i = self.nearest_pt(position)
 
         if nearest_dist < self.lookahead:
             lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
@@ -172,7 +196,7 @@ class TunerCar:
         if lookahead_point is None:
             return 4.0, 0.0
 
-        speed, steering_angle = get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
+        speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed
 
         # print(f"Speed: {speed} --> Steer: {steering_angle}")
@@ -191,42 +215,35 @@ class TunerCar:
         return new_steer
 
     def reset_lap(self):
-        self.wpts = self.env_map.get_optimal_path()
-        self.vs = self.env_map.get_velocity()
+        self.wpts, self.vs = self.env_map.get_optimal_path()
         # self.wpts = self.env_map.get_reference_path()
 
+        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
+        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
+    def get_actuation(self, pose_theta, lookahead_point, position):
+        waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
+        
+        speed = lookahead_point[2]
+        if np.abs(waypoint_y) < 1e-6:
+            return speed, 0.
+        radius = 1/(2.0*waypoint_y/self.lookahead**2)
+        steering_angle = np.arctan(self.wheelbase/radius)
 
-# @njit(fastmath=False, cache=True)
-def nearest_point_on_trajectory_py2(point, trajectory):
-    '''
-    Return the nearest point along the given piecewise linear trajectory.
-    Same as nearest_point_on_line_segment, but vectorized. This method is quite fast, time constraints should
-    not be an issue so long as trajectories are not insanely long.
-        Order of magnitude: trajectory length: 1000 --> 0.0002 second computation (5000fps)
-    point: size 2 numpy array
-    trajectory: Nx2 matrix of (x,y) trajectory waypoints
-        - these must be unique. If they are not unique, a divide by 0 error will destroy the world
-    '''
-    diffs = trajectory[1:,:] - trajectory[:-1,:]
-    l2s   = diffs[:,0]**2 + diffs[:,1]**2
-    # this is equivalent to the elementwise dot product
-    # dots = np.sum((point - trajectory[:-1,:]) * diffs[:,:], axis=1)
-    dots = np.empty((trajectory.shape[0]-1, ))
-    for i in range(dots.shape[0]):
-        dots[i] = np.dot((point - trajectory[i, :]), diffs[i, :])
-    t = dots / l2s
-    t[t<0.0] = 0.0
-    t[t>1.0] = 1.0
-    # t = np.clip(dots / l2s, 0.0, 1.0)
-    projections = trajectory[:-1,:] + (t*diffs.T).T
-    # dists = np.linalg.norm(point - projections, axis=1)
-    dists = np.empty((projections.shape[0],))
-    for i in range(dists.shape[0]):
-        temp = point - projections[i]
-        dists[i] = np.sqrt(np.sum(temp*temp))
-    min_dist_segment = np.argmin(dists)
-    return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
+        return speed, steering_angle
+
+    def nearest_pt(self, point):
+        dots = np.empty((self.wpts.shape[0]-1, ))
+        for i in range(dots.shape[0]):
+            dots[i] = np.dot((point - self.wpts[i, :]), self.diffs[i, :])
+        t = dots / self.l2s
+
+        t = np.clip(dots / self.l2s, 0.0, 1.0)
+        projections = self.wpts[:-1,:] + (t*self.diffs.T).T
+        dists = np.linalg.norm(point - projections, axis=1)
+
+        min_dist_segment = np.argmin(dists)
+        return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
 
 # @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):
@@ -310,22 +327,6 @@ def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0
     return first_p, first_i, first_t
 
     # print min_dist_segment, dists[min_dist_segment], projections[min_dist_segment]
-
-# @njit(fastmath=False, cache=True)
-def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
-
-    # waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)
-    waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
-    
-    speed = lookahead_point[2]
-    if np.abs(waypoint_y) < 1e-6:
-        return speed, 0.
-    radius = 1/(2.0*waypoint_y/lookahead_distance**2)
-    steering_angle = np.arctan(wheelbase/radius)
-
-    return speed, steering_angle
-
-# def get_actuation(pose_theta, lookahead_pt, position, lookahead_distance, wheelbase):
 
 
 

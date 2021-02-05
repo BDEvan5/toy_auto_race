@@ -313,15 +313,9 @@ class ForestMap(MapBase):
         deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
         self.wpts = self.track_pts + deviation
 
-        self.get_velocity()
+        self.vs = Max_velocity(self.wpts, self.config)
 
-        return self.wpts
-
-    def get_velocity(self):
-        vels = Max_velocity(self.wpts, self.config)
-        self.vs = vels
-
-        return vels
+        return self.wpts, self.vs
 
     def get_reference_path(self):
         self.wpts = self.track_pts
@@ -340,7 +334,7 @@ class ForestMap(MapBase):
         # obs_size = [0.4, 0.6]
         obs_size = [1.5, 1.5]
         # obs_size = [1.2, 1.2]
-        xlim = (width - obs_size[0]) / 2
+        xlim = (width - obs_size[0]) - 1 
 
         x, y = self.convert_int_position(obs_size)
         obs_size_normal = [x, y]
@@ -350,7 +344,7 @@ class ForestMap(MapBase):
         
         tys = np.linspace(obs_buf, length - obs_buf - obs_size[1], n)
         # txs = np.random.normal(xlim, 0.6, size=n)
-        txs = np.random.uniform(1, xlim*2-1, size=n)
+        txs = np.random.uniform(1, xlim*2, size=n)
         # txs = np.clip(txs, 0, 4)
         obs_locs = np.array([txs, tys]).T
 

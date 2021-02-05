@@ -280,9 +280,10 @@ def test_Mod():
 def testOptimal():
 
     config = load_config(config_std)
-    vehicle = TunerCar(config)
+    # vehicle = TunerCar(config)
+    vehicle = OptimalAgent(config) # to be deprecated for tuner car
 
-    testVehicle(config, vehicle, True, 100)
+    testVehicle(config, vehicle, True, 10)
 
 
 
@@ -310,7 +311,7 @@ def timing():
 
 if __name__ == "__main__":
 
-    # train_gen_std()
+    train_gen_std()
     # train_gen_steer()
     # train_gen_cth()
 
@@ -320,7 +321,7 @@ if __name__ == "__main__":
 
     # test_Gen()
     # test_Mod()
-    testOptimal()
+    # testOptimal()
 
     # timing()
 
