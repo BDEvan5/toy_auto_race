@@ -154,7 +154,7 @@ def testVehicle(config, vehicle, show=False, laps=100):
 
     crashes = 0
     completes = 0
-    lap_times = []
+    lap_times = [] 
 
     state, w, v = env.reset()
     vehicle.init_agent(env_map)
@@ -171,7 +171,7 @@ def testVehicle(config, vehicle, show=False, laps=100):
             # env.history.show_history(vs=env_map.vs)
             env.history.show_forces()
             env.render(wait=False)
-            plt.pause(1)
+            # plt.pause(1)
             # env.render(wait=True)
 
         if r == -1:
@@ -282,7 +282,7 @@ def testOptimal():
     config = load_config(config_std)
     vehicle = TunerCar(config)
 
-    testVehicle(config, vehicle, True, 10)
+    testVehicle(config, vehicle, True, 100)
 
 
 

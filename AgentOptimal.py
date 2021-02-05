@@ -127,10 +127,10 @@ class TunerCar:
         self.path_name = None
 
         mu = config['car']['mu']
-        m = config['car']['m']
+        self.m = config['car']['m']
         g = config['car']['g']
         safety_f = config['pp']['force_f']
-        self.f_max = mu * m * g * safety_f
+        self.f_max = mu * self.m * g #* safety_f
 
         self.wpts = None
         self.vs = None
@@ -177,16 +177,16 @@ class TunerCar:
 
         # print(f"Speed: {speed} --> Steer: {steering_angle}")
         avg_speed = max(speed, obs[3])
-        steering_angle = self.limit_inputs(speed, steering_angle)
+        steering_angle = self.limit_inputs(avg_speed, steering_angle)
 
         return [speed, steering_angle]
 
     def limit_inputs(self, speed, steering_angle):
-        max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2))
+        max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
         new_steer = np.clip(steering_angle, -max_steer, max_steer)
 
         if max_steer < abs(steering_angle):
-            print(f"Problem: {max_steer}")
+            print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
 
         return new_steer
 
