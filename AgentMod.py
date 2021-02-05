@@ -224,8 +224,8 @@ class BaseMod:
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
         new_steer = np.clip(steering_angle, -max_steer, max_steer)
 
-        if max_steer < abs(steering_angle):
-            print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
+        # if max_steer < abs(steering_angle):
+            # print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
 
         return new_steer
 
@@ -237,6 +237,7 @@ class BaseMod:
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
         self.steps = 0
+        self.mod_history = []
 
 
     def get_actuation(self, pose_theta, lookahead_point, position):

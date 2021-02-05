@@ -24,6 +24,7 @@ map:
     x: 3
     y: 9
 
+
 sim:
   timestep: 0.02
   update_f: 10
@@ -32,7 +33,7 @@ sim:
 pp:
   lookahead: 2
   v_gain: 0.9
+  force_f: 0.8
 
 nn:
   h: 200
-
