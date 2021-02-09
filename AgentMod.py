@@ -459,6 +459,7 @@ class ModVehicleTest(BaseMod):
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 4
         BaseMod.__init__(self, config, name)
+        print(f"Agent loaded: {name}")
 
         self.current_v_ref = None
         self.current_phi_ref = None

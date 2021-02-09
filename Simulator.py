@@ -303,6 +303,7 @@ class BaseSim:
             xs.append(x)
             ys.append(y)
         plt.plot(xs, ys, 'r', linewidth=3)
+        plt.plot(xs, ys, '+', markersize=12)
         x, y = self.env_map.convert_position([self.car.x, self.car.y])
         plt.plot(x, y, 'x', markersize=20)
 
@@ -478,32 +479,38 @@ class ForestSim(BaseSim):
 
     def check_done_forest(self):
         self.reward = 0 # normal
+        # check if finished lap
+        dx = self.car.x - self.env_map.end[0]
+        dx_lim = self.env_map.width * self.env_map.resolution * 0.5
+        if dx < dx_lim and self.car.y > self.env_map.end[1]:
+            self.done = True
+            self.reward = 1
+            self.done_reason = f"Lap complete"
+
+        # check crash
         if self.env_map.check_scan_location([self.car.x, self.car.y]):
             self.done = True
             self.reward = -1
             self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
         horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
         self.y_forces.append(horizontal_force)
+        # check forces
         if horizontal_force > self.car.max_friction_force:
             self.done = True
             self.reward = -1
             # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
             self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
+        # check steps
         if self.steps > 100:
             self.done = True
             self.reward = -1
             self.done_reason = f"Max steps"
+        # check orientation
         if abs(self.car.theta) > 0.66*np.pi:
             self.done = True
             self.done_reason = f"Vehicle turned around"
             self.reward = -1
 
-        car = [self.car.x, self.car.y]
-        if lib.get_distance(car, self.env_map.end) < 2 and self.steps > 10:
-            self.done = True
-            #TODO: add in a simple y lim line to go past
-            self.reward = 1
-            self.done_reason = f"Lap complete"
 
 
 

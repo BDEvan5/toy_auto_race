@@ -424,17 +424,17 @@ def Max_velocity(pts, config, show=False):
         plt.plot(t[1:], dt)
         plt.plot(t[1:], dt, '+')
     
-    plt.figure(9)
-    plt.clf()
-    plt.title("F_long, F_lat vs t")
-    plt.plot(t[:-1], f_long)
-    plt.plot(t[:-1], f_lat)
-    plt.plot(t[:-1], f_t, linewidth=3)
-    plt.plot(t, np.ones_like(t) * f_max, '--')
-    plt.plot(t, np.ones_like(t) * -f_max, '--')
-    plt.plot(t, np.ones_like(t) * f_long_max, '--')
-    plt.plot(t, np.ones_like(t) * -f_long_max, '--')
-    plt.legend(['Flong', "f_lat", "f_t"])
+    # plt.figure(9)
+    # plt.clf()
+    # plt.title("F_long, F_lat vs t")
+    # plt.plot(t[:-1], f_long)
+    # plt.plot(t[:-1], f_lat)
+    # plt.plot(t[:-1], f_t, linewidth=3)
+    # plt.plot(t, np.ones_like(t) * f_max, '--')
+    # plt.plot(t, np.ones_like(t) * -f_max, '--')
+    # plt.plot(t, np.ones_like(t) * f_long_max, '--')
+    # plt.plot(t, np.ones_like(t) * -f_long_max, '--')
+    # plt.legend(['Flong', "f_lat", "f_t"])
 
 
     return vs

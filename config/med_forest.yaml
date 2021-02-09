@@ -16,13 +16,13 @@ lims:
   dis_scale: 0.5
 
 map:
-  name: "small_forest"
+  name: "med_forest"
   obs_size: 1.5
-  n_obs: 1
+  n_obs: 3
   obs_buf: 3
   end:
     x: 3
-    y: 7
+    y: 14
 
 
 sim:

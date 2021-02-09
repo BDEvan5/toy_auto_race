@@ -32,6 +32,16 @@ def get_tiangle_h(a, b, c):
 
     return h
 
+def distance_potential(s, s_p, end, beta=0.2, scale=0.5):
+    prev_dist = lib.get_distance(s[0:2], end)
+    cur_dist = lib.get_distance(s_p[0:2], end)
+    d_dis = (prev_dist - cur_dist) / scale
+
+    return d_dis * beta
+
+
+
+# Gen
 class StdNavReward:
     def __init__(self, config, b1, b2, b3) -> None:
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
@@ -53,10 +63,10 @@ class StdNavReward:
             cur_dist = lib.get_distance(s_p[0:2], self.end)
 
             v_sc = s_p[2] / self.max_v
-            d_dis = (prev_dist - cur_dist) / self.dis_scale
+            shaped_r = distance_potential(s, s_p, self.end, self.b2)
 
-            new_r = self.b1 + d_dis * self.b2 + self.b3 * v_sc 
-            return new_r  + r
+            new_r = self.b1 + self.b3 * v_sc 
+            return new_r  + r + shaped_r
 
 
 class CrossTrackHeadingReward:
@@ -90,13 +100,11 @@ class CrossTrackHeadingReward:
             d_th = abs(lib.sub_angles_complex(th_ref, th))
 
             v = s_p[3] / self.max_v
-            prev_dist = lib.get_distance(s[0:2], self.end)
-            cur_dist = lib.get_distance(s_p[0:2], self.end)
-            d_dis = (prev_dist - cur_dist) / self.dis_scale
+            shaped_r = distance_potential(s, s_p, self.end)
 
-            new_r = self.t1 * v*(np.cos(d_th) * self.t2 - self.t3 * d_c + 0.4) + 0.02*d_dis
+            new_r = self.t1 * v*(np.cos(d_th) * self.t2 - self.t3 * d_c + 0.4) 
 
-            return new_r  + r
+            return new_r  + r + shaped_r
 
 class OnlineSteering:
     def __init__(self, config, s1, s2, s3) -> None:
@@ -119,13 +127,14 @@ class OnlineSteering:
 
             return new_r + r
 
-class ModStdTimeReward:
-    def __init__(self, config, m1, m2, mt) -> None:
+# Mod
+class ModSteerReward:
+    def __init__(self, config, mv, ms) -> None:
         self.max_steer = config['lims']['max_steer']
-        self.m1 = m1
-        self.m2 = m2
-
-        self.mt = mt
+        self.max_v = config['lims']['max_v']
+        self.end = [config['map']['end']['x'], config['map']['end']['y']]
+        self.mv = mv 
+        self.ms = ms 
 
     def init_reward(self, pts, vs):
         pass
@@ -134,17 +143,22 @@ class ModStdTimeReward:
         if r == -1:
             return r
         else:
-            # time = 0
+            shaped_r = distance_potential(s, s_p, self.end)
+
+            vel = a[0] / self.max_v 
             steer = abs(a[1]) / self.max_steer
-            new_r = self.m1 - self.m2 * steer + self.mt * time
-            return new_r + r
+
+            new_r = self.mv * vel - self.ms * steer 
+
+            return new_r + r + shaped_r 
 
 class ModHeadingReward:
-    def __init__(self, config, m1, m3, m4) -> None:
-        self.m1 = m1
-        self.m3 = m3
-        self.m4 = m4
+    def __init__(self, config, mh, md, m) -> None:
+        self.mh = mh 
+        self.md = md
+        self.m = m
         self.dis_scale = config['lims']["dis_scale"]
+        self.max_v = config['lims']["max_v"]
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
 
         self.pts = None
@@ -153,32 +167,29 @@ class ModHeadingReward:
     def init_reward(self, pts, vs):
         self.pts = pts
         self.vs = vs
-        
-        
+            
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
             return r
         else:
             pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.pts)
             d = lib.get_distance(pt_i, pt_ii)
-            d_c = get_tiangle_h(d_i, d_ii, d)
+            d_c = get_tiangle_h(d_i, d_ii, d) / self.dis_scale
 
             th_ref = lib.get_bearing(pt_i, pt_ii)
             th = s_p[2]
             d_th = abs(lib.sub_angles_complex(th_ref, th))
+            v_scale = s_p[3] / self.max_v
 
-            prev_dist = lib.get_distance(s[0:2], self.end)
-            cur_dist = lib.get_distance(s_p[0:2], self.end)
-            d_dis = (prev_dist - cur_dist) / self.dis_scale
+            shaped_r = distance_potential(s, s_p, self.end)
 
-            new_r = self.m1 - self.m3 * d_c - self.m4 * d_th + d_dis * 0.2
-            return new_r  + r
+            new_r =  self.mh * np.cos(d_th) * v_scale - self.md * d_c
+            new_r *= self.m
 
+            return new_r + r + shaped_r
 
 class ModTimeReward:
-    def __init__(self, config, m1, m2, mt) -> None:
-        self.m1 = m1
-        self.m2 = m2
+    def __init__(self, config, mt) -> None:
         self.mt = mt 
         self.dis_scale = config['lims']["dis_scale"]
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
@@ -191,12 +202,11 @@ class ModTimeReward:
         if r == -1:
             return r
         else:
-            prev_dist = lib.get_distance(s[0:2], self.end)
-            cur_dist = lib.get_distance(s_p[0:2], self.end)
-            d_dis = (prev_dist - cur_dist) / self.dis_scale
+            shaped_r = distance_potential(s, s_p, self.end)
 
-            steer = abs(a[1]) / self.max_steer
-            new_r = self.m1 * d_dis - self.m2 * steer - self.mt 
+            new_r = - self.mt
 
-            return new_r + r
+            return new_r + r + shaped_r
+
+
 
