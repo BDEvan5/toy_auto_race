@@ -152,11 +152,10 @@ class ModSteerReward:
 
             return new_r + r + shaped_r 
 
-class ModHeadingReward:
-    def __init__(self, config, mh, md, m) -> None:
+class ModCthReward:
+    def __init__(self, config, mh, md) -> None:
         self.mh = mh 
         self.md = md
-        self.m = m
         self.dis_scale = config['lims']["dis_scale"]
         self.max_v = config['lims']["max_v"]
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
@@ -184,7 +183,6 @@ class ModHeadingReward:
             shaped_r = distance_potential(s, s_p, self.end)
 
             new_r =  self.mh * np.cos(d_th) * v_scale - self.md * d_c
-            new_r *= self.m
 
             return new_r + r + shaped_r
 

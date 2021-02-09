@@ -227,7 +227,7 @@ def train_mod_steer():
     load = False
 
     agent_name = "ModSteer_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
     reward = ModSteerReward(config, 0.1, 0.1)
 
@@ -237,7 +237,7 @@ def train_mod_time():
     load = False
 
     agent_name = "ModTime_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
     reward = ModTimeReward(config, 0.06)
 
@@ -247,7 +247,7 @@ def train_mod_cth():
     load = False
 
     agent_name = "ModCth_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
     reward = ModCthReward(config, 0.4, 0.04)
 
@@ -433,7 +433,7 @@ def testOptimal():
 def test_compare():
     config = load_config(config_med)
     # config = load_config(config_std)
-    test = TestVehicles(config, "test_compare_tc3")
+    test = TestVehicles(config, "test_compare_mod")
 
     # mod
     agent_name = "ModTime_test"
@@ -465,7 +465,7 @@ def test_compare():
     vehicle = TunerCar(config)
     test.add_vehicle(vehicle)
 
-    test.run_eval(100, True)
+    test.run_eval(10, True)
 
 
 # Development functions
