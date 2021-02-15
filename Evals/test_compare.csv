@@ -1,0 +1,8 @@
+#,Name,%Complete,AvgTime
+0,ModTime_test,100.0,22.43
+1,ModCth_test,94.0,22.340425531914892
+2,ModSteer_test,88.0,18.988636363636363
+3,GenTime_test,57.99999999999999,16.689655172413794
+4,GenCth_test,76.0,18.07894736842105
+5,GenSteer_test,82.0,18.25609756097561
+6,TunerCar Agent: Following PP references,89.0,16.202247191011235

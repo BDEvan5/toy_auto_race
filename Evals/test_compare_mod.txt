@@ -1,0 +1,25 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: GenTime_test
+Crashes: 5.0 --> Completes 5.0
+% Finished = 50.00
+Avg lap times: 21.8
+-----------------------------------------------------
+Vehicle: GenCth_test
+Crashes: 3.0 --> Completes 7.0
+% Finished = 70.00
+Avg lap times: 17.857142857142858
+-----------------------------------------------------
+Vehicle: GenSteer_test
+Crashes: 3.0 --> Completes 7.0
+% Finished = 70.00
+Avg lap times: 17.0
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 2.0 --> Completes 8.0
+% Finished = 80.00
+Avg lap times: 17.25
+-----------------------------------------------------

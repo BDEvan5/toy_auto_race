@@ -2,6 +2,7 @@ import LibFunctions as lib
 import os, shutil
 import csv
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class TrainHistory():
@@ -17,6 +18,7 @@ class TrainHistory():
         # espisode data
         self.ep_counter = 0 # ep steps
         self.ep_reward = 0
+        self.ep_rewards = []
 
         self.init_file_struct()
 
@@ -30,15 +32,27 @@ class TrainHistory():
 
     def add_step_data(self, new_r):
         self.ep_reward += new_r
+        self.ep_rewards.append(new_r)
         self.ep_counter += 1
         self.t_counter += 1 
 
-    def lap_done(self):
+    def lap_done(self, show_reward=False):
         self.lengths.append(self.ep_counter)
         self.rewards.append(self.ep_reward)
 
+        if show_reward:
+            plt.figure(8)
+            plt.clf()
+            plt.plot(self.ep_rewards)
+            plt.plot(self.ep_rewards, 'x', markersize=10)
+            plt.title(f"Ep rewards: total: {self.ep_reward:.4f}")
+            plt.ylim([-1.1, 1.5])
+            plt.pause(0.0001)
+
         self.ep_counter = 0
         self.ep_reward = 0
+        self.ep_rewards = []
+
 
     def print_update(self):
         mean = np.mean(self.rewards)
@@ -55,3 +69,23 @@ class TrainHistory():
             csvwriter = csv.writer(csvfile)
             csvwriter.writerows(data)
 
+        plt.figure(2)
+        plt.savefig(self.path + "/training_rewards.png")
+
+
+class RewardAnalyser:
+    def __init__(self) -> None:
+        self.rewards = []
+        self.t = 0
+
+    def add_reward(self, new_r):
+        self.rewards.append(new_r)
+        self.t += 1
+
+    def show_rewards(self, show=False):
+        plt.figure(6)
+        plt.plot(self.rewards, '-*')
+        plt.ylim([-1, 1])
+        plt.title('Reward History')
+        if show:
+            plt.show()

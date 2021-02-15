@@ -6,7 +6,8 @@ import LibFunctions as lib
 
 
 class CarModel:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.x = 0
         self.y = 0
         self.theta = 0
@@ -16,20 +17,14 @@ class CarModel:
 
         self.prev_loc = 0
 
-        self.wheelbase = 0.33
-        self.mass = 3.74
-        self.len_cg_rear = 0.17
-        self.I_z = 0.047
-        self.mu = 0.523
-        self.height_cg = 0.074
-        self.cs_f = 4.718
-        self.cs_r = 5.45
+        self.wheelbase = config['car']['l_f'] + config['car']['l_r']
+        self.mass = config['car']['m']
+        self.mu = config['car']['mu']
 
-        self.max_d_dot = 3.2
-        self.max_steer = 0.4
-        self.max_a = 7.5
-        self.max_decel = -8.5
-        self.max_v = 7.5
+        self.max_d_dot = config['lims']['max_d_dot']
+        self.max_steer = config['lims']['max_steer']
+        self.max_a = config['lims']['max_a']
+        self.max_v = config['lims']['max_v']
         self.max_friction_force = self.mass * self.mu * 9.81
 
     def update_kinematic_state(self, a, d_dot, dt):
@@ -40,7 +35,7 @@ class CarModel:
         dth = theta_dot * dt
         self.theta = lib.add_angles_complex(self.theta, dth)
 
-        a = np.clip(a, self.max_decel, self.max_a)
+        a = np.clip(a, -self.max_a, self.max_a)
         d_dot = np.clip(d_dot, -self.max_d_dot, self.max_d_dot)
 
         self.steering = self.steering + d_dot * dt
@@ -100,11 +95,14 @@ class ScanSimulator:
 
 
 class SimHistory:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.positions = []
         self.steering = []
         self.velocities = []
         self.obs_locations = []
+        self.thetas = []
+
 
         self.ctr = 0
 
@@ -126,18 +124,62 @@ class SimHistory:
         self.steering = []
         self.velocities = []
         self.obs_locations = []
+        self.thetas = []
 
         self.ctr += 1
 
-    def show_history(self):
-        plt.figure(3)
+    def show_history(self, vs=None):
+        plt.figure(1)
+        plt.clf()
         plt.title("Steer history")
         plt.plot(self.steering)
         plt.pause(0.001)
 
         plt.figure(2)
+        plt.clf()
         plt.title("Velocity history")
         plt.plot(self.velocities)
+        if vs is not None:
+            r = len(vs) / len(self.velocities)
+            new_vs = []
+            for i in range(len(self.velocities)):
+                new_vs.append(vs[int(round(r*i))])
+            plt.plot(new_vs)
+            plt.legend(['Actual', 'Planned'])
+        plt.pause(0.001)
+
+    def show_forces(self):
+        mu = self.config['car']['mu']
+        m = self.config['car']['m']
+        g = self.config['car']['g']
+        l_f = self.config['car']['l_f']
+        l_r = self.config['car']['l_r']
+        f_max = mu * m * g
+        f_long_max = l_f / (l_r + l_f) * f_max
+
+        self.velocities = np.array(self.velocities)
+        self.thetas = np.array(self.thetas)
+
+        # divide by time taken for change to get per second
+        t = self.config['sim']['timestep'] * self.config['sim']['update_f']
+        v_dot = (self.velocities[1:] - self.velocities[:-1]) / t
+        oms = (self.thetas[1:] - self.thetas[:-1]) / t
+
+        f_lat = oms * self.velocities[:-1] * m
+        f_long = v_dot * m
+        f_total = (f_lat**2 + f_long**2)**0.5
+
+        plt.figure(3)
+        plt.clf()
+        plt.title("Forces (lat, long)")
+        plt.plot(f_lat)
+        plt.plot(f_long)
+        plt.plot(f_total, linewidth=2)
+        plt.legend(['Lat', 'Long', 'total'])
+        plt.plot(np.ones_like(f_lat) * f_max, '--')
+        plt.plot(np.ones_like(f_lat) * f_long_max, '--')
+        plt.plot(-np.ones_like(f_lat) * f_max, '--')
+        plt.plot(-np.ones_like(f_lat) * f_long_max, '--')
         plt.pause(0.001)
 
 
@@ -146,12 +188,14 @@ class BaseSim:
     Base simulator class
     """
     def __init__(self, env_map):
-        self.timestep = 0.02
+        self.env_map = env_map
+        self.config = self.env_map.config
+
+        self.timestep = self.config['sim']['timestep']
         self.eps = 0
 
-        self.env_map = env_map
 
-        self.car = CarModel()
+        self.car = CarModel(self.config)
 
         self.done = False
         self.reward = 0
@@ -159,7 +203,7 @@ class BaseSim:
         self.action_memory = []
         self.steps = 0
 
-        self.history = SimHistory()
+        self.history = SimHistory(self.config)
         self.done_reason = ""
         self.y_forces = []
 
@@ -179,6 +223,7 @@ class BaseSim:
         self.history.velocities.append(self.car.velocity)
         self.history.steering.append(self.car.steering)
         self.history.positions.append([self.car.x, self.car.y])
+        self.history.thetas.append(self.car.theta)
         
         self.action_memory.append([self.car.x, self.car.y])
 
@@ -236,32 +281,6 @@ class BaseSim:
             self.reward = 1
             self.done_reason = f"Lap complete"
 
-    def check_done_forest(self):
-        self.reward = 0 # normal
-        if self.env_map.check_scan_location([self.car.x, self.car.y]):
-            self.done = True
-            self.reward = -1
-            self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
-        horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
-        self.y_forces.append(horizontal_force)
-        if horizontal_force > self.car.max_friction_force:
-            # self.done = True
-            self.reward = -1
-            self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
-        if self.steps > 100:
-            self.done = True
-            self.done_reason = f"Max steps"
-        if abs(self.car.theta) > 0.66*np.pi:
-            self.done = True
-            self.done_reason = f"Vehicle turned around"
-            self.reward = -1
-
-        car = [self.car.x, self.car.y]
-        if lib.get_distance(car, self.env_map.end) < 2 and self.steps > 10:
-            self.done = True
-            self.reward = 1
-            self.done_reason = f"Lap complete"
-
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
         fig = plt.figure(4)
@@ -284,6 +303,7 @@ class BaseSim:
             xs.append(x)
             ys.append(y)
         plt.plot(xs, ys, 'r', linewidth=3)
+        plt.plot(xs, ys, '+', markersize=12)
         x, y = self.env_map.convert_position([self.car.x, self.car.y])
         plt.plot(x, y, 'x', markersize=20)
 
@@ -451,9 +471,46 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        self.env_map.reset_static_map(8)
+        n_obs = self.config['map']['n_obs']
+        wpts, vs = self.env_map.reset_static_map(n_obs)
+        s = self.base_reset()
 
-        return self.base_reset()
+        return s, wpts, vs
+
+    def check_done_forest(self):
+        self.reward = 0 # normal
+        # check if finished lap
+        dx = self.car.x - self.env_map.end[0]
+        dx_lim = self.env_map.width * self.env_map.resolution * 0.5
+        if dx < dx_lim and self.car.y > self.env_map.end[1]:
+            self.done = True
+            self.reward = 1
+            self.done_reason = f"Lap complete"
+
+        # check crash
+        if self.env_map.check_scan_location([self.car.x, self.car.y]):
+            self.done = True
+            self.reward = -1
+            self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
+        horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
+        self.y_forces.append(horizontal_force)
+        # check forces
+        if horizontal_force > self.car.max_friction_force:
+            self.done = True
+            self.reward = -1
+            # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
+            self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
+        # check steps
+        if self.steps > 100:
+            self.done = True
+            self.reward = -1
+            self.done_reason = f"Max steps"
+        # check orientation
+        if abs(self.car.theta) > 0.66*np.pi:
+            self.done = True
+            self.done_reason = f"Vehicle turned around"
+            self.reward = -1
+
 
 
 

@@ -1,18 +1,22 @@
+from Testing import TestVehicles
 import numpy as np
 import matplotlib.pyplot as plt
-from HistoryStructs import TrainHistory
+from HistoryStructs import RewardAnalyser, TrainHistory
 
 import timeit
+import yaml
 
 from Simulator import ForestSim
 from SimMaps import  ForestMap
 from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import LibFunctions as lib
+from LibFunctions import load_config
+from Rewards import *
 
 from AgentOptimal import OptimalAgent, TunerCar
 from AgentMPC import AgentMPC
 from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenTrainStd, GenTrainStr, GenTest
+from RefGen import GenVehicle, GenTest
 
 names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
 name = names[5]
@@ -20,16 +24,26 @@ myMap = 'TrackMap1000'
 forest_name = 'forest'
 bfg = 'BigForest'
 
+config_sf = "small_forest"
+config_std = "std_config"
+config_med = "med_forest"
+
+
+
 
 def RunOptimalAgent():
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
-    env_map = ForestMap(forest_name)
+    config = lib.load_config("std_config")
+
+
+    env_map = ForestMap(config)
     env = ForestSim(env_map)
 
-    agent = OptimalAgent()
-    agent = TunerCar()
+    # agent = OptimalAgent()
+    agent = TunerCar(config)
+    ra = RewardAnalyser()
 
     done, state, score = False, env.reset(), 0.0
     wpts = agent.init_agent(env_map)
@@ -39,14 +53,18 @@ def RunOptimalAgent():
         action = agent.act(state)
         s_p, r, done, _ = env.step(action)
         score += r
+
         state = s_p
+
 
         # env.render(True, wpts)
         # env.env_map.render_map(4, True)
-        env.render(False)
+        # env.render(False)
 
     print(f"Score: {score}")
-    env.history.show_history()
+    ra.show_rewards()
+    env.history.show_history(vs=env_map.vs)
+    env.history.show_forces()
     env.render(wait=True)
 
 def RunMpcAgent():
@@ -75,31 +93,31 @@ def RunMpcAgent():
 
 
 
-
-"""Training functions: PURE MOD"""
-def TrainModVehicle(agent_name, load=True):
+"""Train"""
+def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
-    env_map = ForestMap(forest_name)
+    env_map = ForestMap(config)
     env = ForestSim(env_map)
-
-    vehicle = ModVehicleTrain(agent_name, load, 200, 10)
 
     t_his = TrainHistory(agent_name)
     print_n = 500
 
-    done, state = False, env.reset()
-    wpts = vehicle.init_agent(env_map)
+    done = False
+    state, wpts, vs = env.reset()
+    vehicle.init_agent(env_map)
+    reward.init_reward(wpts, vs)
 
-    for n in range(10000):
+    for n in range(steps):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
-        new_r = vehicle.add_memory_entry(r, done, s_prime, buffer)
+        new_r = reward(state, a, s_prime, r)
+        vehicle.add_memory_entry(new_r, done, s_prime, buffer)
         t_his.add_step_data(new_r)
 
         state = s_prime
@@ -112,37 +130,39 @@ def TrainModVehicle(agent_name, load=True):
             vehicle.agent.save(directory=path)
         
         if done:
-            t_his.lap_done()
+            t_his.lap_done(True)
             # vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
-            state = env.reset()
+            state, wpts, vs = env.reset()
+            reward.init_reward(wpts, vs)
 
 
     vehicle.agent.save(directory=path)
+    t_his.save_csv_data()
+
+    print(f"Finished Training: {agent_name}")
 
     return t_his.rewards
 
-
 """General test function"""
-def testVehicle(vehicle, show=False, obs=True):
+def testVehicle(config, vehicle, show=False, laps=100):
     # env_map = SimMap(name)
     # env = TrackSim(env_map)
 
-    env_map = ForestMap(forest_name)
+    env_map = ForestMap(config)
     env = ForestSim(env_map)
 
     crashes = 0
     completes = 0
-    lap_times = []
+    lap_times = [] 
 
-    wpts = vehicle.init_agent(env_map)
-    done, state, score = False, env.reset(), 0.0
-    for i in range(100): # 10 laps
+    state, w, v = env.reset()
+    vehicle.init_agent(env_map)
+    done, score = False, 0.0
+    for i in range(laps):
         print(f"Running lap: {i}")
-        # if obs:
-        #     env_map.reset_map()
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
@@ -150,8 +170,10 @@ def testVehicle(vehicle, show=False, obs=True):
             # env.render(False, vehicle.scan_sim)
         print(f"Lap time updates: {env.steps}")
         if show:
-            # vehicle.show_vehicle_history()
+            # env.history.show_history(vs=env_map.vs)
+            # env.history.show_forces()
             env.render(wait=False)
+            # plt.pause(1)
             # env.render(wait=True)
 
         if r == -1:
@@ -159,10 +181,8 @@ def testVehicle(vehicle, show=False, obs=True):
         else:
             completes += 1
             lap_times.append(env.steps)
-        state = env.reset()
+        state, w, v = env.reset()
         
-        # env.reset_lap()
-        env.reset()
         vehicle.reset_lap()
         done = False
 
@@ -170,91 +190,284 @@ def testVehicle(vehicle, show=False, obs=True):
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
-"""RefGen Train"""
-def TrainGenVehicle(agent_name, load):
-    path = 'Vehicles/' + agent_name
-    buffer = ReplayBufferTD3()
 
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
+""" Training sets"""
+def train_gen_time():
+    load = False
 
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
+    agent_name = "GenTime_test"
+    config = load_config(config_med)
+    vehicle = GenVehicle(config, agent_name, load)
+    reward = TimeReward(config, 0.06)
 
-    # vehicle = GenVehicleTrainDistance(agent_name, load, 200, 10)
-    vehicle = GenVehicleTrainSteering(agent_name, load, 200, 10)
-    # vehicle = GenVehicleTrainVelocity(agent_name, load, 200, 10)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def train_gen_cth():
+    load = False
+
+    agent_name = "GenCth_test"
+    config = load_config(config_med)
+    vehicle = GenVehicle(config, agent_name, load)
+    reward = CthReward(config, 0.4, 0.04)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def train_gen_steer():
+    load = False
+
+    agent_name = "GenSteer_test"
+    config = load_config(config_med)
+    vehicle = GenVehicle(config, agent_name, load)
+    reward = SteerReward(config, 0.1, 0.1)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+"""Mod training"""
+def train_mod_steer():
+    load = False
+
+    agent_name = "ModSteer_test"
+    config = load_config(config_med)
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = SteerReward(config, 0.1, 0.1)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def train_mod_time():
+    load = False
+
+    agent_name = "ModTime_test"
+    config = load_config(config_med)
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.06)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def train_mod_cth():
+    load = False
+
+    agent_name = "ModCth_test"
+    config = load_config(config_med)
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = CthReward(config, 0.4, 0.04)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 
-    t_his = TrainHistory(agent_name)
-    print_n = 500
+"""Mod param sweeps"""
+def train_mod_time_sweep_mt():
+    load = False
+    config = load_config(config_sf)
 
-    done, state = False, env.reset()
-    wpts = vehicle.init_agent(env_map)
+    agent_name = "ModTime_02_02_004"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.04)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-    for n in range(10000):
-        a = vehicle.act(state)
-        s_prime, r, done, _ = env.step(a)
+    agent_name = "ModTime_02_02_002"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.02)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-        new_r = vehicle.add_memory_entry(r, done, s_prime, buffer)
-        t_his.add_step_data(new_r)
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-        state = s_prime
-        vehicle.agent.train(buffer, 2)
-        
-        # env.render(False)
+    agent_name = "ModTime_02_02_0005"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.005)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-        if n % print_n == 0 and n > 0:
-            t_his.print_update()
-            vehicle.agent.save(directory=path)
-        
-        if done:
-            t_his.lap_done()
-            # vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
+def train_mod_time_sweep_m2():
+    load = False
+    config = load_config(config_sf)
 
-            vehicle.reset_lap()
-            state = env.reset()
+    agent_name = "ModTime_02_005_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.05, 0.04)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_02_01_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.1, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.01)
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_02_04_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.4, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def train_mod_time_sweep_m1():
+    load = False
+    config = load_config(config_sf)
+
+    agent_name = "ModTime_005_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.05, 0.2, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_01_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.1, 0.2, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.2, 0.2, 0.01)
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_04_02_001"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = ModTimeReward(config, 0.4, 0.2, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 
-    vehicle.agent.save(directory=path)
+def test_mod_time_sweep_mt():
+    config = load_config(config_std)
+    test = TestVehicles(config, "mod_time_sweep_mt")
 
-    return t_his.rewards
+    agent_name = "ModTime_02_02_004"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_02_002"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_02_0005"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100)
 
 
+def test_mod_time_sweep_m2():
+    config = load_config(config_std)
+    test = TestVehicles(config, "mod_time_sweep_m2")
 
+    agent_name = "ModTime_02_005_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_01_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_04_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100)
+
+def test_mod_time_sweep_m1():
+    config = load_config(config_std)
+    test = TestVehicles(config, "mod_time_sweep_m1")
+
+    agent_name = "ModTime_005_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_01_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_02_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_04_02_001"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100)
 
 
 """Total functions"""
-def RunModAgent():
-    agent_name = "TestingMod"
+def test_Gen():
+    agent_name = "GenCth_test"
+    # agent_name = "GenTime_test"
+    # agent_name = "GenSteer_test"
     
-    TrainModVehicle(agent_name, False)
-    # TrainModVehicle(agent_name, True)
 
-    # vehicle = ModVehicleTest(agent_name)
+    config = load_config(config_med)
+    vehicle = GenTest(config, agent_name)
 
-    # testVehicle(vehicle, obs=True, show=True)
-    # testVehicle(vehicle, obs=False, show=True)
+    testVehicle(config, vehicle, True, 10)
+    
+def test_Mod():
+    agent_name = "ModSteer_test"
+    # agent_name = "ModCth_test"
+    # agent_name = "ModTime_test"
+    
+    config = load_config("std_config")
+    config = load_config(config_med)
+    # config = load_config(config_sf)
+    vehicle = ModVehicleTest(config, agent_name)
 
-def RunGenAgent():
-    agent_name = "TestingGenD"
-    # agent_name = "TestingGenV"
-
-    # TrainGenVehicle(agent_name, False)
-
-    vehicle = GenVehicleTest(agent_name)
-    # vehicle = GenVehicleTestV(agent_name)
-
-    testVehicle(vehicle, obs=True, show=True)
-    # testVehicle(vehicle, obs=False, show=True)
+    testVehicle(config, vehicle, True, laps=20)
 
 
 def testOptimal():
-    agent = OptimalAgent()
 
-    testVehicle(agent, obs=False, show=True)
+    # config = load_config(config_std)
+    config = load_config(config_med)
+    vehicle = TunerCar(config)
+    # vehicle = OptimalAgent(config) # to be deprecated for tuner car
 
+    testVehicle(config, vehicle, True, 10)
+
+def test_compare():
+    config = load_config(config_med)
+    # config = load_config(config_std)
+    # test = TestVehicles(config, "test_compare_mod")
+    # test = TestVehicles(config, "test_compare_gen")
+    test = TestVehicles(config, "test_compare")
+
+    # mod
+    agent_name = "ModTime_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModCth_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModSteer_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # gen
+    agent_name = "GenTime_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenCth_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenSteer_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # PP
+    vehicle = TunerCar(config)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100, True)
 
 
 # Development functions
@@ -281,9 +494,27 @@ def timing():
 
 if __name__ == "__main__":
 
-    # RunModAgent()
-    # RunGenAgent()
-    RunOptimalAgent()
+    # train_gen_time()
+    # train_gen_steer()
+    # train_gen_cth()
+
+    # train_mod_steer()
+    # train_mod_cth()
+    # train_mod_time()
+
+
+    # train_mod_time_sweep_m1()
+    # train_mod_time_sweep_m2()
+    # train_mod_time_sweep_mt()
+
+    # test_mod_time_sweep_m1()
+    # test_mod_time_sweep_m2()
+    # test_mod_time_sweep_mt()
+
+    test_Gen()
+    # test_Mod()
+    # testOptimal()
+    # test_compare()
 
     # timing()
 

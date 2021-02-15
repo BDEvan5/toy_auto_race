@@ -10,7 +10,8 @@ from Simulator import ScanSimulator
 
 
 class BaseGenAgent:
-    def __init__(self, name, n_beams):
+    def __init__(self, config, name):
+        self.config = config
         self.name = name
         self.env_map = None
         self.wpts = None
@@ -20,21 +21,25 @@ class BaseGenAgent:
         self.target = None
 
         # history
-        self.mod_history = []
+        self.steer_history = []
+        self.vel_history = []
         self.d_ref_history = []
         self.reward_history = []
         self.critic_history = []
         self.steps = 0
 
-        self.max_v = 7.5
-        self.max_d = 0.4
-        self.max_friction_force = 3.74 * 9.81 * 0.523 *0.5
+        self.max_v = config['lims']['max_v']
+        self.max_d = config['lims']['max_steer']
+        self.mu = config['car']['mu']
+        self.m = config['car']['m']
+        self.max_friction_force = 9.81 * self.m * self.mu 
 
         # agent stuff 
         self.state_action = None
         self.cur_nn_act = None
         self.prev_nn_act = 0
 
+        n_beams = config['sim']['beams']
         self.scan_sim = ScanSimulator(n_beams, np.pi)
         self.n_beams = n_beams
 
@@ -53,12 +58,12 @@ class BaseGenAgent:
     def show_vehicle_history(self):
         plt.figure(1)
         plt.clf()
-        plt.title("Mod History")
+        plt.title("Steer History")
         plt.ylim([-1.1, 1.1])
-        plt.plot(self.mod_history)
-        np.save('Vehicles/mod_hist', self.mod_history)
-        # plt.plot(self.d_ref_history)
-        plt.legend(['NN'])
+        # np.save('Vehicles/mod_hist', self.steer_history)
+        plt.plot(self.steer_history)
+        plt.plot(self.vel_history)
+        plt.legend(['Steer', 'Velocity'])
 
         plt.pause(0.001)
 
@@ -83,131 +88,61 @@ class BaseGenAgent:
 
         return nn_obs
 
-    def generate_references(self, nn_action, obs):
-        d = nn_action[0] * self.max_d
-        d_ref = np.clip(d, - self.max_d, self.max_d)
-
-        d_plan = max(abs(d_ref), abs(obs[4]))
-        theta_dot = abs(obs[3] / 0.33 * np.tan(d_plan))
-        v_ref = self.max_friction_force / (3.74 * max(theta_dot, 0.01)) 
-        v_ref = min(v_ref, 8.5)
-
-        return v_ref, d_ref
-
     def reset_lap(self):
-        self.mod_history.clear()
+        self.steer_history.clear()
+        self.vel_history.clear()
         self.d_ref_history.clear()
         self.reward_history.clear()
         self.critic_history.clear()
         self.steps = 0
         self.pind = 1
 
+    def generate_references(self, nn_action, space=None):
+        v_ref = (nn_action[0] + 1) / 2 * self.max_v # change the min from -1 to 0
+        d_ref = nn_action[1] * self.max_d
+
+        return v_ref, d_ref
+
+
 
 class GenVehicle(BaseGenAgent):
-    def __init__(self, name, load, h_size, n_beams):
-        BaseGenAgent.__init__(self, name, n_beams)
+    def __init__(self, config, name, load):
+        BaseGenAgent.__init__(self, config, name)
 
         state_space = 3 + self.n_beams
         self.agent = TD3(state_space, 2, 1, name)
+        h_size = config['nn']['h']
         self.agent.try_load(load, h_size, path=self.path_name)
 
     def act(self, obs):
         nn_obs = self.transform_obs(obs)
         nn_action = self.agent.act(nn_obs)
-        self.cur_nn_act = nn_action
 
-        self.mod_history.append(self.cur_nn_act[0])
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
+        self.state_action = [nn_obs, nn_action]
 
-        v_ref, d_ref = self.generate_references(self.cur_nn_act, obs)
+        v_ref, d_ref = self.generate_references(nn_action, obs)
+        self.steer_history.append(d_ref/self.max_d)
+        self.vel_history.append(v_ref/self.max_v)
 
         self.steps += 1
 
         return [v_ref, d_ref]
 
-    def add_memory_entry(self, reward, done, s_prime, buffer):
-        new_reward = self.update_reward(reward, s_prime)
+    def add_memory_entry(self, new_reward, done, s_prime, buffer):
         self.prev_nn_act = self.state_action[1][0]
 
         nn_s_prime = self.transform_obs(s_prime)
-        # done_mask = 0.0 if done else 1.0
 
         mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
 
         buffer.add(mem_entry)
 
-        return new_reward
-
-    def generate_references(self, nn_action, space=None):
-        d_ref = nn_action[0] * self.max_d
-        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
-
-        return v_ref, d_ref
-
-
-"""Full Vehicles  """
-class GenTrainStd(GenVehicle):
-    def __init__(self, name, load, h_size, n_beams):
-        super().__init__(name, load, h_size, n_beams)
-
-        self.prev_dist_target = 0
-        self.b1 = None
-        self.b2 = None
-        self.b3 = None
-
-    def init_reward(self, b1, b2, b3):
-        self.b1 = b1
-        self.b2 = b2
-        self.b3 = b3
-
-    def update_reward(self, reward, s_prime):
-        if reward == -1:
-            new_reward = -1
-            self.prev_dist_target = lib.get_distance(self.env_map.start, self.env_map.end)
-        else:
-            dist_target = lib.get_distance(s_prime[0:2], self.env_map.end)
-            d_dis = self.prev_dist_target - dist_target
-            vel = s_prime[2] / self.max_v
-
-            new_reward = self.b1 + d_dis * self.b2 + vel * self.b3
-
-            self.prev_dist_target = dist_target
-
-        self.reward_history.append(new_reward)
-
-        return new_reward
-
-
-class GenTrainStr(GenVehicle):
-    def __init__(self, name, load, h_size, n_beams):
-        super().__init__(name, load, h_size, n_beams)
-
-        self.s1 = None
-        self.s2 = None
-        self.s3 = None
-
-    def init_reward(self, s1, s2, s3):
-        self.s1 = s1
-        self.s2 = s2
-        self.s3 = s3
-
-    def update_reward(self, reward, s_prime):
-        if reward == -1:
-            new_reward = -1
-        else:
-            del_norm = (abs(s_prime[4]) / self.max_d) ** 2
-            v_norm = s_prime[3] / self.max_v
-            new_reward = self.s1 - del_norm * self.s2 + self.s3 * v_norm
-
-        self.reward_history.append(new_reward)
-
-        return new_reward
 
 
 """Test Vehicles"""
 class GenTest(BaseGenAgent):
-    def __init__(self, name):
+    def __init__(self, config, name):
         path = 'Vehicles/' + name + ''
         self.agent = TD3(1, 1, 1, name)
         self.agent.load(directory=path)
@@ -216,13 +151,7 @@ class GenTest(BaseGenAgent):
 
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 3
-        BaseGenAgent.__init__(self, name, n_beams)
-
-    def generate_references(self, nn_action, space=None):
-        d_ref = nn_action[0] * self.max_d
-        v_ref = (nn_action[1] + 1) / 2 * self.max_v # change the min from -1 to 0
-
-        return v_ref, d_ref
+        BaseGenAgent.__init__(self, config, name)
 
     def act(self, obs):
         nn_obs = self.transform_obs(obs)

@@ -37,6 +37,7 @@ class MapBase:
 
         self.start = None
         self.wpts = []
+        self.vs = None
 
         self.height = None
         self.width = None
@@ -79,6 +80,7 @@ class MapBase:
 
         self.scan_map = np.load(f'Maps/{self.name}.npy')
         self.obs_map = np.zeros_like(self.scan_map)
+        self.obs_map_plan = np.zeros_like(self.scan_map)
 
         self.width = self.scan_map.shape[1]
         self.height = self.scan_map.shape[0]
@@ -115,6 +117,19 @@ class MapBase:
         if self.scan_map[y, x]:
             return True
         if self.obs_map[y, x]:
+            return True
+        return False
+
+    def check_opt_scan(self, x_in):
+        if x_in[0] < 0 or x_in[1] < 0:
+            return True
+        x, y = self.convert_int_position(x_in)
+        if x_in[0] > self.width * self.resolution or x_in[1] > self.height * self.resolution:
+            return True
+
+        if self.scan_map[y, x]:
+            return True
+        if self.obs_map_plan[y, x]:
             return True
         return False
 
@@ -282,58 +297,76 @@ class ForestMap(MapBase):
     get_reference_path
         Returns a straight reference to follow
     """
-    def __init__(self, map_name="forest"):
+    def __init__(self, config):
+        self.config = config
+        map_name = config['map']['name']
         MapBase.__init__(self, map_name)
 
-        self.obs_map = np.zeros_like(self.scan_map)
-        self.end = [3, 28] #TODO: move this to the yaml file
-        #TODO: generally relook at the yaml file
+        # self.obs_map = np.zeros_like(self.scan_map)
+        # self.obs_map = np.zeros_like(self.scan_map)
+        self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
+
 
     def get_optimal_path(self):
         n_set = ObsAvoidTraj(self.track_pts, self.nvecs, self.ws, self.check_scan_location)
         deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
         self.wpts = self.track_pts + deviation
 
-        return self.wpts
+        self.vs = Max_velocity(self.wpts, self.config)
 
-    def get_velocity(self):
-        vels = Max_velocity(self.wpts)
-
-        return vels
-
+        return self.wpts, self.vs
 
     def get_reference_path(self):
         self.wpts = self.track_pts
+        # self.get_velocity()
 
-        return self.wpts
+        self.vs = self.config['lims']['max_v'] * np.ones(len(self.wpts))
+
+        return self.wpts, self.vs
 
     def reset_static_map(self, n=6):
         self.obs_map = np.zeros_like(self.obs_map)
+        length = self.height * self.resolution
+        width = self.width * self.resolution
+        obs_buf = self.config['map']['obs_buf']
 
         # obs_size = [0.4, 0.6]
-        obs_size = [1.2, 1.2]
+        obs_size = [1.5, 1.5]
         # obs_size = [1.2, 1.2]
-        xlim = (6 - obs_size[0]) / 2
+        xlim = (width - obs_size[0]) - 1 
 
         x, y = self.convert_int_position(obs_size)
-        obs_size = [x, y]
-
-        tys = np.linspace(4, 26, n)
+        obs_size_normal = [x, y]
+        x, y = self.convert_int_position(np.array(obs_size)*1.2)
+        obs_size_plan = [x, y]
+        
+        y_lim = length - obs_buf - obs_size[1] - 1
+        tys = np.linspace(obs_buf, y_lim, n)
         # txs = np.random.normal(xlim, 0.6, size=n)
-        txs = np.random.uniform(1, 4.8, size=n)
-        txs = np.clip(txs, 0, 4)
+        txs = np.random.uniform(1, xlim, size=n)
+        # txs = np.clip(txs, 0, 4)
         obs_locs = np.array([txs, tys]).T
 
         for obs in obs_locs:
-            for i in range(0, obs_size[0]):
-                for j in range(0, obs_size[1]):
+            for i in range(0, obs_size_normal[0]):
+                for j in range(0, obs_size_normal[1]):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.width-1)
                     y = np.clip(y+j, 0, self.height-1)
                     self.obs_map[y, x] = 1
 
-        return obs_locs
+        for obs in obs_locs:
+            for i in range(0, obs_size_plan[0]):
+                for j in range(0, obs_size_plan[1]):
+                    x, y = self.convert_int_position([obs[0], obs[1]])
+                    x = np.clip(x+i, 0, self.width-1)
+                    y = np.clip(y+j, 0, self.height-1)
+                    self.obs_map_plan[y, x] = 1
+
+        
+
+        return self.get_reference_path() 
 
     def reset_dynamic_map(self, n=1):
         self.obs_cars.clear()
