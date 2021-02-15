@@ -178,38 +178,94 @@ def train_time_sweep():
     load = False
     config = load_config(config_med)
 
-    agent_name = "ModTime_test_04"
+    # agent_name = "ModTime_test_04"
+    # vehicle = ModVehicleTrain(config, agent_name, load)
+    # reward = TimeReward(config, 0.04)
+
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+
+    # agent_name = "ModTime_test_06"
+    # vehicle = ModVehicleTrain(config, agent_name, load)
+    # reward = TimeReward(config, 0.06)
+
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    # agent_name = "ModTime_test_08"
+    # vehicle = ModVehicleTrain(config, agent_name, load)
+    # reward = TimeReward(config, 0.08)
+
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    # agent_name = "ModTime_test_10"
+    # vehicle = ModVehicleTrain(config, agent_name, load)
+    # reward = TimeReward(config, 0.1)
+
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    # agent_name = "ModTime_test_15"
+    # vehicle = ModVehicleTrain(config, agent_name, load)
+    # reward = TimeReward(config, 0.15)
+
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_test_18"
     vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.04)
+    reward = TimeReward(config, 0.18)
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
+    agent_name = "ModTime_test_20"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.20)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_test_25"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.25)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+def test_time_sweep():
+    config = load_config(config_med)
+
+    test = TestVehicles(config, "test_time_sweep")
+
+    # mod
+    agent_name = "ModTime_test_04"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
     agent_name = "ModTime_test_06"
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.06)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
     agent_name = "ModTime_test_08"
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.08)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
     agent_name = "ModTime_test_10"
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.1)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
     agent_name = "ModTime_test_15"
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.15)
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    agent_name = "ModTime_test_18"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
 
-# def test_time_sweep():
+    agent_name = "ModTime_test_20"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModTime_test_25"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100, False)
 
 
 def train():
@@ -222,13 +278,14 @@ def train():
     # train_mod_cth()
     # train_mod_time()
 
-    train_time_sweep()
+    # train_time_sweep()
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
+    test_time_sweep()
 # 
 
