@@ -27,8 +27,10 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     t_his = TrainHistory(agent_name)
     print_n = 500
 
-    done, state = False, env.reset()
-    wpts = vehicle.init_agent(env_map)
+    done = False
+    state, wpts, vs = env.reset()
+    vehicle.init_agent(env_map)
+    reward.init_reward(wpts, vs)
 
     for n in range(steps):
         a = vehicle.act(state)
@@ -48,12 +50,13 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
             vehicle.agent.save(directory=path)
         
         if done:
-            t_his.lap_done()
+            t_his.lap_done(True)
             # vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
-            state = env.reset()
+            state, wpts, vs = env.reset()
+            reward.init_reward(wpts, vs)
 
 
     vehicle.agent.save(directory=path)
@@ -63,7 +66,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
 
     return t_his.rewards
 
-
+    
 """Testing Function"""
 class TestData:
     def __init__(self) -> None:

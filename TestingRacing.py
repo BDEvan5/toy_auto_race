@@ -174,25 +174,61 @@ def test_compare_std():
     test.run_eval(10, True)
 
 """Time sweep"""
+def train_time_sweep():
+    load = False
+    config = load_config(config_med)
+
+    agent_name = "ModTime_test_04"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.04)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 
+    agent_name = "ModTime_test_06"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.06)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_test_08"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.08)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_test_10"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.1)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+    agent_name = "ModTime_test_15"
+    vehicle = ModVehicleTrain(config, agent_name, load)
+    reward = TimeReward(config, 0.15)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+# def test_time_sweep():
 
 
 def train():
     pass
     # train_gen_std()
-    train_gen_steer()
+    # train_gen_steer()
     # train_gen_cth()
 
     # train_mod_std()
     # train_mod_cth()
     # train_mod_time()
 
+    train_time_sweep()
+
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
-    test_compare_mod()
+    # test_compare_mod()
 # 
 

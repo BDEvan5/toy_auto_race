@@ -1,6 +1,5 @@
 from Testing import TestVehicles
 import numpy as np
-import matplotlib.pyplot as plt
 from HistoryStructs import RewardAnalyser, TrainHistory
 
 import timeit
@@ -8,7 +7,7 @@ import yaml
 
 from Simulator import ForestSim
 from SimMaps import  ForestMap
-from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
+from ModelsRL import  ReplayBufferTD3
 import LibFunctions as lib
 from LibFunctions import load_config
 from Rewards import *
