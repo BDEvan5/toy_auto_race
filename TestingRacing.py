@@ -124,9 +124,9 @@ def test_compare():
     vehicle = TunerCar(config)
     test.add_vehicle(vehicle)
 
+
+
     test.run_eval(100, True)
-
-
 
     test.run_eval(10, True)
 
@@ -172,6 +172,8 @@ def test_compare_std():
 
 
     test.run_eval(10, True)
+
+"""Time sweep"""
 
 
 

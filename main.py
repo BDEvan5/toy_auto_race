@@ -14,82 +14,16 @@ from LibFunctions import load_config
 from Rewards import *
 
 from AgentOptimal import OptimalAgent, TunerCar
-from AgentMPC import AgentMPC
+
 from AgentMod import ModVehicleTest, ModVehicleTrain
 from RefGen import GenVehicle, GenTest
 
-names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
-name = names[5]
-myMap = 'TrackMap1000'
-forest_name = 'forest'
-bfg = 'BigForest'
 
 config_sf = "small_forest"
 config_std = "std_config"
 config_med = "med_forest"
 
 
-
-
-def RunOptimalAgent():
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
-
-    config = lib.load_config("std_config")
-
-
-    env_map = ForestMap(config)
-    env = ForestSim(env_map)
-
-    # agent = OptimalAgent()
-    agent = TunerCar(config)
-    ra = RewardAnalyser()
-
-    done, state, score = False, env.reset(), 0.0
-    wpts = agent.init_agent(env_map)
-    env.render(wait=False)
-    # env.render(True, wpts)
-    while not done:
-        action = agent.act(state)
-        s_p, r, done, _ = env.step(action)
-        score += r
-
-        state = s_p
-
-
-        # env.render(True, wpts)
-        # env.env_map.render_map(4, True)
-        # env.render(False)
-
-    print(f"Score: {score}")
-    ra.show_rewards()
-    env.history.show_history(vs=env_map.vs)
-    env.history.show_forces()
-    env.render(wait=True)
-
-def RunMpcAgent():
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
-
-    agent = AgentMPC()
-
-    done, state, score = False, env.reset(), 0.0
-    wpts = agent.init_agent(env_map)
-    # env.render(wait=True)
-    # env.render(True, wpts)
-    while not done:
-        action, pts, t, cwpts = agent.act(state)
-        s_p, r, done, _ = env.step(action, dt=t)
-        score += r
-        state = s_p
-
-        # env.render(True, wpts)
-        # env.env_map.render_map(4, True)
-        env.render(True, pts1=pts, pts2=cwpts)
-
-    print(f"Score: {score}")
-    # env.show_history()
-    env.render(wait=True)
 
 
 
@@ -329,19 +263,6 @@ def test_compare():
 
     test.run_eval(100, True)
 
-
-# Development functions
-
-def test_mapping():
-    env_map = ForestMap(forest_name)
-    env = ForestSim(env_map)
-
-    for i in range(100):
-        env.reset()
-        env_map.get_optimal_path()
-        env.render(wait=False)
-        env_map.get_velocity()
-        env.render(wait=True)
         
 
 def timing():
