@@ -1,0 +1,25 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModSteer_test_004_004
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 25.3
+-----------------------------------------------------
+Vehicle: ModSteer_test_008_008
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 19.5
+-----------------------------------------------------
+Vehicle: ModSteer_test_015_015
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 17.1
+-----------------------------------------------------
+Vehicle: ModSteer_test_02_02
+Crashes: 3.0 --> Completes 7.0
+% Finished = 70.00
+Avg lap times: 23.857142857142858
+-----------------------------------------------------

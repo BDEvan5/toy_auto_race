@@ -290,8 +290,8 @@ if __name__ == "__main__":
     # test_mod_time_sweep_m2()
     # test_mod_time_sweep_mt()
 
-    test_Gen()
-    # test_Mod()
+    # test_Gen()
+    test_Mod()
     # testOptimal()
     # test_compare()
 

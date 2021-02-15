@@ -258,7 +258,7 @@ def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0
 
 
 class ModVehicleTrain(BaseMod):
-    def __init__(self, config, name, load):
+    def __init__(self, config, name, load=False):
         BaseMod.__init__(self, config, name)
 
         self.current_v_ref = None

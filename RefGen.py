@@ -106,7 +106,7 @@ class BaseGenAgent:
 
 
 class GenVehicle(BaseGenAgent):
-    def __init__(self, config, name, load):
+    def __init__(self, config, name, load=False):
         BaseGenAgent.__init__(self, config, name)
 
         state_space = 3 + self.n_beams
