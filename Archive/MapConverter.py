@@ -557,7 +557,7 @@ class MapConverter(MapBase):
 
 def forest_gen():
     # f = ForestGenerator("BigForest")
-    f = ForestGenerator("small_forest", 10, 6)
+    f = ForestGenerator("med_forest", 16, 6)
     f.save_map()
 
 forest_gen()

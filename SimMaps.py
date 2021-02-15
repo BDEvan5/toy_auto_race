@@ -341,8 +341,8 @@ class ForestMap(MapBase):
         x, y = self.convert_int_position(np.array(obs_size)*1.2)
         obs_size_plan = [x, y]
         
-        
-        tys = np.linspace(obs_buf, length - obs_buf - obs_size[1], n)
+        y_lim = length - obs_buf - obs_size[1] - 1
+        tys = np.linspace(obs_buf, y_lim, n)
         # txs = np.random.normal(xlim, 0.6, size=n)
         txs = np.random.uniform(1, xlim, size=n)
         # txs = np.clip(txs, 0, 4)

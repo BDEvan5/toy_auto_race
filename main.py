@@ -26,6 +26,7 @@ bfg = 'BigForest'
 
 config_sf = "small_forest"
 config_std = "std_config"
+config_med = "med_forest"
 
 
 
@@ -191,68 +192,69 @@ def testVehicle(config, vehicle, show=False, laps=100):
 
 
 """ Training sets"""
-def train_gen_std():
+def train_gen_time():
     load = False
 
-    agent_name = "GenStd_test"
-    config = load_config(config_sf)
+    agent_name = "GenTime_test"
+    config = load_config(config_med)
     vehicle = GenVehicle(config, agent_name, load)
-    reward = StdNavReward(config, -0.02, 0.2, 0)
-    # reward = StdNavReward(config, 0, 0.2, 0)
+    reward = TimeReward(config, 0.06)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_gen_cth():
     load = False
 
     agent_name = "GenCth_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = GenVehicle(config, agent_name, load)
-    reward = CrossTrackHeadingReward(config, 0.5, 1, 0.1)
+    reward = CthReward(config, 0.4, 0.04)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_gen_steer():
     load = False
 
-    agent_name = "GenSteer_02_02_02"
-    config = load_config("std_config")
+    agent_name = "GenSteer_test"
+    config = load_config(config_med)
     vehicle = GenVehicle(config, agent_name, load)
-    reward = OnlineSteering(config, 0.2, 0.2, 0.2)
+    reward = SteerReward(config, 0.1, 0.1)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 """Mod training"""
-def train_mod_std():
+def train_mod_steer():
     load = False
 
-    agent_name = "ModStd_test"
-    config = load_config(config_sf)
+    agent_name = "ModSteer_test"
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = ModStdTimeReward(config, 0.4, 0.2, 0)
+    reward = SteerReward(config, 0.1, 0.1)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
     load = False
 
     agent_name = "ModTime_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = ModTimeReward(config, 0.2, 0.2, 0.02)
+    reward = TimeReward(config, 0.06)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_cth():
     load = False
 
     agent_name = "ModCth_test"
-    config = load_config(config_sf)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = ModHeadingReward(config, 1, 1, 1)
+    reward = CthReward(config, 0.4, 0.04)
 
-    TrainVehicle(config, agent_name, vehicle, reward)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
+
+"""Mod param sweeps"""
 def train_mod_time_sweep_mt():
     load = False
     config = load_config(config_sf)
@@ -396,22 +398,24 @@ def test_mod_time_sweep_m1():
 
 """Total functions"""
 def test_Gen():
-    # agent_name = "GenCth_test"
-    agent_name = "GenStd_test"
+    agent_name = "GenCth_test"
+    # agent_name = "GenTime_test"
     # agent_name = "GenSteer_test"
     
 
-    config = load_config("std_config")
+    config = load_config(config_med)
     vehicle = GenTest(config, agent_name)
 
     testVehicle(config, vehicle, True, 10)
     
 def test_Mod():
-    agent_name = "ModStd_test"
+    agent_name = "ModSteer_test"
     # agent_name = "ModCth_test"
-    agent_name = "ModTime_test"
+    # agent_name = "ModTime_test"
     
     config = load_config("std_config")
+    config = load_config(config_med)
+    # config = load_config(config_sf)
     vehicle = ModVehicleTest(config, agent_name)
 
     testVehicle(config, vehicle, True, laps=20)
@@ -419,13 +423,52 @@ def test_Mod():
 
 def testOptimal():
 
-    config = load_config(config_std)
+    # config = load_config(config_std)
+    config = load_config(config_med)
     vehicle = TunerCar(config)
     # vehicle = OptimalAgent(config) # to be deprecated for tuner car
 
     testVehicle(config, vehicle, True, 10)
 
- 
+def test_compare():
+    config = load_config(config_med)
+    # config = load_config(config_std)
+    # test = TestVehicles(config, "test_compare_mod")
+    # test = TestVehicles(config, "test_compare_gen")
+    test = TestVehicles(config, "test_compare")
+
+    # mod
+    agent_name = "ModTime_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModCth_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModSteer_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # gen
+    agent_name = "GenTime_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenCth_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "GenSteer_test"
+    vehicle = GenTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # PP
+    vehicle = TunerCar(config)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(100, True)
+
 
 # Development functions
 
@@ -451,11 +494,11 @@ def timing():
 
 if __name__ == "__main__":
 
-    # train_gen_std()
+    # train_gen_time()
     # train_gen_steer()
     # train_gen_cth()
 
-    # train_mod_std()
+    # train_mod_steer()
     # train_mod_cth()
     # train_mod_time()
 
@@ -466,11 +509,12 @@ if __name__ == "__main__":
 
     # test_mod_time_sweep_m1()
     # test_mod_time_sweep_m2()
-    test_mod_time_sweep_mt()
+    # test_mod_time_sweep_mt()
 
-    # test_Gen()
+    test_Gen()
     # test_Mod()
     # testOptimal()
+    # test_compare()
 
     # timing()
 

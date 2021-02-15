@@ -180,9 +180,9 @@ class TestVehicles(TestData):
         self.save_csv_results()
 
     def run_lap(self, vehicle, env, show=False):
+        state, wpts, vs = env.reset()
         vehicle.init_agent(env.env_map)
         done = False
-        state, wpts, vs = env.reset()
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
