@@ -25,8 +25,6 @@ config_med = "med_forest"
 
 
 
-
-
 """Train"""
 def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     path = 'Vehicles/' + agent_name
@@ -262,6 +260,7 @@ def test_compare():
     test.add_vehicle(vehicle)
 
     test.run_eval(100, True)
+
 
         
 
