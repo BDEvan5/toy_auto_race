@@ -1,6 +1,6 @@
 import numpy as np
 import csv, yaml
-from Rewards import CthReward, TimeReward, SteerReward
+from Rewards import CthReward, SteerRewardTrack, TimeReward, SteerReward, TimeRewardTrack
 
 
 import LibFunctions as lib
@@ -20,28 +20,25 @@ from Testing import TestVehicles, TrainVehicle
 config_sf = "small_forest"
 config_std = "std_config"
 config_med = "med_forest"
+config_rt = "race_track"
 
 
 """Mod training"""
 def train_mod_steer():
-    load = False
-
     agent_name = "ModSteer_test"
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = SteerReward(config, 0.1, 0.1)
+    config = load_config(config_rt)
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = SteerRewardTrack(config, 0.1, 0.1)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
 
 def train_mod_time():
-    load = False
-
     agent_name = "ModTime_test"
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.06)
+    config = load_config(config_rt)
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = TimeRewardTrack(config, 0.12)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
 
 def train_mod_cth():
     load = False
@@ -55,8 +52,8 @@ def train_mod_cth():
 
 def FullTrain():
     config = load_config(config_med)
-    env_name = "medForest"
-    n_train = 40000
+    env_name = "raceTrack"
+    n_train = 6000
 
     agent_name = "ModSteer_"  + env_name
     config = load_config(config_med)
@@ -262,9 +259,6 @@ def train_steer_sweep():
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-
-
-
 def test_time_sweep():
     config = load_config(config_med)
 
@@ -305,7 +299,7 @@ def test_time_sweep():
 
     test.run_eval(100, False)
 
-
+"""Smaller tests"""
 def test_steer_sweep():
     config = load_config(config_med)
 
@@ -345,11 +339,22 @@ def test_ftg():
     test.run_eval(10, True)
     # testVehicle(config, vehicle, True, 10)
 
+def test_mod():
+    config = load_config(config_rt)
+    # agent_name = "ModTime_raceTrack"1
+    agent_name = "ModTime_medForest"
+    # vehicle = ModVehicleTest(config, agent_name)
+    vehicle = TunerCar(config)
+
+    test = TestVehicles(config, "Mod_test", 'track')
+    test.add_vehicle(vehicle)
+    test.run_eval(10, True, add_obs=False)
+
 
 def train():
     pass
 
-    # train_mod_std()
+    train_mod_steer()
     # train_mod_cth()
     # train_mod_time()
 
@@ -358,7 +363,7 @@ def train():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
     # test_compare_mod()
@@ -366,7 +371,8 @@ if __name__ == "__main__":
     # test_steer_sweep()
 
     # FullTrain()
-    FullTest()
+    # FullTest()
 # 
 
     # test_ftg()
+    # test_mod()

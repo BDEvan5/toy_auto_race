@@ -1,8 +1,8 @@
 
 
 from HistoryStructs import TrainHistory
-from Simulator import ForestSim
-from SimMaps import  ForestMap
+from Simulator import ForestSim, TrackSim
+from SimMaps import  ForestMap, SimMap
 
 from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import numpy as np
@@ -14,15 +14,17 @@ import LibFunctions as lib
 
 
 """Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
+def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='forest'):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
+    if env_kwarg == 'forest':
+        env_map = ForestMap(config)
+        env = ForestSim(env_map)
+    else:
+        env_map = SimMap(config)
+        env = TrackSim(env_map)
 
-    env_map = ForestMap(config)
-    env = ForestSim(env_map)
 
     t_his = TrainHistory(agent_name)
     print_n = 500
@@ -145,11 +147,12 @@ class TestData:
 
 
 class TestVehicles(TestData):
-    def __init__(self, config, eval_name) -> None:
+    def __init__(self, config, eval_name, env_kwarg='forest') -> None:
         self.config = config
         self.eval_name = eval_name
         self.vehicle_list = []
         self.N = None
+        self.env_kwarg = env_kwarg
 
         TestData.__init__(self)
 
@@ -160,12 +163,17 @@ class TestVehicles(TestData):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
-        env_map = ForestMap(self.config)
-        env = ForestSim(env_map)    
+        if self.env_kwarg == 'forest':
+            env_map = ForestMap(self.config)
+            env = ForestSim(env_map)    
+        else:
+            env_map = SimMap(self.config)
+            env = TrackSim(env_map)
+
+
+            
 
         for i in range(laps):
-        # if add_obs:
-            # env_map.reset_map()
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 

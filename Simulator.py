@@ -190,6 +190,7 @@ class BaseSim:
     def __init__(self, env_map):
         self.env_map = env_map
         self.config = self.env_map.config
+        self.n_obs = self.config['map']['n_obs']
 
         self.timestep = self.config['sim']['timestep']
         self.eps = 0
@@ -427,7 +428,7 @@ class TrackSim(BaseSim):
 
         return obs, reward, done, None
 
-    def reset(self):
+    def reset(self, add_obs=True):
         self.car.x = self.env_map.start[0]
         self.car.y = self.env_map.start[1]
         self.car.prev_loc = [self.car.x, self.car.y]
@@ -437,7 +438,14 @@ class TrackSim(BaseSim):
 
         #TODO: combine with reset lap that it can be called every lap and do the right thing
 
-        return self.base_reset()
+        if add_obs:
+            wpts, vs = self.env_map.reset_map(self.n_obs)
+        else:
+            wpts, vs = self.env_map.reset_map(0)
+
+        s = self.base_reset()
+
+        return s, wpts, vs
 
 
 class ForestSim(BaseSim):
@@ -471,9 +479,9 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        n_obs = self.config['map']['n_obs']
+        
         if add_obs:
-            wpts, vs = self.env_map.reset_static_map(n_obs)
+            wpts, vs = self.env_map.reset_static_map(self.n_obs)
         else:
             wpts, vs = self.env_map.reset_no_obs()
         s = self.base_reset()

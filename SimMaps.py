@@ -36,7 +36,7 @@ class MapBase:
         self.N = None
 
         self.start = None
-        self.wpts = []
+        self.wpts = None
         self.vs = None
 
         self.height = None
@@ -145,10 +145,13 @@ class SimMap(MapBase):
     get_reference_path
         Returns a min curve reference to follow
     """
-    def __init__(self, map_name):
-        MapBase.__init__(self, map_name)
+    def __init__(self, config):
+        self.config = config
+        self.map_name = config['map']['name']
+        MapBase.__init__(self, self.map_name)
 
         self.end = self.start
+        self.ss = None
 
         # called here before obstacles are added.
         self.redef_shortest_track()
@@ -171,25 +174,61 @@ class SimMap(MapBase):
         deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
         self.wpts = self.track_pts + deviation
 
-        return self.wpts
+        self.vs = Max_velocity(self.wpts, self.config)
 
-    def get_reference_path(self):
-        path_name = 'Maps/' + self.name + "_path.npy"
+        return self.wpts, self.vs
+
+    def load_ref_path(self):
         try:
             # raise Exception
-            path = np.load(path_name)
+            track_data = []
+            filename = 'maps/' + self.map_name + '_opti.csv'
+            
+            with open(filename, 'r') as csvfile:
+                csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+                for lines in csvFile:  
+                    track_data.append(lines)
+
+            track = np.array(track_data)
+            print(f"Track Loaded: {filename}")
+
+            self.N = len(track)
+            self.ss = track[:, 0]
+            self.wpts = track[:, 1:3]
+            self.vs = track[:, 5]
+
             print(f"Path loaded from file: min curve")
         except:
             n_set = MinCurvatureTrajectory(self.track_pts, self.nvecs, self.ws)
             deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
-            path = self.track_pts + deviation
+            self.wpts = self.track_pts + deviation
 
-            np.save(path_name, path)
-            print(f"Path saved: min curve")
+            # self.render_map(4, False)
 
-        self.wpts = path
+            self.vs = Max_velocity(self.wpts, self.config, True)
+            dss, ths = convert_pts_s_th(self.wpts)
+            ss = np.cumsum(dss)
+            ks = np.zeros_like(ths[:, None]) #TODO: add the curvature
 
-        return path
+            track = np.concatenate([ss[:, None], self.wpts[:-1], ths[:, None], ks, self.vs], axis=-1)
+
+            filename = 'maps/' + self.map_name + '_opti.csv'
+
+            with open(filename, 'w') as csvfile:
+                csvwriter = csv.writer(csvfile)
+                csvwriter.writerows(track)
+
+            print(f"Track Saved in File: {filename}")
+            # plt.show()
+
+
+    def get_reference_path(self):
+        if self.wpts is None:
+            self.load_ref_path()
+        
+        return self.wpts, self.vs
+
 
     def reset_map(self, n=10):
         self.obs_map = np.zeros_like(self.obs_map)
@@ -212,7 +251,7 @@ class SimMap(MapBase):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     self.obs_map[y+j, x+i] = 1
 
-        return obs_locs
+        return self.get_reference_path()
 
     def set_true_widths(self):
         nvecs = self.nvecs
@@ -432,6 +471,18 @@ class ForestMap(MapBase):
         plt.pause(0.0001)
         if wait:
             plt.show()
+
+
+def convert_pts_s_th(pts):
+    N = len(pts)
+    s_i = np.zeros(N-1)
+    th_i = np.zeros(N-1)
+    for i in range(N-1):
+        s_i[i] = lib.get_distance(pts[i], pts[i+1])
+        th_i[i] = lib.get_bearing(pts[i], pts[i+1])
+
+    return s_i, th_i
+
 
 
 class CarObs:

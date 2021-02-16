@@ -230,6 +230,8 @@ class MapConverter(MapBase):
         map_file_name = self.yaml_file['image']
         pgm_name = 'maps/' + map_file_name
 
+        #TODO: add png reading
+        #TODO: clean up this so that it can be easily used. Look at one in new sim
 
         with open(pgm_name, 'rb') as f:
             codec = f.readline()

@@ -355,9 +355,11 @@ def Max_velocity(pts, config, show=False):
         plt.figure(1)
         plt.title("Velocity vs dt")
         plt.plot(t, vs)
-        plt.plot(t, dx)
-        plt.plot(t, dy)
-        plt.legend(['v', 'dx', 'dy'])
+        plt.plot(t, th_i)
+        plt.legend(['vs', 'ths'])
+        # plt.plot(t, dx)
+        # plt.plot(t, dy)
+        # plt.legend(['v', 'dx', 'dy'])
         plt.plot(t, np.ones_like(t) * max_v, '--')
 
         plt.figure(2)
@@ -372,15 +374,15 @@ def Max_velocity(pts, config, show=False):
 
         plt.legend(['Flong', "f_lat", "f_t"])
 
-        plt.figure(3)
-        plt.title("Theta vs t")
-        plt.plot(t, th_i)
+        # plt.figure(3)
+        # plt.title("Theta vs t")
+        # plt.plot(t, th_i)
         # plt.plot(t, np.abs(th_i))
 
-        plt.figure(5)
-        plt.title(f"t vs dt")
-        plt.plot(t[1:], dt)
-        plt.plot(t[1:], dt, '+')
+        # plt.figure(5)
+        # plt.title(f"t vs dt")
+        # plt.plot(t[1:], dt)
+        # plt.plot(t[1:], dt, '+')
     
     # plt.figure(9)
     # plt.clf()
