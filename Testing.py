@@ -156,7 +156,7 @@ class TestVehicles(TestData):
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
-    def run_eval(self, laps=100, show=False):
+    def run_eval(self, laps=100, show=False, add_obs=True):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
@@ -169,7 +169,7 @@ class TestVehicles(TestData):
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show)
+                r, steps = self.run_lap(vehicle, env, show, add_obs)
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
                 if r == -1 or r == 0:
@@ -182,15 +182,15 @@ class TestVehicles(TestData):
         self.save_txt_results()
         self.save_csv_results()
 
-    def run_lap(self, vehicle, env, show=False):
-        state, wpts, vs = env.reset()
+    def run_lap(self, vehicle, env, show=False, add_obs=True):
+        state, wpts, vs = env.reset(add_obs)
         vehicle.init_agent(env.env_map)
         done = False
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
             state = s_p
-            env.render(False)
+            # env.render(False)
 
         if show:
             # vehicle.show_vehicle_history()

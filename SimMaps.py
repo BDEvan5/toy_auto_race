@@ -368,6 +368,9 @@ class ForestMap(MapBase):
 
         return self.get_reference_path() 
 
+    def reset_no_obs(self):
+        return self.get_reference_path()
+
     def reset_dynamic_map(self, n=1):
         self.obs_cars.clear()
 

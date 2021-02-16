@@ -462,7 +462,7 @@ class ForestSim(BaseSim):
 
         return obs, reward, done, None
 
-    def reset(self):
+    def reset(self, add_obs=True):
         self.car.x = self.env_map.start[0]
         self.car.y = self.env_map.start[1]
         self.car.prev_loc = [self.car.x, self.car.y]
@@ -472,7 +472,10 @@ class ForestSim(BaseSim):
 
         # self.env_map.reset_dynamic_map(4)
         n_obs = self.config['map']['n_obs']
-        wpts, vs = self.env_map.reset_static_map(n_obs)
+        if add_obs:
+            wpts, vs = self.env_map.reset_static_map(n_obs)
+        else:
+            wpts, vs = self.env_map.reset_no_obs()
         s = self.base_reset()
 
         return s, wpts, vs

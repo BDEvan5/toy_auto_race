@@ -86,7 +86,7 @@ def FullTest():
     # config = load_config(config_std)
 
     env_name = "medForest"
-    test_name = "compare_" + env_name
+    test_name = "compare_" + env_name + "_noObs"
     test = TestVehicles(config, test_name)
 
     # mod
@@ -106,7 +106,11 @@ def FullTest():
     vehicle = TunerCar(config)
     test.add_vehicle(vehicle)
 
-    test.run_eval(1000, True)
+    # FTG
+    vehicle = FollowTheGap(config)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(10, True, add_obs=False)
 
     # test.run_eval(10, True)
 
@@ -129,29 +133,6 @@ def test_compare_mod():
 
     test.run_eval(10, True)
 
-def test_compare_std():
-    config = lib.load_config("std_config")
-    test = TestVehicles(config, 'RaceComparison_t')
-
-    agent_name = "GenStd_0_02_0"
-    agent_name = "GenStd_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "GenCth_1_1_1"
-    agent_name = "GenCth_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "GenSteer_02_02"
-    agent_name = "GenSteer_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-
-
-
-    test.run_eval(10, True)
 
 """Time sweep"""
 def train_time_sweep():
@@ -385,7 +366,7 @@ if __name__ == "__main__":
     # test_steer_sweep()
 
     # FullTrain()
-    # FullTest()
+    FullTest()
 # 
 
-    test_ftg()
+    # test_ftg()
