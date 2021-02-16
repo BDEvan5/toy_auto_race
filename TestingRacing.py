@@ -7,7 +7,7 @@ import LibFunctions as lib
 from LibFunctions import load_config
 
 # from AgentOptimal import OptimalAgent
-from AgentOptimal import TunerCar
+from AgentOptimal import FollowTheGap, TunerCar
 from AgentMod import ModVehicleTest, ModVehicleTrain
 from RefGen import GenTest, GenVehicle
 
@@ -421,6 +421,16 @@ def test_steer_sweep():
 
     test.run_eval(10, False)
 
+def test_ftg():
+    config = load_config(config_med)
+    # vehicle = TunerCar(config)
+    vehicle = FollowTheGap(config)
+
+    test = TestVehicles(config, "FTG")
+    test.add_vehicle(vehicle)
+    test.run_eval(10, True)
+    # testVehicle(config, vehicle, True, 10)
+
 
 def train():
     pass
@@ -444,7 +454,8 @@ if __name__ == "__main__":
     # test_time_sweep()
     # test_steer_sweep()
 
-    FullTrain()
-    FullTest()
+    # FullTrain()
+    # FullTest()
 # 
 
+    test_ftg()

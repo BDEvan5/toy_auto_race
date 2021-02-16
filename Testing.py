@@ -66,7 +66,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
 
     return t_his.rewards
 
-    
+
 """Testing Function"""
 class TestData:
     def __init__(self) -> None:
@@ -190,12 +190,12 @@ class TestVehicles(TestData):
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
             state = s_p
-            # env.render(False, wpts)
+            env.render(False)
 
         if show:
             # vehicle.show_vehicle_history()
             # env.show_history()
-            env.history.show_history()
+            # env.history.show_history()
             env.render(wait=False)
             # env.render(wait=True)
 
