@@ -1,5 +1,6 @@
 
 
+from matplotlib import pyplot as plt
 from HistoryStructs import TrainHistory
 from Simulator import ForestSim, TrackSim
 from SimMaps import  ForestMap, SimMap
@@ -159,7 +160,7 @@ class TestVehicles(TestData):
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
-    def run_eval(self, laps=100, show=False, add_obs=True):
+    def run_eval(self, laps=100, show=False, add_obs=True, save=False):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
@@ -170,14 +171,21 @@ class TestVehicles(TestData):
             env_map = SimMap(self.config)
             env = TrackSim(env_map)
 
+        path = 'Evals/imgs/'
 
-            
 
         for i in range(laps):
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
                 r, steps = self.run_lap(vehicle, env, show, add_obs)
+                
+                if save:
+                    plt.figure(4)
+                    plt.title(vehicle.name)
+                    plt.savefig(path + f"lap_{i}_{vehicle.name}")
+
+                
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
                 if r == -1 or r == 0:

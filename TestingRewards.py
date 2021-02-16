@@ -83,7 +83,7 @@ def FullTest():
     # config = load_config(config_std)
 
     env_name = "medForest"
-    test_name = "compare_" + env_name + "_noObs"
+    test_name = "compare_" + env_name + "_1"
     test = TestVehicles(config, test_name)
 
     # mod
@@ -107,7 +107,8 @@ def FullTest():
     vehicle = FollowTheGap(config)
     test.add_vehicle(vehicle)
 
-    test.run_eval(10, True, add_obs=False)
+    # test.run_eval(10, True, add_obs=False)
+    test.run_eval(10, True, add_obs=True, save=True)
 
     # test.run_eval(10, True)
 
@@ -363,7 +364,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
@@ -371,7 +372,7 @@ if __name__ == "__main__":
     # test_steer_sweep()
 
     # FullTrain()
-    # FullTest()
+    FullTest()
 # 
 
     # test_ftg()

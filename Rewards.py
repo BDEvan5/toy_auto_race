@@ -120,12 +120,9 @@ class TimeReward:
 
             return new_r + r + shaped_r
 
-# track rewards
-class TimeRewardTrack:
-    def __init__(self, config, mt) -> None:
-        self.mt = mt 
-        self.dis_scale = config['lims']["dis_scale"]
-        self.max_steer = config['lims']['max_steer']
+
+class TrackRewardBase:
+    def __init__(self) -> None:
         self.wpts = None
         self.ss = None
 
@@ -167,6 +164,15 @@ class TimeRewardTrack:
 
         return shaped_r
 
+
+# track rewards
+class TimeRewardTrack(TrackRewardBase):
+    def __init__(self, config, mt) -> None:
+        TrackRewardBase.__init__(self)
+        self.mt = mt 
+        self.dis_scale = config['lims']["dis_scale"]
+        self.max_steer = config['lims']['max_steer']
+        
     def __call__(self, s, a, s_p, r) -> float:
         if r == -1:
             return -1
@@ -176,54 +182,15 @@ class TimeRewardTrack:
 
             return ret_r
 
-class SteerRewardTrack:
+class SteerRewardTrack(TrackRewardBase):
     def __init__(self, config, mv, ms) -> None:
+        TrackRewardBase.__init__(self)
         self.max_steer = config['lims']['max_steer']
         self.max_v = config['lims']['max_v']
         self.mv = mv 
         self.ms = ms 
 
-        self.wpts = None
-        self.ss = None
-
-    def init_reward(self, pts, vs):
-        self.wpts = pts
-
-        N = len(pts)
-        ss = np.array([lib.get_distance(pts[i], pts[i+1]) for i in range(N-1)])
-        self.ss = np.cumsum(ss)
-
-        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
-        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
-
-
-    def find_s(self, point):
-        dots = np.empty((self.wpts.shape[0]-1, ))
-        for i in range(dots.shape[0]):
-            dots[i] = np.dot((point - self.wpts[i, :]), self.diffs[i, :])
-        t = dots / self.l2s
-
-        t = np.clip(dots / self.l2s, 0.0, 1.0)
-        projections = self.wpts[:-1,:] + (t*self.diffs.T).T
-        dists = np.linalg.norm(point - projections, axis=1)
-
-        min_dist_segment = np.argmin(dists)
-        dist_from_cur_pt = dists[min_dist_segment]
-        if dist_from_cur_pt > 1: #more than 2m from centerline
-            return self.ss[min_dist_segment] - dist_from_cur_pt # big makes it go back
-
-        s = self.ss[min_dist_segment] + dist_from_cur_pt
-
-        return s 
-
-    def get_shpaed_r(self, pt1, pt2):
-        s = self.find_s(pt1)
-        ss = self.find_s(pt2)
-        ds = np.clip(ss - s, -0.5, 0.5)
-        shaped_r = 0.2 * ds
-
-        return shaped_r
-        
+            
     def __call__(self, s, a, s_p, r, time=0) -> float:
         if r == -1:
             return r
@@ -236,6 +203,14 @@ class SteerRewardTrack:
             new_r = self.mv * vel - self.ms * steer 
 
             return new_r + shaped_r 
+
+# class DeviationReward(TrackRewardBase):
+#     def __init__(self) -> None:
+#         TrackRewardBase.__init__(self)
+
+#     def __call__(self, s, a, s_p, r):
+
+
 
 
 class CthRewardTrack:
