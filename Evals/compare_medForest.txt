@@ -1,0 +1,40 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModTime_medForest
+Crashes: 6.0 --> Completes 994.0
+% Finished = 99.40
+Avg lap times: 19.58148893360161
+-----------------------------------------------------
+Vehicle: ModCth_medForest
+Crashes: 60.0 --> Completes 940.0
+% Finished = 94.00
+Avg lap times: 24.393617021276597
+-----------------------------------------------------
+Vehicle: ModSteer_medForest
+Crashes: 5.0 --> Completes 995.0
+% Finished = 99.50
+Avg lap times: 21.46633165829146
+-----------------------------------------------------
+Vehicle: GenTime_medForest
+Crashes: 285.0 --> Completes 715.0
+% Finished = 71.50
+Avg lap times: 13.696503496503496
+-----------------------------------------------------
+Vehicle: GenCth_medForest
+Crashes: 559.0 --> Completes 441.0
+% Finished = 44.10
+Avg lap times: 16.569160997732425
+-----------------------------------------------------
+Vehicle: GenSteer_medForest
+Crashes: 401.0 --> Completes 599.0
+% Finished = 59.90
+Avg lap times: 15.353923205342237
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 90.0 --> Completes 910.0
+% Finished = 91.00
+Avg lap times: 15.82857142857143
+-----------------------------------------------------

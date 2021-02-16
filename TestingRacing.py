@@ -122,7 +122,7 @@ def FullTrain():
     agent_name = "ModTime_" + env_name
     config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TimeReward(config, 0.06)
+    reward = TimeReward(config, 0.12)
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train)
 
@@ -135,7 +135,7 @@ def FullTrain():
 
 
 """Tests """
-def test_compare():
+def FullTest():
     config = load_config(config_med)
     # config = load_config(config_std)
 
@@ -442,6 +442,9 @@ if __name__ == "__main__":
     # test_compare()
     # test_compare_mod()
     # test_time_sweep()
-    test_steer_sweep()
+    # test_steer_sweep()
+
+    FullTrain()
+    FullTest()
 # 
 
