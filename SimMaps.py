@@ -80,8 +80,8 @@ class SimMap:
         self.map_img = np.ones_like(self.map_img) - self.map_img
 
 
-        self.obs_map = np.zeros_like(self.map_img)
-        self.obs_map_plan = np.zeros_like(self.map_img)
+        self.obs_img = np.zeros_like(self.map_img)
+        self.obs_img_plan = np.zeros_like(self.map_img)
 
         self.width = self.map_img.shape[1]
         self.height = self.map_img.shape[0]
@@ -131,10 +131,10 @@ class SimMap:
         tx, ty = self.convert_positions(self.targets)
         plt.plot(tx, ty, 'o')
 
-        if self.obs_map is None:
+        if self.obs_img is None:
             plt.imshow(self.map_img, origin='lower')
         else:
-            plt.imshow(self.obs_map + self.map_img, origin='lower')
+            plt.imshow(self.obs_img + self.map_img, origin='lower')
 
         plt.gca().set_aspect('equal', 'datalim')
 
@@ -174,19 +174,18 @@ class SimMap:
         obs_size = [self.width/600, self.height/600]
         # obs_size = [0.3, 0.3]
         # obs_size = [1, 1]
-        x, y = self.xy_to_row_column(obs_size)
-        obs_size = [x, y]
-    
+        obs_size = np.array(obs_size) / self.resolution
+
         rands = np.random.randint(1, self.N-1, n)
         obs_locs = []
         for i in range(n):
-            pt = self.track_pts[rands[i]][:, None]
+            pt = self.wpts[rands[i]][:, None]
             obs_locs.append(pt[:, 0])
 
         for obs in obs_locs:
-            for i in range(0, obs_size[0]):
-                for j in range(0, obs_size[1]):
-                    x, y = self.convert_int_position([obs[0], obs[1]])
+            for i in range(0, int(obs_size[0])):
+                for j in range(0, int(obs_size[1])):
+                    x, y = self.xy_to_row_column([obs[0], obs[1]])
                     self.obs_img[y+j, x+i] = 1
 
         return self.get_reference_path()
@@ -226,7 +225,7 @@ class MapBase:
         self.name = map_name
 
         self.map_img = None
-        self.obs_map = None
+        self.obs_img = None
 
         self.track_pts = None
         self.nvecs = None
@@ -292,8 +291,8 @@ class MapBase:
         # plt.show()
 
         # self.map_img = np.load(f'Maps/{self.name}.npy')
-        self.obs_map = np.zeros_like(self.map_img)
-        self.obs_map_plan = np.zeros_like(self.map_img)
+        self.obs_img = np.zeros_like(self.map_img)
+        self.obs_img_plan = np.zeros_like(self.map_img)
 
         self.width = self.map_img.shape[1]
         self.height = self.map_img.shape[0]
@@ -329,7 +328,7 @@ class MapBase:
 
         if self.map_img[y, x]:
             return True
-        if self.obs_map[y, x]:
+        if self.obs_img[y, x]:
             return True
         return False
 
@@ -342,7 +341,7 @@ class MapBase:
 
         if self.map_img[y, x]:
             return True
-        if self.obs_map_plan[y, x]:
+        if self.obs_img_plan[y, x]:
             return True
         return False
 
@@ -456,7 +455,7 @@ class SimMap2(MapBase):
 
 
     def reset_map(self, n=10):
-        self.obs_map = np.zeros_like(self.obs_map)
+        self.obs_img = np.zeros_like(self.obs_img)
 
         obs_size = [self.width/600, self.height/600]
         # obs_size = [0.3, 0.3]
@@ -474,7 +473,7 @@ class SimMap2(MapBase):
             for i in range(0, obs_size[0]):
                 for j in range(0, obs_size[1]):
                     x, y = self.convert_int_position([obs[0], obs[1]])
-                    self.obs_map[y+j, x+i] = 1
+                    self.obs_img[y+j, x+i] = 1
 
         return self.get_reference_path()
 
@@ -547,10 +546,10 @@ class SimMap2(MapBase):
                 ys.append(y)
             plt.plot(xs, ys, '--', linewidth=2)
 
-        if self.obs_map is None:
+        if self.obs_img is None:
             plt.imshow(self.map_img)
         else:
-            plt.imshow(self.obs_map + self.map_img)
+            plt.imshow(self.obs_img + self.map_img)
 
         plt.gca().set_aspect('equal', 'datalim')
 
@@ -590,8 +589,8 @@ class ForestMap(MapBase):
         map_name = config['map']['name']
         MapBase.__init__(self, map_name)
 
-        # self.obs_map = np.zeros_like(self.map_img)
-        # self.obs_map = np.zeros_like(self.map_img)
+        # self.obs_img = np.zeros_like(self.map_img)
+        # self.obs_img = np.zeros_like(self.map_img)
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
 
@@ -614,7 +613,7 @@ class ForestMap(MapBase):
         return self.wpts, self.vs
 
     def reset_static_map(self, n=6):
-        self.obs_map = np.zeros_like(self.obs_map)
+        self.obs_img = np.zeros_like(self.obs_img)
         length = self.height * self.resolution
         width = self.width * self.resolution
         obs_buf = self.config['map']['obs_buf']
@@ -642,7 +641,7 @@ class ForestMap(MapBase):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.width-1)
                     y = np.clip(y+j, 0, self.height-1)
-                    self.obs_map[y, x] = 1
+                    self.obs_img[y, x] = 1
 
         for obs in obs_locs:
             for i in range(0, obs_size_plan[0]):
@@ -650,7 +649,7 @@ class ForestMap(MapBase):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.width-1)
                     y = np.clip(y+j, 0, self.height-1)
-                    self.obs_map_plan[y, x] = 1
+                    self.obs_img_plan[y, x] = 1
 
         
 
@@ -676,7 +675,7 @@ class ForestMap(MapBase):
         for car in self.obs_cars:
             car.update_pos(dt)
 
-        self.obs_map = np.zeros_like(self.obs_map)
+        self.obs_img = np.zeros_like(self.obs_img)
 
         car_size = [1, 1.5]
         x, y = self.convert_int_position(car_size)
@@ -689,7 +688,7 @@ class ForestMap(MapBase):
                     x, y = self.convert_int_position([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.width-1)
                     y = np.clip(y+j, 0, self.height-1)
-                    self.obs_map[y, x] = 1
+                    self.obs_img[y, x] = 1
 
 
     def render_map(self, figure_n=1, wait=False):
@@ -708,10 +707,10 @@ class ForestMap(MapBase):
                 ys.append(y)
             plt.plot(xs, ys, '--', color='g', linewidth=2)
 
-        if self.obs_map is None:
+        if self.obs_img is None:
             plt.imshow(self.map_img)
         else:
-            plt.imshow(self.obs_map + self.map_img)
+            plt.imshow(self.obs_img + self.map_img)
 
         # plt.gca().set_aspect('equal', 'datalim')
         x, y = self.convert_position(self.end)

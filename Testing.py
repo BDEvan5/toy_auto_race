@@ -31,7 +31,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
     print_n = 500
 
     done = False
-    state, wpts, vs = env.reset()
+    state, wpts, vs = env.reset(add_obs=False)
     vehicle.init_agent(env_map)
     reward.init_reward(wpts, vs)
 
@@ -58,7 +58,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
-            state, wpts, vs = env.reset()
+            state, wpts, vs = env.reset(add_obs=False)
             reward.init_reward(wpts, vs)
 
 

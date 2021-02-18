@@ -42,7 +42,6 @@ class BaseMod:
 
     def init_agent(self, env_map):
         self.env_map = env_map
-        self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
         self.scan_sim.set_check_fcn(self.env_map.check_scan_location)
 
 
@@ -51,13 +50,14 @@ class BaseMod:
     def _get_current_waypoint(self, position):
         nearest_pt, nearest_dist, t, i = self.nearest_pt(position)
 
-        if nearest_dist < self.lookahead:
-            lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
-            if i2 == None:
-                return None
-            i = i2
-        elif nearest_dist < 20:
-            return np.append(self.wpts[i], self.vs[i])
+        # if nearest_dist < self.lookahead:
+        #     lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
+        #     if i2 == None:
+        #         return None
+        #     i = i2
+        # elif nearest_dist < 20:
+        #     return np.append(self.wpts[i], self.vs[i])
+        return np.append(self.wpts[i], self.vs[i])
 
     def act_pp(self, obs):
         pose_th = obs[2]
@@ -67,6 +67,7 @@ class BaseMod:
 
         if lookahead_point is None:
             return 4.0, 0.0
+        self.env_map.targets.append(lookahead_point[0:2])
 
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed

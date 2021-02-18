@@ -224,7 +224,7 @@ class TunerCar:
     def get_actuation(self, pose_theta, lookahead_point, position):
         waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
         
-        print(f"Wpt_y: {waypoint_y} --> pos: {position} --> lookahead: {lookahead_point}")
+        # print(f"Wpt_y: {waypoint_y} --> pos: {position} --> lookahead: {lookahead_point}")
 
         speed = lookahead_point[2]
         if np.abs(waypoint_y) < 1e-6:
@@ -335,6 +335,7 @@ class FollowTheGap:
     def __init__(self, config):
         self.name = "Follow The Gap"
         self.config = config
+        self.env_map = None
         self.map = None
         self.cur_scan = None
         self.cur_odom = None
@@ -355,6 +356,7 @@ class FollowTheGap:
         
     def init_agent(self, env_map):
         self.scan_sim.set_check_fcn(env_map.check_scan_location)
+        self.env_map = env_map
 
 
     def act(self, obs):
@@ -375,7 +377,12 @@ class FollowTheGap:
         half_pt = len(ranges) /2
         steering_angle =  angle_increment * (aim - half_pt)
 
-        speed = self.max_speed * ranges[aim] / max_range * 0.8
+        val = ranges[aim] * 4
+        th = lib.add_angles_complex(obs[2], steering_angle)
+        pt = lib.theta_to_xy(th) * val
+        self.env_map.targets.append(pt)
+
+        speed = self.max_speed * ranges[aim] / max_range * 0.5
         steering_angle = self.limit_inputs(speed, steering_angle)
 
         return np.array([speed, steering_angle])

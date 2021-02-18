@@ -96,7 +96,7 @@ def theta_to_xy(theta):
     x = np.sin(theta)
     y = np.cos(theta)
 
-    return [x, y]
+    return np.array([x, y])
 
 def get_rands(a=100, b=0):
     r = [np.random.random() * a + b, np.random.random() * a + b]

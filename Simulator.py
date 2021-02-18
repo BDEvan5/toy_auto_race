@@ -246,6 +246,7 @@ class BaseSim:
         self.done_reason = "Null"
         self.action_memory = []
         self.steps = 0
+        self.env_map.targets = []
         
         self.eps += 1
 
@@ -284,7 +285,7 @@ class BaseSim:
 
         # check for turn around.
         near_idx = self.env_map.find_nearest_pt(car)
-        # if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi:
+        # if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi*1.8:
         #     self.done = True
         #     self.done_reason = f"Turned around"
         #     self.reward = -1
