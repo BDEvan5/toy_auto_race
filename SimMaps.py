@@ -28,6 +28,8 @@ class SimMap:
         self.diffs = None
         self.l2s = None
 
+        self.targets = []
+
         self.load_map()
 
     def load_map(self):
@@ -72,10 +74,11 @@ class SimMap:
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         self.map_img = self.map_img[:, :, 0] / 255
         
-        self.map_img = np.ones_like(self.map_img) - self.map_img
-
         self.dt = ndimage.distance_transform_edt(self.map_img) 
         self.dt = np.array(self.dt *self.resolution)
+
+        self.map_img = np.ones_like(self.map_img) - self.map_img
+
 
         self.obs_map = np.zeros_like(self.map_img)
         self.obs_map_plan = np.zeros_like(self.map_img)
@@ -125,10 +128,13 @@ class SimMap:
         cx, cy = self.convert_positions(self.wpts)
         plt.plot(cx, cy, '--', linewidth=1)
 
+        tx, ty = self.convert_positions(self.targets)
+        plt.plot(tx, ty, 'o')
+
         if self.obs_map is None:
-            plt.imshow(self.map_img)
+            plt.imshow(self.map_img, origin='lower')
         else:
-            plt.imshow(self.obs_map + self.map_img)
+            plt.imshow(self.obs_map + self.map_img, origin='lower')
 
         plt.gca().set_aspect('equal', 'datalim')
 
@@ -146,7 +152,9 @@ class SimMap:
         c, r = self.xy_to_row_column(pt)
         if abs(c) > self.width -2 or abs(r) > self.height -2:
             return True
-        val = self.dt[c, r]
+        val = self.dt[r, c]
+        # plt.imshow(self.dt)
+        # plt.show()
         if val < 0.05:
             return True
         return False

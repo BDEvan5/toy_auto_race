@@ -194,6 +194,8 @@ class TunerCar:
         if lookahead_point is None:
             return 4.0, 0.0
 
+        self.env_map.targets.append(lookahead_point[0:2])
+
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed
 
@@ -222,6 +224,8 @@ class TunerCar:
     def get_actuation(self, pose_theta, lookahead_point, position):
         waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
         
+        print(f"Wpt_y: {waypoint_y} --> pos: {position} --> lookahead: {lookahead_point}")
+
         speed = lookahead_point[2]
         if np.abs(waypoint_y) < 1e-6:
             return speed, 0.
