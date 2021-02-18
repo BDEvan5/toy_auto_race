@@ -1,6 +1,6 @@
 import numpy as np
 import csv, yaml
-from Rewards import CthReward, SteerRewardTrack, TimeReward, SteerReward, TimeRewardTrack
+from Rewards import CthReward, SteerRewardTrack, TimeReward, SteerReward, TimeRewardTrack, TrackDevReward
 
 
 import LibFunctions as lib
@@ -52,6 +52,16 @@ def train_mod_cth():
     reward = CthReward(config, 0.4, 0.04)
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+
+def train_mod_dev():
+    agent_name = "ModDev_test_rt"
+    config = load_config(config_rt)
+    vehicle = ModVehicleTrain(config, agent_name)
+
+    reward = TrackDevReward(config)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
 
 
 """Tests """
@@ -307,16 +317,18 @@ def test_mod():
 def train():
     pass
 
-    train_mod_steer()
+    # train_mod_steer()
     # train_mod_cth()
     # train_mod_time()
+
+    train_mod_dev()
 
     # train_time_sweep()
     # train_steer_sweep()
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
     # test_compare_mod()
@@ -327,5 +339,5 @@ if __name__ == "__main__":
     # FullTest()
 
 
-    test_ftg()
+    # test_ftg()
     # test_mod()

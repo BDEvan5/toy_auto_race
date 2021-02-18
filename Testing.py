@@ -39,7 +39,8 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
-        new_r = reward(state, a, s_prime, r)
+        deviation = vehicle.get_deviation()
+        new_r = reward(state, a, s_prime, r, deviation)
         vehicle.add_memory_entry(new_r, done, s_prime, buffer)
         t_his.add_step_data(new_r)
 

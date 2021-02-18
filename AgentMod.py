@@ -301,6 +301,8 @@ class ModVehicleTrain(BaseMod):
 
         buffer.add(mem_entry)
 
+    def get_deviation(self):
+        return self.cur_nn_act[0]
 
 
 class ModVehicleTest(BaseMod):

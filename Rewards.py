@@ -166,6 +166,22 @@ class TrackRewardBase:
 
         return shaped_r
 
+class TrackDevReward(TrackRewardBase):
+    def __init__(self, config) -> None:
+        TrackRewardBase.__init__(self)
+        self.dis_scale = config['lims']["dis_scale"]
+        self.max_steer = config['lims']['max_steer']
+
+    def __call__(self, s, a, s_p, r, dev):
+        if r == -1:
+            return -1
+        else:
+            beta = 0.2
+            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+            ret_r = shaped_r - beta * abs(dev)
+            # ret_r = 0.2 - 0.2 * abs(dev)
+
+            return ret_r
 
 # track rewards
 class TimeRewardTrack(TrackRewardBase):
