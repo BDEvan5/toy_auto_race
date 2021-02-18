@@ -25,18 +25,18 @@ config_rt = "race_track"
 
 """Mod training"""
 def train_mod_steer():
-    # agent_name = "ModSteer_test"
-    agent_name = "ModSteer_test_01_01"
-    config = load_config(config_med)
-    # config = load_config(config_rt)
+    agent_name = "ModSteer_test_rt"
+    # agent_name = "ModSteer_test_01_01"
+    # config = load_config(config_med)
+    config = load_config(config_rt)
     vehicle = ModVehicleTrain(config, agent_name)
     reward = SteerRewardTrack(config, 0.1, 0.1)
 
-    # TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
-    agent_name = "ModTime_test"
+    agent_name = "ModTime_test_rt"
     config = load_config(config_rt)
     vehicle = ModVehicleTrain(config, agent_name)
     reward = TimeRewardTrack(config, 0.12)
@@ -52,6 +52,9 @@ def train_mod_cth():
     reward = CthReward(config, 0.4, 0.04)
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
+
+
+"""Tests """
 
 def FullTrain():
     config = load_config(config_med)
@@ -79,8 +82,6 @@ def FullTrain():
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train)
 
-
-"""Tests """
 def FullTest():
     config = load_config(config_med)
     # config = load_config(config_std)
@@ -114,26 +115,6 @@ def FullTest():
     test.run_eval(10, True, add_obs=True, save=True)
 
     # test.run_eval(10, True)
-
-def test_compare_mod():
-    config = lib.load_config(config_std)
-    test = TestVehicles(config, 'ModCompare_t1')
-
-    agent_name = "ModStd_test"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test"
-    # vehicle = ModVehicleTest(config, agent_name)
-    # test.add_vehicle(vehicle)
-
-    agent_name = "ModCth_test"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-
-    test.run_eval(10, True)
-
 
 """Time sweep"""
 def train_time_sweep():
@@ -263,47 +244,6 @@ def train_steer_sweep():
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-def test_time_sweep():
-    config = load_config(config_med)
-
-    test = TestVehicles(config, "test_time_sweep")
-
-    # mod
-    agent_name = "ModTime_test_04"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_06"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_08"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_10"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_15"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_18"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_20"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModTime_test_25"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    test.run_eval(100, False)
-
-"""Smaller tests"""
 def test_steer_sweep():
     config = load_config(config_med)
 
@@ -333,22 +273,31 @@ def test_steer_sweep():
 
     test.run_eval(100, False)
 
-def test_ftg():
-    config = load_config(config_med)
-    # vehicle = TunerCar(config)
-    vehicle = FollowTheGap(config)
 
-    test = TestVehicles(config, "FTG")
+
+"""Smaller tests"""
+
+def test_ftg():
+    # config = load_config(config_med)
+    config = load_config(config_rt)
+
+    vehicle = TunerCar(config)
+    # vehicle = FollowTheGap(config)
+
+    test = TestVehicles(config, "FTG", 'track')
     test.add_vehicle(vehicle)
-    test.run_eval(10, True)
+    test.run_eval(10, True, add_obs=False)
     # testVehicle(config, vehicle, True, 10)
 
 def test_mod():
     config = load_config(config_rt)
-    # agent_name = "ModTime_raceTrack"1
-    agent_name = "ModTime_medForest"
-    # vehicle = ModVehicleTest(config, agent_name)
-    vehicle = TunerCar(config)
+    # agent_name = "ModTime_raceTrack"
+
+    agent_name = "ModSteer_test_rt"
+    # agent_name = "ModTime_test_rt"
+    # agent_name = "ModTime_medForest"
+    vehicle = ModVehicleTest(config, agent_name)
+    # vehicle = TunerCar(config)
 
     test = TestVehicles(config, "Mod_test", 'track')
     test.add_vehicle(vehicle)
@@ -367,16 +316,16 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
     # test_time_sweep()
-    test_steer_sweep()
+    # test_steer_sweep()
 
     # FullTrain()
     # FullTest()
-# 
 
-    # test_ftg()
+
+    test_ftg()
     # test_mod()

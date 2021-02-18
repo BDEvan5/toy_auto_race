@@ -215,8 +215,8 @@ class TunerCar:
         return new_steer
 
     def reset_lap(self):
-        self.wpts, self.vs = self.env_map.get_optimal_path()
-        # self.wpts = self.env_map.get_reference_path()
+        # self.wpts, self.vs = self.env_map.get_optimal_path()
+        self.wpts, self.vs = self.env_map.get_reference_path()
 
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 

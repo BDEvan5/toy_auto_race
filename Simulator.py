@@ -282,6 +282,13 @@ class BaseSim:
             self.reward = 1
             self.done_reason = f"Lap complete"
 
+        # check for turn around.
+        near_idx = self.env_map.find_nearest_pt(car)
+        if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi:
+            self.done = True
+            self.done_reason = f"Turned around"
+            self.reward = -1
+
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
         fig = plt.figure(4)

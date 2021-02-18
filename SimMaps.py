@@ -3,6 +3,7 @@ from scipy import ndimage
 from matplotlib import pyplot as plt
 import yaml
 import csv
+from PIL import Image
 
 import LibFunctions as lib
 from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj, Max_velocity
@@ -59,11 +60,16 @@ class MapBase:
         self.yaml_file = dict(yaml_file)
 
         self.resolution = self.yaml_file['resolution']
-        self.start = self.yaml_file['start']
+        try:
+            self.start = self.yaml_file['start']
+        except KeyError:
+            origin = self.yaml_file['origin']
+            self.start = np.array([-origin[0], -origin[1]]) 
+            print(self.start)
 
     def load_map_csv(self):
         track = []
-        filename = 'Maps/' + self.name + ".csv"
+        filename = 'Maps/' + self.name + "_std.csv"
         with open(filename, 'r') as csvfile:
             csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
         
@@ -71,14 +77,24 @@ class MapBase:
                 track.append(lines)
 
         track = np.array(track)
-        print(f"Track Loaded: {filename}")
+        print(f"Track Loaded: {filename} in env_map")
 
         self.N = len(track)
         self.track_pts = track[:, 0:2]
         self.nvecs = track[:, 2: 4]
         self.ws = track[:, 4:6]
 
-        self.scan_map = np.load(f'Maps/{self.name}.npy')
+        self.scan_map = plt.imread(f'maps/{self.name}.png')
+        map_img_path = f'maps/{self.name}.png'
+        np.array(Image.open(map_img_path))
+        self.scan_map = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
+        self.scan_map = self.scan_map[:, :, 0] / 255
+        
+        self.scan_map = np.ones_like(self.scan_map) - self.scan_map
+        # plt.imshow(self.scan_map)
+        # plt.show()
+
+        # self.scan_map = np.load(f'Maps/{self.name}.npy')
         self.obs_map = np.zeros_like(self.scan_map)
         self.obs_map_plan = np.zeros_like(self.scan_map)
 
@@ -152,9 +168,14 @@ class SimMap(MapBase):
 
         self.end = self.start
         self.ss = None
+        self.diffs = None
+        self.l2s = None
+        self.thetas = None
+
+        self.render_map(wait=True)
 
         # called here before obstacles are added.
-        self.redef_shortest_track()
+        # self.redef_shortest_track()
 
     def redef_shortest_track(self):
         """
@@ -180,7 +201,7 @@ class SimMap(MapBase):
 
     def load_ref_path(self):
         try:
-            # raise Exception
+            raise Exception
             track_data = []
             filename = 'maps/' + self.map_name + '_opti.csv'
             
@@ -191,15 +212,16 @@ class SimMap(MapBase):
                     track_data.append(lines)
 
             track = np.array(track_data)
-            print(f"Track Loaded: {filename}")
+            print(f"Track Loaded: {filename} in env map")
 
             self.N = len(track)
             self.ss = track[:, 0]
             self.wpts = track[:, 1:3]
             self.vs = track[:, 5]
+            self.thetas = track[:, 3]
 
-            print(f"Path loaded from file: min curve")
-        except:
+        except Exception as e:
+            print(f"Exception in opening map: {e}")
             n_set = MinCurvatureTrajectory(self.track_pts, self.nvecs, self.ws)
             deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
             self.wpts = self.track_pts + deviation
@@ -208,6 +230,7 @@ class SimMap(MapBase):
 
             self.vs = Max_velocity(self.wpts, self.config, True)
             dss, ths = convert_pts_s_th(self.wpts)
+            self.thetas = ths
             ss = np.cumsum(dss)
             ks = np.zeros_like(ths[:, None]) #TODO: add the curvature
 
@@ -222,11 +245,16 @@ class SimMap(MapBase):
             print(f"Track Saved in File: {filename}")
             # plt.show()
 
+        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
+        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
+
 
     def get_reference_path(self):
         if self.wpts is None:
             self.load_ref_path()
         
+        self.render_map(wait=True)
+
         return self.wpts, self.vs
 
 
@@ -313,6 +341,15 @@ class SimMap(MapBase):
                 ys.append(y)
             plt.plot(xs, ys, '--', linewidth=2)
 
+        if self.track_pts is not None:
+            xs, ys = [], []
+            for pt in self.track_pts:
+                x, y = self.convert_position(pt)
+                # plt.plot(x, y, '+', markersize=14)
+                xs.append(x)
+                ys.append(y)
+            plt.plot(xs, ys, '--', linewidth=2)
+
         if self.obs_map is None:
             plt.imshow(self.scan_map)
         else:
@@ -323,6 +360,21 @@ class SimMap(MapBase):
         plt.pause(0.0001)
         if wait:
             plt.show()
+
+    def find_nearest_pt(self, point):
+        dots = np.empty((self.wpts.shape[0]-1, ))
+        for i in range(dots.shape[0]):
+            dots[i] = np.dot((point - self.wpts[i, :]), self.diffs[i, :])
+        t = dots / self.l2s
+
+        t = np.clip(dots / self.l2s, 0.0, 1.0)
+        projections = self.wpts[:-1,:] + (t*self.diffs.T).T
+        dists = np.linalg.norm(point - projections, axis=1)
+
+        min_dist_segment = np.argmin(dists)
+
+        return min_dist_segment
+    
 
 
 class ForestMap(MapBase):

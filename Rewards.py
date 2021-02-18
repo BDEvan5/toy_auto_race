@@ -131,7 +131,8 @@ class TrackRewardBase:
 
         N = len(pts)
         ss = np.array([lib.get_distance(pts[i], pts[i+1]) for i in range(N-1)])
-        self.ss = np.cumsum(ss)
+        ss = np.cumsum(ss)
+        self.ss = np.insert(ss, 0, 0)
 
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
@@ -159,8 +160,9 @@ class TrackRewardBase:
     def get_shpaed_r(self, pt1, pt2):
         s = self.find_s(pt1)
         ss = self.find_s(pt2)
-        ds = np.clip(ss - s, -0.5, 0.5)
-        shaped_r = 0.2 * ds
+        ds = ss - s
+        r = ds * 0.2
+        shaped_r = np.clip(r, -0.5, 0.5)
 
         return shaped_r
 

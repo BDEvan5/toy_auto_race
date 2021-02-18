@@ -16,7 +16,8 @@ lims:
   dis_scale: 0.5
 
 map:
-  name: "race_track"
+  # name: "race_track"
+  name: "berlin"
   obs_size: 1.5
   n_obs: 10
   # obs_buf: 3
