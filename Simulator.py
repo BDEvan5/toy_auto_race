@@ -284,10 +284,10 @@ class BaseSim:
 
         # check for turn around.
         near_idx = self.env_map.find_nearest_pt(car)
-        if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi:
-            self.done = True
-            self.done_reason = f"Turned around"
-            self.reward = -1
+        # if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi:
+        #     self.done = True
+        #     self.done_reason = f"Turned around"
+        #     self.reward = -1
 
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
@@ -307,12 +307,12 @@ class BaseSim:
 
         xs, ys = [], []
         for pos in self.action_memory:
-            x, y = self.env_map.convert_position(pos)
+            x, y = self.env_map.xy_to_row_column(pos)
             xs.append(x)
             ys.append(y)
         plt.plot(xs, ys, 'r', linewidth=3)
         plt.plot(xs, ys, '+', markersize=12)
-        x, y = self.env_map.convert_position([self.car.x, self.car.y])
+        x, y = self.env_map.xy_to_row_column([self.car.x, self.car.y])
         plt.plot(x, y, 'x', markersize=20)
 
         if pts1 is not None:
@@ -326,8 +326,8 @@ class BaseSim:
                 x, y = self.env_map.convert_position(pt)
                 plt.plot(x, y, 'o', markersize=6)
 
-        text_x = self.env_map.scan_map.shape[1] + 10
-        text_y = self.env_map.scan_map.shape[0] / 10
+        text_x = self.env_map.map_img.shape[1] + 10
+        text_y = self.env_map.map_img.shape[0] / 10
 
         s = f"Reward: [{self.reward:.1f}]" 
         plt.text(text_x, text_y * 1, s)

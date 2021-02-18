@@ -281,8 +281,8 @@ def test_ftg():
     # config = load_config(config_med)
     config = load_config(config_rt)
 
-    vehicle = TunerCar(config)
-    # vehicle = FollowTheGap(config)
+    # vehicle = TunerCar(config)
+    vehicle = FollowTheGap(config)
 
     test = TestVehicles(config, "FTG", 'track')
     test.add_vehicle(vehicle)

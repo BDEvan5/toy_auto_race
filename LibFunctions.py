@@ -3,6 +3,16 @@ from matplotlib import  pyplot as plt
 import math
 import cmath
 import yaml
+from argparse import Namespace
+
+def load_config_namespace(fname):
+    with open('config/' + fname + '.yaml') as file:
+        conf_dict = yaml.load(file, Loader=yaml.FullLoader)
+
+    conf = Namespace(**conf_dict)
+
+    return conf
+
 
 
 def add_locations(x1=[0, 0], x2=[0, 0], dx=1):

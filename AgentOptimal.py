@@ -165,8 +165,6 @@ class TunerCar:
     def init_agent(self, env_map):
         self.env_map = env_map
 
-        self.path_name = "DataRecords/" + self.env_map.name + "_path.npy" # move to setup call
-
         self.reset_lap()
 
     def _get_current_waypoint(self, position, theta):

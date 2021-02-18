@@ -8,6 +8,195 @@ from PIL import Image
 import LibFunctions as lib
 from TrajectoryPlanner import MinCurvatureTrajectory, ObsAvoidTraj, ShortestTraj, Max_velocity
 
+class SimMap:
+    def __init__(self, config) -> None:
+        self.config = config
+        self.map_name = config['map']['name']
+
+        self.map_img = None
+        self.obs_img = None
+
+        self.start = np.array([0, 0])
+        self.origin = None
+        self.wpts = None
+        self.vs = None
+
+        self.height = None
+        self.width = None
+        self.resolution = None
+
+        self.diffs = None
+        self.l2s = None
+
+        self.load_map()
+
+    def load_map(self):
+        # load yaml
+        file_name = 'maps/' + self.map_name + '.yaml'
+        with open(file_name) as file:
+            documents = yaml.full_load(file)
+            yaml_file = documents.items()
+
+        self.yaml_file = dict(yaml_file)
+        self.resolution = self.yaml_file['resolution']
+        self.origin = self.yaml_file['origin']
+
+        # load traj
+
+        track_data = []
+        filename = 'maps/' + self.map_name + '_opti.csv'
+        
+        try:
+            with open(filename, 'r') as csvfile:
+                csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+                for lines in csvFile:  
+                    track_data.append(lines)
+        except FileNotFoundError:
+            raise FileNotFoundError("No map traj")
+
+        track = np.array(track_data)
+        print(f"Track Loaded: {filename} in env map")
+
+        self.N = len(track)
+        self.ss = track[:, 0]
+        self.wpts = track[:, 1:3]
+        self.vs = track[:, 5]
+        self.thetas = track[:, 3]
+
+        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
+        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
+
+        map_img_path = f'maps/{self.map_name}.png'
+        np.array(Image.open(map_img_path))
+        self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
+        self.map_img = self.map_img[:, :, 0] / 255
+        
+        self.map_img = np.ones_like(self.map_img) - self.map_img
+
+        self.dt = ndimage.distance_transform_edt(self.map_img) 
+        self.dt = np.array(self.dt *self.resolution)
+
+        self.obs_map = np.zeros_like(self.map_img)
+        self.obs_map_plan = np.zeros_like(self.map_img)
+
+        self.width = self.map_img.shape[1]
+        self.height = self.map_img.shape[0]
+
+    def calculate_traj(self):
+        n_set = MinCurvatureTrajectory(self.track_pts, self.nvecs, self.ws)
+        deviation = np.array([self.nvecs[:, 0] * n_set[:, 0], self.nvecs[:, 1] * n_set[:, 0]]).T
+        self.wpts = self.track_pts + deviation
+
+        # self.render_map(4, False)
+
+        self.vs = Max_velocity(self.wpts, self.config, True)
+        dss, ths = convert_pts_s_th(self.wpts)
+        self.thetas = ths
+        ss = np.cumsum(dss)
+        ks = np.zeros_like(ths[:, None]) #TODO: add the curvature
+
+        track = np.concatenate([ss[:, None], self.wpts[:-1], ths[:, None], ks, self.vs], axis=-1)
+
+        filename = 'maps/' + self.map_name + '_opti.csv'
+
+        with open(filename, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(track)
+
+        print(f"Track Saved in File: {filename}")
+        # plt.show()
+
+    def get_reference_path(self):
+        if self.wpts is None:
+            self.load_map()
+        
+        # self.render_map(wait=True)
+
+        return self.wpts, self.vs
+
+    def render_map(self, figure_n=4, wait=False):
+        f = plt.figure(figure_n)
+        plt.clf()
+
+        plt.xlim([0, self.width])
+        plt.ylim([self.height, 0])
+
+        cx, cy = self.convert_positions(self.wpts)
+        plt.plot(cx, cy, '--', linewidth=1)
+
+        if self.obs_map is None:
+            plt.imshow(self.map_img)
+        else:
+            plt.imshow(self.obs_map + self.map_img)
+
+        plt.gca().set_aspect('equal', 'datalim')
+
+        plt.pause(0.0001)
+        if wait:
+            plt.show()
+
+    def xy_to_row_column(self, pt_xy):
+        c = int((pt_xy[0] - self.origin[0]) / self.resolution)
+        r = int((pt_xy[1] - self.origin[1]) / self.resolution)
+
+        return c, r
+
+    def check_scan_location(self, pt):
+        c, r = self.xy_to_row_column(pt)
+        if abs(c) > self.width -2 or abs(r) > self.height -2:
+            return True
+        val = self.dt[c, r]
+        if val < 0.05:
+            return True
+        return False
+
+    def convert_positions(self, pts):
+        xs, ys = [], []
+        for pt in pts:
+            x, y = self.xy_to_row_column(pt)
+            xs.append(x)
+            ys.append(y)
+
+        return np.array(xs), np.array(ys)
+
+    def reset_map(self, n=10):
+        self.obs_img = np.zeros_like(self.obs_img)
+
+        obs_size = [self.width/600, self.height/600]
+        # obs_size = [0.3, 0.3]
+        # obs_size = [1, 1]
+        x, y = self.xy_to_row_column(obs_size)
+        obs_size = [x, y]
+    
+        rands = np.random.randint(1, self.N-1, n)
+        obs_locs = []
+        for i in range(n):
+            pt = self.track_pts[rands[i]][:, None]
+            obs_locs.append(pt[:, 0])
+
+        for obs in obs_locs:
+            for i in range(0, obs_size[0]):
+                for j in range(0, obs_size[1]):
+                    x, y = self.convert_int_position([obs[0], obs[1]])
+                    self.obs_img[y+j, x+i] = 1
+
+        return self.get_reference_path()
+
+    def find_nearest_pt(self, point):
+        dots = np.empty((self.wpts.shape[0]-1, ))
+        for i in range(dots.shape[0]):
+            dots[i] = np.dot((point - self.wpts[i, :]), self.diffs[i, :])
+        t = dots / self.l2s
+
+        t = np.clip(dots / self.l2s, 0.0, 1.0)
+        projections = self.wpts[:-1,:] + (t*self.diffs.T).T
+        dists = np.linalg.norm(point - projections, axis=1)
+
+        min_dist_segment = np.argmin(dists)
+
+        return min_dist_segment
+  
 
 class MapBase:
     """
@@ -28,7 +217,7 @@ class MapBase:
     def __init__(self, map_name):
         self.name = map_name
 
-        self.scan_map = None
+        self.map_img = None
         self.obs_map = None
 
         self.track_pts = None
@@ -84,22 +273,22 @@ class MapBase:
         self.nvecs = track[:, 2: 4]
         self.ws = track[:, 4:6]
 
-        self.scan_map = plt.imread(f'maps/{self.name}.png')
+        self.map_img = plt.imread(f'maps/{self.name}.png')
         map_img_path = f'maps/{self.name}.png'
         np.array(Image.open(map_img_path))
-        self.scan_map = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
-        self.scan_map = self.scan_map[:, :, 0] / 255
+        self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
+        self.map_img = self.map_img[:, :, 0] / 255
         
-        self.scan_map = np.ones_like(self.scan_map) - self.scan_map
-        # plt.imshow(self.scan_map)
+        self.map_img = np.ones_like(self.map_img) - self.map_img
+        # plt.imshow(self.map_img)
         # plt.show()
 
-        # self.scan_map = np.load(f'Maps/{self.name}.npy')
-        self.obs_map = np.zeros_like(self.scan_map)
-        self.obs_map_plan = np.zeros_like(self.scan_map)
+        # self.map_img = np.load(f'Maps/{self.name}.npy')
+        self.obs_map = np.zeros_like(self.map_img)
+        self.obs_map_plan = np.zeros_like(self.map_img)
 
-        self.width = self.scan_map.shape[1]
-        self.height = self.scan_map.shape[0]
+        self.width = self.map_img.shape[1]
+        self.height = self.map_img.shape[0]
 
 
     def convert_position(self, pt):
@@ -130,7 +319,7 @@ class MapBase:
         if x_in[0] > self.width * self.resolution or x_in[1] > self.height * self.resolution:
             return True
 
-        if self.scan_map[y, x]:
+        if self.map_img[y, x]:
             return True
         if self.obs_map[y, x]:
             return True
@@ -143,14 +332,14 @@ class MapBase:
         if x_in[0] > self.width * self.resolution or x_in[1] > self.height * self.resolution:
             return True
 
-        if self.scan_map[y, x]:
+        if self.map_img[y, x]:
             return True
         if self.obs_map_plan[y, x]:
             return True
         return False
 
 
-class SimMap(MapBase):
+class SimMap2(MapBase):
     """
     This class is for using the race maps
 
@@ -351,9 +540,9 @@ class SimMap(MapBase):
             plt.plot(xs, ys, '--', linewidth=2)
 
         if self.obs_map is None:
-            plt.imshow(self.scan_map)
+            plt.imshow(self.map_img)
         else:
-            plt.imshow(self.obs_map + self.scan_map)
+            plt.imshow(self.obs_map + self.map_img)
 
         plt.gca().set_aspect('equal', 'datalim')
 
@@ -393,8 +582,8 @@ class ForestMap(MapBase):
         map_name = config['map']['name']
         MapBase.__init__(self, map_name)
 
-        # self.obs_map = np.zeros_like(self.scan_map)
-        # self.obs_map = np.zeros_like(self.scan_map)
+        # self.obs_map = np.zeros_like(self.map_img)
+        # self.obs_map = np.zeros_like(self.map_img)
         self.end = [config['map']['end']['x'], config['map']['end']['y']]
         self.obs_cars = []
 
@@ -512,9 +701,9 @@ class ForestMap(MapBase):
             plt.plot(xs, ys, '--', color='g', linewidth=2)
 
         if self.obs_map is None:
-            plt.imshow(self.scan_map)
+            plt.imshow(self.map_img)
         else:
-            plt.imshow(self.obs_map + self.scan_map)
+            plt.imshow(self.obs_map + self.map_img)
 
         # plt.gca().set_aspect('equal', 'datalim')
         x, y = self.convert_position(self.end)
