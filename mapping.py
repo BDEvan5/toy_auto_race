@@ -12,8 +12,6 @@ import LibFunctions as lib
 from scipy import ndimage 
 
 import casadi as ca 
-# from pgm_reader import Reader
-from Utils.pgm_reader import Reader
 
 
 
@@ -21,7 +19,6 @@ class PreMap:
     def __init__(self, conf) -> None:
         self.conf = conf 
         self.map_name = conf.map_name
-        self.map_ext = conf.map_ext
 
         self.map_img = None
         self.origin = None
@@ -95,7 +92,12 @@ class PreMap:
         map_file_name = self.yaml_file['image']
         map_img_name = 'maps/' + map_file_name
 
-        self.map_img = np.array(Image.open(map_img_name).transpose(Image.FLIP_TOP_BOTTOM))
+        try:
+            self.map_img = np.array(Image.open(map_img_name).transpose(Image.FLIP_TOP_BOTTOM))
+        except Exception as e:
+            print(f"MapPath: {map_img_name}")
+            print(f"Exception in reading: {e}")
+            raise ImportError(f"Cannot read map")
         try:
             self.map_img = self.map_img[:, :, 0]
         except:

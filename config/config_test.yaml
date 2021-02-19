@@ -5,14 +5,17 @@
 # map_name: "example_map"
 # map_name: "vegas"
 # map_name: "levine_blocked"
+# map_name: "columbia"
+# map_name: "mtl"
 # map_name: "berlin"
-map_name: "torino"
+# map_name: "torino"
 # map_name: "porto"
-# map_name: "stata_basement"
-# map_name: "levinelobby"
+
 # map_name: "race_track"
-# map_ext: ".png"
-map_ext: ".pgm"
+#dont work
+# map_name: "levine"
+# map_name: "levinelobby"
+# map_name: "stata_basement"
 
 # starting positions for vehicle
 sx: 0.0
