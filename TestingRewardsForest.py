@@ -360,7 +360,7 @@ def test_mod():
     vehicle = ModVehicleTest(config, agent_name)
     # vehicle = TunerCar(config)
 
-    test = TestVehicles(config, "Mod_test", 'track')
+    test = TestVehicles(config, "Mod_test_f")
     test.add_vehicle(vehicle)
     # test.run_eval(10, True, add_obs=False)
     test.run_eval(10, True, add_obs=True)

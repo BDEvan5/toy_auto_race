@@ -325,8 +325,8 @@ class BaseSim:
                 x, y = self.env_map.convert_position(pt)
                 plt.plot(x, y, 'o', markersize=6)
 
-        text_x = self.env_map.map_img.shape[1] + 10
-        text_y = self.env_map.map_img.shape[0] / 10
+        text_x = self.env_map.obs_img.shape[0] + 10
+        text_y = self.env_map.obs_img.shape[1] / 10
 
         s = f"Reward: [{self.reward:.1f}]" 
         plt.text(text_x, text_y * 1, s)
@@ -489,7 +489,7 @@ class ForestSim(BaseSim):
         # self.env_map.reset_dynamic_map(4)
         
         if add_obs:
-            wpts, vs = self.env_map.reset_static_map(self.n_obs)
+            wpts, vs = self.env_map.reset_static_map()
         else:
             wpts, vs = self.env_map.reset_no_obs()
         s = self.base_reset()
@@ -514,11 +514,11 @@ class ForestSim(BaseSim):
         horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
         self.y_forces.append(horizontal_force)
         # check forces
-        if horizontal_force > self.car.max_friction_force:
-            self.done = True
-            self.reward = -1
+        # if horizontal_force > self.car.max_friction_force:
+            # self.done = True
+            # self.reward = -1
             # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
-            self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
+            # self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
         # check steps
         if self.steps > 100:
             self.done = True

@@ -34,11 +34,14 @@ forest_len: 30
 forest_w: 6
 start: [3, 1]
 end: [3, 29]
-n_obs: 3
-obs_buf: 4
-obs_size: 0.5
+obs_buf: 5
 resolution: 0.1
 plan_scale: 1.2
+# n_obs: 8
+# obs_size: 0.5
+
+n_obs: 4
+obs_size: 1.5
 
 
 sim:

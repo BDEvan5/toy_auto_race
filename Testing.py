@@ -59,7 +59,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             # t_his.lap_done(True)
             t_his.lap_done(False)
             # vehicle.show_vehicle_history()
-            # env.render(wait=False, save=False)
+            env.render(wait=False, save=False)
 
             vehicle.reset_lap()
             state, wpts, vs = env.reset(add_obs=add_obs)

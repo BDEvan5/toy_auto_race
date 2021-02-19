@@ -232,7 +232,7 @@ class ForestMap:
         self.obs_img = np.zeros((self.w, self.h))
         self.obs_img_plan = np.zeros((self.w, self.h))
 
-    def scale_xy_to_img(self, pt):
+    def xy_to_row_column(self, pt):
         c = int(round(np.clip(pt[0] / self.resoltuion, 0, self.w-2)))
         r = int(round(np.clip(pt[1] / self.resoltuion, 0, self.h-2)))
         return c, r
@@ -243,9 +243,9 @@ class ForestMap:
         self.obs_img = np.zeros_like(self.obs_img)
 
         obs_size = np.array([self.obs_size, self.obs_size])
-        x, y = self.scale_xy_to_img(obs_size)
+        x, y = self.xy_to_row_column(obs_size)
         norm_obs_size = [x, y]
-        x, y = self.scale_xy_to_img(obs_size * self.plan_scale)
+        x, y = self.xy_to_row_column(obs_size * self.plan_scale)
         obs_size_plan = [x, y]
 
         y_end = self.length - self.obs_buf - self.obs_size
@@ -256,7 +256,7 @@ class ForestMap:
         for obs in obs_locs:
             for i in range(0, norm_obs_size[0]):
                 for j in range(0, norm_obs_size[1]):
-                    x, y = self.scale_xy_to_img([obs[0], obs[1]])
+                    x, y = self.xy_to_row_column([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.w-1)
                     y = np.clip(y+j, 0, self.h-1)
                     self.obs_img[x, y] = 1
@@ -264,7 +264,7 @@ class ForestMap:
         for obs in obs_locs:
             for i in range(0, obs_size_plan[0]):
                 for j in range(0, obs_size_plan[1]):
-                    x, y = self.scale_xy_to_img([obs[0], obs[1]])
+                    x, y = self.xy_to_row_column([obs[0], obs[1]])
                     x = np.clip(x+i, 0, self.w-1)
                     y = np.clip(y+j, 0, self.h-1)
                     self.obs_img_plan[x, y] = 1
@@ -276,7 +276,7 @@ class ForestMap:
             return True
         if x_in[0] > self.width or x_in[1] > self.length:
             return True
-        x, y = self.scale_xy_to_img(x_in)
+        x, y = self.xy_to_row_column(x_in)
         if self.obs_img[x, y]:
             return True
 
@@ -294,32 +294,34 @@ class ForestMap:
         raise NotImplementedError
 
     def render_map(self, figure_n=1, wait=False):
+        #TODO: draw the track boundaries nicely
         f = plt.figure(figure_n)
         plt.clf()
 
-        plt.xlim([0, self.width])
-        plt.ylim([self.height, 0])
+        plt.xlim([0, self.w])
+        plt.ylim([self.h, 0])
 
         if self.wpts is not None:
             xs, ys = [], []
             for pt in self.wpts:
-                x, y = self.convert_position(pt)
+                x, y = self.xy_to_row_column(pt)
                 # plt.plot(x, y, '+', markersize=14)
                 xs.append(x)
                 ys.append(y)
             plt.plot(xs, ys, '--', color='g', linewidth=2)
 
-        plt.imshow(self.obs_img)
+        plt.imshow(self.obs_img.T)
 
         # plt.gca().set_aspect('equal', 'datalim')
-        x, y = self.convert_position(self.end)
+        x, y = self.xy_to_row_column(self.end)
         plt.plot(x, y, '*', markersize=14)        
-        x, y = self.convert_position(self.start)
+        x, y = self.xy_to_row_column(self.start)
         plt.plot(x, y, '*', markersize=14)
 
         plt.pause(0.0001)
         if wait:
             plt.show()
+            pass
 
 class MapBase:
     """
