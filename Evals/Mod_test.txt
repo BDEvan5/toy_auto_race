@@ -3,8 +3,8 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
-Vehicle: ModDev_test_rt
-Crashes: 3.0 --> Completes 7.0
-% Finished = 70.00
-Avg lap times: 126.71428571428571
+Vehicle: ModSteer_test_rt
+Crashes: 2.0 --> Completes 8.0
+% Finished = 80.00
+Avg lap times: 165.875
 -----------------------------------------------------

@@ -41,7 +41,7 @@ def distance_potential(s, s_p, end, beta=0.2, scale=0.5):
 
 
 
-# Mod
+# Forest Rewards
 class SteerReward:
     def __init__(self, config, mv, ms) -> None:
         self.max_steer = config['lims']['max_steer']
@@ -53,7 +53,7 @@ class SteerReward:
     def init_reward(self, pts, vs):
         pass
         
-    def __call__(self, s, a, s_p, r, time=0) -> float:
+    def __call__(self, s, a, s_p, r, dev) -> float:
         if r == -1:
             return r
         else:
@@ -121,13 +121,16 @@ class TimeReward:
             return new_r + r + shaped_r
 
 
+# Track rewards
 class TrackRewardBase:
     def __init__(self) -> None:
         self.wpts = None
         self.ss = None
+        self.vs = None
 
     def init_reward(self, pts, vs):
         self.wpts = pts
+        self.vs = vs
 
         N = len(pts)
         ss = np.array([lib.get_distance(pts[i], pts[i+1]) for i in range(N-1)])
@@ -166,6 +169,7 @@ class TrackRewardBase:
 
         return shaped_r
 
+#golden oldies
 class TrackDevReward(TrackRewardBase):
     def __init__(self, config) -> None:
         TrackRewardBase.__init__(self)
@@ -185,6 +189,9 @@ class TrackDevReward(TrackRewardBase):
 
 class TrackOldReward:
     def __init__(self, config) -> None:
+        pass
+
+    def init_reward(self, wpts, vs):
         pass
 
     def __call__(self, s, a, s_p, r, dev):
@@ -210,15 +217,15 @@ class TrackStdReward(TrackRewardBase):
 
             return shaped_r
 
-# track rewards
-class TimeRewardTrack(TrackRewardBase):
+# newbies for testing
+class TrackTimeReward(TrackRewardBase):
     def __init__(self, config, mt) -> None:
         TrackRewardBase.__init__(self)
         self.mt = mt 
         self.dis_scale = config['lims']["dis_scale"]
         self.max_steer = config['lims']['max_steer']
         
-    def __call__(self, s, a, s_p, r) -> float:
+    def __call__(self, s, a, s_p, r, dev) -> float:
         if r == -1:
             return -1
         else:
@@ -227,7 +234,7 @@ class TimeRewardTrack(TrackRewardBase):
 
             return ret_r
 
-class SteerRewardTrack(TrackRewardBase):
+class TrackSteerReward(TrackRewardBase):
     def __init__(self, config, mv, ms) -> None:
         TrackRewardBase.__init__(self)
         self.max_steer = config['lims']['max_steer']
@@ -236,7 +243,7 @@ class SteerRewardTrack(TrackRewardBase):
         self.ms = ms 
 
             
-    def __call__(self, s, a, s_p, r, time=0) -> float:
+    def __call__(self, s, a, s_p, r, dev) -> float:
         if r == -1:
             return r
         else:
@@ -249,72 +256,21 @@ class SteerRewardTrack(TrackRewardBase):
 
             return new_r + shaped_r 
 
-# class DeviationReward(TrackRewardBase):
-#     def __init__(self) -> None:
-#         TrackRewardBase.__init__(self)
-
-#     def __call__(self, s, a, s_p, r):
-
-
-
-
-class CthRewardTrack:
+class TrackCthReward(TrackRewardBase):
     def __init__(self, config, mh, md) -> None:
+        TrackRewardBase.__init__(self)
         self.mh = mh 
         self.md = md
         self.dis_scale = config['lims']["dis_scale"]
         self.max_v = config['lims']["max_v"]
-        self.end = [config['map']['end']['x'], config['map']['end']['y']]
 
-        self.pts = None
-        self.vs = None
-
-        self.wpts = None
-        self.ss = None
-
-    def init_reward(self, pts, vs):
-        self.wpts = pts
-
-        N = len(pts)
-        ss = np.array([lib.get_distance(pts[i], pts[i+1]) for i in range(N-1)])
-        self.ss = np.cumsum(ss)
-
-        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
-        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
-
-
-    def find_s(self, point):
-        dots = np.empty((self.wpts.shape[0]-1, ))
-        for i in range(dots.shape[0]):
-            dots[i] = np.dot((point - self.wpts[i, :]), self.diffs[i, :])
-        t = dots / self.l2s
-
-        t = np.clip(dots / self.l2s, 0.0, 1.0)
-        projections = self.wpts[:-1,:] + (t*self.diffs.T).T
-        dists = np.linalg.norm(point - projections, axis=1)
-
-        min_dist_segment = np.argmin(dists)
-        dist_from_cur_pt = dists[min_dist_segment]
-        if dist_from_cur_pt > 1: #more than 2m from centerline
-            return self.ss[min_dist_segment] - dist_from_cur_pt # big makes it go back
-
-        s = self.ss[min_dist_segment] + dist_from_cur_pt
-
-        return s 
-
-    def get_shpaed_r(self, pt1, pt2):
-        s = self.find_s(pt1)
-        ss = self.find_s(pt2)
-        ds = np.clip(ss - s, -0.5, 0.5)
-        shaped_r = 0.2 * ds
-
-        return shaped_r
-            
-    def __call__(self, s, a, s_p, r) -> float:
+    def __call__(self, s, a, s_p, r, dev):
         if r == -1:
             return r
         else:
-            pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.pts)
+            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+
+            pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.wpts)
             d = lib.get_distance(pt_i, pt_ii)
             d_c = get_tiangle_h(d_i, d_ii, d) / self.dis_scale
 
@@ -323,11 +279,11 @@ class CthRewardTrack:
             d_th = abs(lib.sub_angles_complex(th_ref, th))
             v_scale = s_p[3] / self.max_v
 
-            shaped_r = distance_potential(s, s_p, self.end)
-
             new_r =  self.mh * np.cos(d_th) * v_scale - self.md * d_c
 
-            return new_r + r + shaped_r
+            return new_r + shaped_r 
+
+
 
 
 

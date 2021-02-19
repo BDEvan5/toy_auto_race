@@ -209,8 +209,8 @@ class TunerCar:
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
         new_steer = np.clip(steering_angle, -max_steer, max_steer)
 
-        if max_steer < abs(steering_angle):
-            print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
+        # if max_steer < abs(steering_angle):
+        #     print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
 
         return new_steer
 

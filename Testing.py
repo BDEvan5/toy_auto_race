@@ -56,9 +56,10 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             vehicle.agent.save(directory=path)
         
         if done:
-            t_his.lap_done(True)
-            vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
+            # t_his.lap_done(True)
+            t_his.lap_done(False)
+            # vehicle.show_vehicle_history()
+            # env.render(wait=False, save=False)
 
             vehicle.reset_lap()
             state, wpts, vs = env.reset(add_obs=add_obs)
@@ -114,6 +115,8 @@ class TestData:
         print(f"-----------------------------------------------------")
         print(f"-----------------------------------------------------")
         for i in range(self.N):
+            if len(self.lap_times[i]) == 0:
+                self.lap_times[i].append(0)
             print(f"Vehicle: {self.vehicle_list[i].name}")
             print(f"Crashes: {self.crashes[i]} --> Completes {self.completes[i]}")
             percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
