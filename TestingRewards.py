@@ -83,65 +83,81 @@ def train_mod_old():
 
 """Tests """
 
-def FullTrain():
-    config = load_config(config_med)
+def FullTrainRT():
+    # config = load_config(config_med)
+    config = load_config(config_rt)
     env_name = "raceTrack"
-    n_train = 6000
+    n_train = 100
 
     agent_name = "ModSteer_"  + env_name
-    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = SteerReward(config, 0.1, 0.1)
+    reward = TrackSteerReward(config, 0.1, 0.1)
 
-    TrainVehicle(config, agent_name, vehicle, reward, n_train)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
     agent_name = "ModTime_" + env_name
-    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TimeReward(config, 0.12)
+    reward = TrackTimeReward(config, 0.12)
 
-    TrainVehicle(config, agent_name, vehicle, reward, n_train)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
     agent_name = "ModCth_" + env_name
-    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = CthReward(config, 0.4, 0.04)
+    reward = TrackCthReward(config, 0.4, 0.04)
 
-    TrainVehicle(config, agent_name, vehicle, reward, n_train)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    agent_name = "ModOld_" + env_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = TrackOldReward(config)
+
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    agent_name = "ModStd_" + env_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = TrackStdReward(config)
+
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    agent_name = "ModDev_" + env_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = TrackDevReward(config)
+
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
 def FullTest():
     # config = load_config(config_med)
     # config = load_config(config_std)
     config = load_config(config_rt)
 
-    env_name = "rt"
-    test_name = "compare_" + env_name + "_3_noObs"
+    env_name = "raceTrack"
+    test_name = "compare_" + env_name + "_4"
     test = TestVehicles(config, test_name, 'track')
 
     # mod
-    # agent_name = "ModTime_" + env_name
-    # vehicle = ModVehicleTest(config, agent_name)
-    # test.add_vehicle(vehicle)
-
-    # agent_name = "ModCth_test_" + env_name
-    agent_name = "ModCth_test"
+    agent_name = "ModTime_" + env_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModSteer_test_" + env_name
+    agent_name = "ModCth_" + env_name
+    # agent_name = "ModCth_test"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModSteer_" + env_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
     # old
-    agent_name = "ModDev_test_" + env_name
+    agent_name = "ModDev_" + env_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModOld_test_" + env_name
+    agent_name = "ModOld_" + env_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModStd_test_" + env_name
+    agent_name = "ModStd_" + env_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
@@ -153,9 +169,9 @@ def FullTest():
     # vehicle = FollowTheGap(config)
     # test.add_vehicle(vehicle)
 
-    # test.run_eval(10, True, add_obs=False)
+    test.run_eval(1, True, add_obs=False)
     # test.run_eval(10, True, add_obs=True, save=True)
-    test.run_eval(100, False, add_obs=False, save=True)
+    # test.run_eval(100, False, add_obs=False, save=True)
 
     # test.run_eval(10, True)
 
@@ -337,7 +353,8 @@ def test_mod():
     # agent_name = "ModTime_raceTrack"
 
     # agent_name = "ModSteer_test_rt"
-    agent_name = "ModCth_test_rt"
+    # agent_name = "ModCth_test_rt"
+    agent_name = "ModCth_test"
     # agent_name = "ModDev_test_rt"
     # agent_name = "ModDev_test_rt"
     # agent_name = "ModOld_test_rt"
@@ -375,9 +392,9 @@ if __name__ == "__main__":
     # test_time_sweep()
     # test_steer_sweep()
 
-    # FullTrain()
+    FullTrainRT()
     FullTest()
 
 
-    # test_ftg()
     # test_mod()
+    # test_ftg()

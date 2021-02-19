@@ -1,0 +1,40 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModTime_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: ModCth_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: ModSteer_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: ModDev_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: ModOld_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: ModStd_raceTrack
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 156.0
+-----------------------------------------------------

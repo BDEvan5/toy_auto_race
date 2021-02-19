@@ -200,8 +200,8 @@ class TunerCar:
         speed = self.vgain * speed
 
         # print(f"Speed: {speed} --> Steer: {steering_angle}")
-        avg_speed = max(speed, obs[3])
-        steering_angle = self.limit_inputs(avg_speed, steering_angle)
+        # avg_speed = max(speed, obs[3])
+        # steering_angle = self.limit_inputs(avg_speed, steering_angle)
 
         return [speed, steering_angle]
 

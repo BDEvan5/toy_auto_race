@@ -34,7 +34,7 @@ sim:
   beams: 10
 
 pp:
-  lookahead: 2
+  lookahead: 1.5
   v_gain: 0.9
   force_f: 0.8
 

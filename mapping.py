@@ -506,7 +506,7 @@ def Max_velocity(pts, conf, show=False):
     l_f = conf.l_f
     l_r = conf.l_r
     safety_f = conf.force_f
-    f_max = mu * m * g * safety_f
+    f_max = mu * m * g #* safety_f
     f_long_max = l_f / (l_r + l_f) * f_max
     max_v = conf.max_v  
     max_a = conf.max_a
@@ -530,7 +530,8 @@ def Max_velocity(pts, conf, show=False):
 
     nlp = {\
         'x': ca.vertcat(dx, dy, dt, f_long, f_lat),
-        'f': ca.sum1(dt), 
+        # 'f': ca.sum1(dt), 
+        'f': ca.sumsqr(dt), 
         'g': ca.vertcat(
                     # dynamic constraints
                     dt - s_i_1 / ((vel(dx[:-1], dy[:-1]) + vel(dx[1:], dy[1:])) / 2 ),
@@ -588,6 +589,7 @@ def Max_velocity(pts, conf, show=False):
     # print(f"DT0: {dt[0]}")
     t = np.cumsum(dt)
     t = np.insert(t, 0, 0)
+    print(f"Total Time: {t[-1]}")
     # print(f"Dt: {dt.T}")
     # print(f"Dx: {dx.T}")
     # print(f"Dy: {dy.T}")
