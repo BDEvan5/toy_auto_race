@@ -1,8 +1,6 @@
 import numpy as np
 import csv, yaml
 from Rewards import CthReward, TimeReward, SteerReward
-from Rewards import TrackCthReward, TrackTimeReward, TrackSteerReward
-from Rewards import TrackDevReward, TrackOldReward, TrackStdReward
 
 
 import LibFunctions as lib
@@ -22,61 +20,59 @@ from Testing import TestVehicles, TrainVehicle
 config_sf = "small_forest"
 config_std = "std_config"
 config_med = "med_forest"
-config_rt = "race_track"
 
 
 """Mod training"""
 def train_mod_steer():
-    agent_name = "ModSteer_test_rt"
+    agent_name = "ModSteer_test_f"
 
-    config = load_config(config_rt)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackSteerReward(config, 0.1, 0.1)
+    reward = SteerReward(config, 0.1, 0.1)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
-    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
-    agent_name = "ModTime_test_rt"
-    config = load_config(config_rt)
+    agent_name = "ModTime_test_f"
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackTimeReward(config, 0.12)
+    reward = TimeReward(config, 0.12)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_cth():
-    agent_name = "ModCth_test_rt"
-    config = load_config(config_rt)
+    agent_name = "ModCth_test_f"
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackCthReward(config, 0.4, 0.04)
+    reward = CthReward(config, 0.4, 0.04)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
+    TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 
 def train_mod_dev():
-    agent_name = "ModDev_test_rt"
-    config = load_config(config_rt)
+    agent_name = "ModDev_test_f"
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
 
-    reward = TrackDevReward(config)
+    reward = DevReward(config)
 
     TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
 
 def train_mod_std():
-    agent_name = "ModStd_test_rt"
-    config = load_config(config_rt)
+    agent_name = "ModStd_test_f"
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
 
-    reward = TrackStdReward(config)
+    reward = StdReward(config)
 
     TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
 
 def train_mod_old():
     agent_name = "ModOld_test_rt"
-    config = load_config(config_rt)
+    config = load_config(config_med)
     vehicle = ModVehicleTrain(config, agent_name)
 
-    reward = TrackOldReward(config)
+    reward = OldReward(config)
 
     TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
 
@@ -85,13 +81,13 @@ def train_mod_old():
 
 def FullTrainRT():
     # config = load_config(config_med)
-    config = load_config(config_rt)
+    config = load_config(config_med)
     env_name = "porto"
     n_train = 20000
 
     agent_name = "ModSteer_"  + env_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackSteerReward(config, 0.1, 0.1)
+    reward = SteerReward(config, 0.1, 0.1)
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
@@ -103,19 +99,19 @@ def FullTrainRT():
 
     agent_name = "ModCth_" + env_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackCthReward(config, 0.4, 0.04)
+    reward = CthReward(config, 0.4, 0.04)
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
     agent_name = "ModOld_" + env_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackOldReward(config)
+    reward = OldReward(config)
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
     agent_name = "ModStd_" + env_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackStdReward(config)
+    reward = StdReward(config)
 
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
@@ -128,7 +124,7 @@ def FullTrainRT():
 def FullTest():
     # config = load_config(config_med)
     # config = load_config(config_std)
-    config = load_config(config_rt)
+    config = load_config(config_med)
 
     env_name = "porto"
     test_name = "compare_" + env_name + "_8_noObs"
@@ -338,7 +334,7 @@ def test_steer_sweep():
 
 def test_ftg():
     # config = load_config(config_med)
-    config = load_config(config_rt)
+    config = load_config(config_med)
 
     vehicle = TunerCar(config)
     # vehicle = FollowTheGap(config)
@@ -349,18 +345,18 @@ def test_ftg():
     # testVehicle(config, vehicle, True, 10)
 
 def test_mod():
-    config = load_config(config_rt)
+    config = load_config(config_med)
     # agent_name = "ModTime_raceTrack"
 
-    # agent_name = "ModSteer_test_rt"
-    # agent_name = "ModCth_test_rt"
+    agent_name = "ModSteer_test_f"
+    # agent_name = "ModCth_test_f"
     # agent_name = "ModCth_test"
-    # agent_name = "ModDev_test_rt"
-    # agent_name = "ModDev_test_rt"
-    # agent_name = "ModOld_test_rt"
-    # agent_name = "ModTime_test_rt"
+    # agent_name = "ModDev_test_f"
+    # agent_name = "ModDev_test_f"
+    # agent_name = "ModOld_test_f"
+    # agent_name = "ModTime_test_f"
     # agent_name = "ModTime_medForest"
-    agent_name = "ModDev_raceTrack"
+    # agent_name = "ModDev_raceTrack"
     vehicle = ModVehicleTest(config, agent_name)
     # vehicle = TunerCar(config)
 
@@ -373,9 +369,9 @@ def test_mod():
 def train():
     pass
 
-    # train_mod_steer()
     # train_mod_cth()
     # train_mod_time()
+    train_mod_steer()
 
     # train_mod_dev()
     # train_mod_std()
@@ -386,16 +382,17 @@ def train():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
+
 
     # test_compare()
     # test_compare_mod()
     # test_time_sweep()
     # test_steer_sweep()
 
-    # FullTrainRT()
-    FullTest()
+    # FullTrainf()
+    # FullTest()
 
 
-    # test_mod()
+    test_mod()
     # test_ftg()

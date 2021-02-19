@@ -211,7 +211,115 @@ class SimMap:
         return min_dist_segment
   
 
+class ForestMap:
+    def __init__(self,config) -> None:
+        self.config = config
+        self.length = config['forest_len']
+        self.width = config['forest_w']
+        self.start = config['start']
+        self.end = config['end']
+        self.resoltuion = config['resolution']
+        self.obs_size = config['obs_size']
+        self.obs_buf = config['obs_buf']
+        self.n_obs = config['n_obs']
+        self.plan_scale = config['plan_scale']
 
+        self.max_v = config['max_v']
+        self.wpts = None
+
+        self.h = int(self.length / self.resoltuion)
+        self.w = int(self.width / self.resoltuion)
+        self.obs_img = np.zeros((self.w, self.h))
+        self.obs_img_plan = np.zeros((self.w, self.h))
+
+    def scale_xy_to_img(self, pt):
+        c = int(round(np.clip(pt[0] / self.resoltuion, 0, self.w-2)))
+        r = int(round(np.clip(pt[1] / self.resoltuion, 0, self.h-2)))
+        return c, r
+
+    def reset_static_map(self, n=None):
+        if n is None:
+            n = self.n_obs
+        self.obs_img = np.zeros_like(self.obs_img)
+
+        obs_size = np.array([self.obs_size, self.obs_size])
+        x, y = self.scale_xy_to_img(obs_size)
+        norm_obs_size = [x, y]
+        x, y = self.scale_xy_to_img(obs_size * self.plan_scale)
+        obs_size_plan = [x, y]
+
+        y_end = self.length - self.obs_buf - self.obs_size
+        tys = np.linspace(self.obs_buf, y_end, n)
+        txs = np.random.uniform(0, self.width-self.obs_size, n)
+        obs_locs = np.array([txs, tys]).T
+
+        for obs in obs_locs:
+            for i in range(0, norm_obs_size[0]):
+                for j in range(0, norm_obs_size[1]):
+                    x, y = self.scale_xy_to_img([obs[0], obs[1]])
+                    x = np.clip(x+i, 0, self.w-1)
+                    y = np.clip(y+j, 0, self.h-1)
+                    self.obs_img[x, y] = 1
+
+        for obs in obs_locs:
+            for i in range(0, obs_size_plan[0]):
+                for j in range(0, obs_size_plan[1]):
+                    x, y = self.scale_xy_to_img([obs[0], obs[1]])
+                    x = np.clip(x+i, 0, self.w-1)
+                    y = np.clip(y+j, 0, self.h-1)
+                    self.obs_img_plan[x, y] = 1
+
+        return self.get_reference_path()
+
+    def check_scan_location(self, x_in):
+        if x_in[0] < 0 or x_in[1] < 0:
+            return True
+        if x_in[0] > self.width or x_in[1] > self.length:
+            return True
+        x, y = self.scale_xy_to_img(x_in)
+        if self.obs_img[x, y]:
+            return True
+
+    def get_reference_path(self):
+        n_pts = self.length * 3
+        tys = np.linspace(self.start[1], self.end[1], n_pts)
+        txs = np.ones(n_pts) * self.width/2
+
+        self.wpts = np.concatenate([txs[:, None], tys[:, None]], axis=-1)
+        vs = np.ones(n_pts) * self.max_v
+
+        return self.wpts, vs 
+
+    def get_optimal_path(self):
+        raise NotImplementedError
+
+    def render_map(self, figure_n=1, wait=False):
+        f = plt.figure(figure_n)
+        plt.clf()
+
+        plt.xlim([0, self.width])
+        plt.ylim([self.height, 0])
+
+        if self.wpts is not None:
+            xs, ys = [], []
+            for pt in self.wpts:
+                x, y = self.convert_position(pt)
+                # plt.plot(x, y, '+', markersize=14)
+                xs.append(x)
+                ys.append(y)
+            plt.plot(xs, ys, '--', color='g', linewidth=2)
+
+        plt.imshow(self.obs_img)
+
+        # plt.gca().set_aspect('equal', 'datalim')
+        x, y = self.convert_position(self.end)
+        plt.plot(x, y, '*', markersize=14)        
+        x, y = self.convert_position(self.start)
+        plt.plot(x, y, '*', markersize=14)
+
+        plt.pause(0.0001)
+        if wait:
+            plt.show()
 
 class MapBase:
     """
@@ -583,7 +691,7 @@ class SimMap2(MapBase):
     
 
 
-class ForestMap(MapBase):
+class ForestMap2(MapBase):
     """
     This class is for using a forest map
 

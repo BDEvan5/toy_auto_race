@@ -468,9 +468,9 @@ class ForestSim(BaseSim):
             self.dt = dt / 10 # 10 is the current frequency ratio
 
         # self.env_map.update_obs_cars(self.timestep)
-        self.base_step(action)
+        self.base_step(action, self.check_done_forest)
 
-        self.check_done_forest()
+        # self.check_done_forest()
 
         obs = self.car.get_car_state()
         done = self.done
@@ -500,7 +500,7 @@ class ForestSim(BaseSim):
         self.reward = 0 # normal
         # check if finished lap
         dx = self.car.x - self.env_map.end[0]
-        dx_lim = self.env_map.width * self.env_map.resolution * 0.5
+        dx_lim = self.env_map.width * 0.5
         if dx < dx_lim and self.car.y > self.env_map.end[1]:
             self.done = True
             self.reward = 1
