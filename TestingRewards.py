@@ -87,7 +87,7 @@ def FullTrainRT():
     # config = load_config(config_med)
     config = load_config(config_rt)
     env_name = "raceTrack"
-    n_train = 100
+    n_train = 20000
 
     agent_name = "ModSteer_"  + env_name
     vehicle = ModVehicleTrain(config, agent_name)
@@ -131,7 +131,7 @@ def FullTest():
     config = load_config(config_rt)
 
     env_name = "raceTrack"
-    test_name = "compare_" + env_name + "_4"
+    test_name = "compare_" + env_name + "_5_noObs"
     test = TestVehicles(config, test_name, 'track')
 
     # mod
@@ -171,7 +171,7 @@ def FullTest():
 
     test.run_eval(1, True, add_obs=False)
     # test.run_eval(10, True, add_obs=True, save=True)
-    # test.run_eval(100, False, add_obs=False, save=True)
+    # test.run_eval(100, False, add_obs=True, save=True)
 
     # test.run_eval(10, True)
 
@@ -392,9 +392,9 @@ if __name__ == "__main__":
     # test_time_sweep()
     # test_steer_sweep()
 
-    FullTrainRT()
-    FullTest()
+    # FullTrainRT()
+    # FullTest()
 
 
     # test_mod()
-    # test_ftg()
+    test_ftg()

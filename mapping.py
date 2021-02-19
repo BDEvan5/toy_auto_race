@@ -566,12 +566,14 @@ def Max_velocity(pts, conf, show=False):
 
     # make lbx, ubx
     # lbx = [-max_v] * N + [-max_v] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
-    lbx = [-max_v] * N + [0] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
-    ubx = [max_v] * N + [max_v] * N + [10] * N1 + [f_long_max] * N1 + [f_max] * N1
+    lbx = [-max_v] * N + [0] * N + [0] * N1 + [-ca.inf] * N1 + [-f_max] * N1
+    ubx = [max_v] * N + [max_v] * N + [10] * N1 + [ca.inf] * N1 + [f_max] * N1
+    # lbx = [-max_v] * N + [0] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
+    # ubx = [max_v] * N + [max_v] * N + [10] * N1 + [f_long_max] * N1 + [f_max] * N1
 
     #make lbg, ubg
     lbg = [0] * N1 + [0] * N + [0] * 2 * N1 + [0] * N1 #+ [0] * 2 
-    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [f_max] * N1 #+ [0] * 2 
+    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [ca.inf] * N1 #+ [0] * 2 
 
     r = S(x0=x0, lbg=lbg, ubg=ubg, lbx=lbx, ubx=ubx)
 
@@ -614,6 +616,7 @@ def Max_velocity(pts, conf, show=False):
         plt.plot(t[:-1], f_long)
         plt.plot(t[:-1], f_lat)
         plt.plot(t[:-1], f_t, linewidth=3)
+        plt.ylim([-25, 25])
         plt.plot(t, np.ones_like(t) * f_max, '--')
         plt.plot(t, np.ones_like(t) * -f_max, '--')
         plt.plot(t, np.ones_like(t) * f_long_max, '--')

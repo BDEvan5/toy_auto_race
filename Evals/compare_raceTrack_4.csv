@@ -1,8 +1,8 @@
 #,Name,%Complete,AvgTime,Std
 0,ModTime_raceTrack,0.0,0.0,0.0
-1,ModCth_raceTrack,0.0,0.0,0.0
-2,ModSteer_raceTrack,0.0,0.0,0.0
+1,ModCth_raceTrack,79.0,132.126582278481,4.938526117974248
+2,ModSteer_raceTrack,46.0,161.2608695652174,4.093657780819622
 3,ModDev_raceTrack,0.0,0.0,0.0
-4,ModOld_raceTrack,0.0,0.0,0.0
-5,ModStd_raceTrack,0.0,0.0,0.0
-6,TunerCar Agent: Following PP references,100.0,156.0,0.0
+4,ModOld_raceTrack,76.0,154.57894736842104,8.0135791955621
+5,ModStd_raceTrack,72.0,144.72222222222223,4.0146337255865925
+6,TunerCar Agent: Following PP references,0.0,0.0,0.0
