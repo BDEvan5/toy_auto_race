@@ -230,6 +230,8 @@ class MapConverter(MapBase):
         map_file_name = self.yaml_file['image']
         pgm_name = 'maps/' + map_file_name
 
+        #TODO: add png reading
+        #TODO: clean up this so that it can be easily used. Look at one in new sim
 
         with open(pgm_name, 'rb') as f:
             codec = f.readline()
@@ -544,11 +546,11 @@ class MapConverter(MapBase):
         print(f"Track Saved in File: {filename}")
 
 
-# def test_map_converter():
-#     names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
-#     name = names[5]
-#     myConv = MapConverter(name)
-#     myConv.run_conversion()
+def test_map_converter():
+    names = ['columbia', 'levine_blocked', 'mtl', 'porto', 'torino', 'race_track']
+    name = names[5]
+    myConv = MapConverter(name)
+    myConv.run_conversion()
 
     # t = SimMap(name)
     # t.get_min_curve_path()
@@ -560,4 +562,6 @@ def forest_gen():
     f = ForestGenerator("med_forest", 16, 6)
     f.save_map()
 
-forest_gen()
+# forest_gen()
+
+test_map_converter()

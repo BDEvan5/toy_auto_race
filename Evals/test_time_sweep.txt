@@ -1,0 +1,45 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModTime_test_04
+Crashes: 4.0 --> Completes 96.0
+% Finished = 96.00
+Avg lap times: 21.291666666666668
+-----------------------------------------------------
+Vehicle: ModTime_test_06
+Crashes: 29.0 --> Completes 71.0
+% Finished = 71.00
+Avg lap times: 17.760563380281692
+-----------------------------------------------------
+Vehicle: ModTime_test_08
+Crashes: 23.0 --> Completes 77.0
+% Finished = 77.00
+Avg lap times: 19.376623376623378
+-----------------------------------------------------
+Vehicle: ModTime_test_10
+Crashes: 5.0 --> Completes 95.0
+% Finished = 95.00
+Avg lap times: 17.378947368421052
+-----------------------------------------------------
+Vehicle: ModTime_test_15
+Crashes: 9.0 --> Completes 91.0
+% Finished = 91.00
+Avg lap times: 16.494505494505493
+-----------------------------------------------------
+Vehicle: ModTime_test_18
+Crashes: 15.0 --> Completes 85.0
+% Finished = 85.00
+Avg lap times: 16.0
+-----------------------------------------------------
+Vehicle: ModTime_test_20
+Crashes: 42.0 --> Completes 58.0
+% Finished = 58.00
+Avg lap times: 14.844827586206897
+-----------------------------------------------------
+Vehicle: ModTime_test_25
+Crashes: 50.0 --> Completes 50.0
+% Finished = 50.00
+Avg lap times: 13.96
+-----------------------------------------------------

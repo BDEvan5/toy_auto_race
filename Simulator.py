@@ -190,6 +190,7 @@ class BaseSim:
     def __init__(self, env_map):
         self.env_map = env_map
         self.config = self.env_map.config
+        self.n_obs = self.config['map']['n_obs']
 
         self.timestep = self.config['sim']['timestep']
         self.eps = 0
@@ -207,7 +208,7 @@ class BaseSim:
         self.done_reason = ""
         self.y_forces = []
 
-    def base_step(self, action):
+    def base_step(self, action, done_fcn):
         self.steps += 1
 
         v_ref = action[0]
@@ -219,6 +220,8 @@ class BaseSim:
         for i in range(frequency_ratio):
             acceleration, steer_dot = self.control_system(v_ref, d_ref)
             self.car.update_kinematic_state(acceleration, steer_dot, self.timestep)
+            if done_fcn():
+                break
 
         self.history.velocities.append(self.car.velocity)
         self.history.steering.append(self.car.steering)
@@ -245,6 +248,7 @@ class BaseSim:
         self.done_reason = "Null"
         self.action_memory = []
         self.steps = 0
+        self.env_map.targets = []
         
         self.eps += 1
 
@@ -276,10 +280,13 @@ class BaseSim:
             self.done_reason = f"Max steps"
 
         car = [self.car.x, self.car.y]
-        if lib.get_distance(car, self.env_map.start) < 2 and self.steps > 50:
+        if lib.get_distance(car, self.env_map.start) < 1 and self.steps > 50:
             self.done = True
             self.reward = 1
             self.done_reason = f"Lap complete"
+
+
+        return self.done
 
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
@@ -299,12 +306,12 @@ class BaseSim:
 
         xs, ys = [], []
         for pos in self.action_memory:
-            x, y = self.env_map.convert_position(pos)
+            x, y = self.env_map.xy_to_row_column(pos)
             xs.append(x)
             ys.append(y)
         plt.plot(xs, ys, 'r', linewidth=3)
         plt.plot(xs, ys, '+', markersize=12)
-        x, y = self.env_map.convert_position([self.car.x, self.car.y])
+        x, y = self.env_map.xy_to_row_column([self.car.x, self.car.y])
         plt.plot(x, y, 'x', markersize=20)
 
         if pts1 is not None:
@@ -318,8 +325,8 @@ class BaseSim:
                 x, y = self.env_map.convert_position(pt)
                 plt.plot(x, y, 'o', markersize=6)
 
-        text_x = self.env_map.scan_map.shape[1] + 10
-        text_y = self.env_map.scan_map.shape[0] / 10
+        text_x = self.env_map.obs_img.shape[0] + 10
+        text_y = self.env_map.obs_img.shape[1] / 10
 
         s = f"Reward: [{self.reward:.1f}]" 
         plt.text(text_x, text_y * 1, s)
@@ -417,9 +424,10 @@ class TrackSim(BaseSim):
         BaseSim.__init__(self, env_map)
 
     def step(self, action):
-        self.base_step(action)
+        d_func = self.check_done_reward_track_train
+        self.base_step(action, d_func)
 
-        self.check_done_reward_track_train()
+        # self.check_done_reward_track_train()
 
         obs = self.car.get_car_state()
         done = self.done
@@ -427,17 +435,25 @@ class TrackSim(BaseSim):
 
         return obs, reward, done, None
 
-    def reset(self):
+    def reset(self, add_obs=True):
         self.car.x = self.env_map.start[0]
         self.car.y = self.env_map.start[1]
         self.car.prev_loc = [self.car.x, self.car.y]
         self.car.velocity = 0
         self.car.steering = 0
-        self.car.theta = np.pi/2
+        self.car.theta = -np.pi/2
+        # TODO: have a theta start in config file
 
         #TODO: combine with reset lap that it can be called every lap and do the right thing
 
-        return self.base_reset()
+        if add_obs:
+            wpts, vs = self.env_map.reset_map(self.n_obs)
+        else:
+            wpts, vs = self.env_map.reset_map(0)
+
+        s = self.base_reset()
+
+        return s, wpts, vs
 
 
 class ForestSim(BaseSim):
@@ -452,9 +468,9 @@ class ForestSim(BaseSim):
             self.dt = dt / 10 # 10 is the current frequency ratio
 
         # self.env_map.update_obs_cars(self.timestep)
-        self.base_step(action)
+        self.base_step(action, self.check_done_forest)
 
-        self.check_done_forest()
+        # self.check_done_forest()
 
         obs = self.car.get_car_state()
         done = self.done
@@ -462,7 +478,7 @@ class ForestSim(BaseSim):
 
         return obs, reward, done, None
 
-    def reset(self):
+    def reset(self, add_obs=True):
         self.car.x = self.env_map.start[0]
         self.car.y = self.env_map.start[1]
         self.car.prev_loc = [self.car.x, self.car.y]
@@ -471,8 +487,11 @@ class ForestSim(BaseSim):
         self.car.theta = 0
 
         # self.env_map.reset_dynamic_map(4)
-        n_obs = self.config['map']['n_obs']
-        wpts, vs = self.env_map.reset_static_map(n_obs)
+        
+        if add_obs:
+            wpts, vs = self.env_map.reset_static_map()
+        else:
+            wpts, vs = self.env_map.reset_no_obs()
         s = self.base_reset()
 
         return s, wpts, vs
@@ -481,7 +500,7 @@ class ForestSim(BaseSim):
         self.reward = 0 # normal
         # check if finished lap
         dx = self.car.x - self.env_map.end[0]
-        dx_lim = self.env_map.width * self.env_map.resolution * 0.5
+        dx_lim = self.env_map.width * 0.5
         if dx < dx_lim and self.car.y > self.env_map.end[1]:
             self.done = True
             self.reward = 1
@@ -495,11 +514,11 @@ class ForestSim(BaseSim):
         horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
         self.y_forces.append(horizontal_force)
         # check forces
-        if horizontal_force > self.car.max_friction_force:
-            self.done = True
-            self.reward = -1
+        # if horizontal_force > self.car.max_friction_force:
+            # self.done = True
+            # self.reward = -1
             # print(f"ThDot: {self.car.th_dot} --> Vel: {self.car.velocity}")
-            self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
+            # self.done_reason = f"Friction: {horizontal_force} > {self.car.max_friction_force}"
         # check steps
         if self.steps > 100:
             self.done = True

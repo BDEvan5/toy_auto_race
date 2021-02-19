@@ -1,8 +1,9 @@
 
 
+from matplotlib import pyplot as plt
 from HistoryStructs import TrainHistory
-from Simulator import ForestSim
-from SimMaps import  ForestMap
+from Simulator import ForestSim, TrackSim
+from SimMaps import  ForestMap, SimMap
 
 from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
 import numpy as np
@@ -14,27 +15,34 @@ import LibFunctions as lib
 
 
 """Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
+def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='forest'):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
+    if env_kwarg == 'forest':
+        env_map = ForestMap(config)
+        env = ForestSim(env_map)
+    else:
+        env_map = SimMap(config)
+        env = TrackSim(env_map)
 
-    env_map = ForestMap(config)
-    env = ForestSim(env_map)
 
     t_his = TrainHistory(agent_name)
-    print_n = 500
 
-    done, state = False, env.reset()
-    wpts = vehicle.init_agent(env_map)
+    print_n = 500
+    add_obs = True
+
+    done = False
+    state, wpts, vs = env.reset(add_obs=add_obs)
+    vehicle.init_agent(env_map)
+    reward.init_reward(wpts, vs)
 
     for n in range(steps):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
-        new_r = reward(state, a, s_prime, r)
+        deviation = vehicle.get_deviation()
+        new_r = reward(state, a, s_prime, r, deviation)
         vehicle.add_memory_entry(new_r, done, s_prime, buffer)
         t_his.add_step_data(new_r)
 
@@ -48,12 +56,14 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
             vehicle.agent.save(directory=path)
         
         if done:
-            t_his.lap_done()
+            # t_his.lap_done(True)
+            t_his.lap_done(False)
             # vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
-            state = env.reset()
+            state, wpts, vs = env.reset(add_obs=add_obs)
+            reward.init_reward(wpts, vs)
 
 
     vehicle.agent.save(directory=path)
@@ -73,6 +83,7 @@ class TestData:
         self.lap_times = None
 
         self.names = []
+        self.lap_histories = None
 
         self.N = None
 
@@ -104,6 +115,8 @@ class TestData:
         print(f"-----------------------------------------------------")
         print(f"-----------------------------------------------------")
         for i in range(self.N):
+            if len(self.lap_times[i]) == 0:
+                self.lap_times[i].append(0)
             print(f"Vehicle: {self.vehicle_list[i].name}")
             print(f"Crashes: {self.crashes[i]} --> Completes {self.completes[i]}")
             percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
@@ -114,12 +127,13 @@ class TestData:
     def save_csv_results(self):
         test_name = 'Evals/'  + self.eval_name + '.csv'
 
-        data = [["#", "Name", "%Complete", "AvgTime"]]
+        data = [["#", "Name", "%Complete", "AvgTime", "Std"]]
         for i in range(self.N):
             v_data = [i]
             v_data.append(self.vehicle_list[i].name)
             v_data.append((self.completes[i] / (self.completes[i] + self.crashes[i]) * 100))
             v_data.append(np.mean(self.lap_times[i]))
+            v_data.append(np.std(self.lap_times[i]))
             data.append(v_data)
 
         with open(test_name, 'w') as csvfile:
@@ -142,31 +156,44 @@ class TestData:
 
 
 class TestVehicles(TestData):
-    def __init__(self, config, eval_name) -> None:
+    def __init__(self, config, eval_name, env_kwarg='forest') -> None:
         self.config = config
         self.eval_name = eval_name
         self.vehicle_list = []
         self.N = None
+        self.env_kwarg = env_kwarg
 
         TestData.__init__(self)
 
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
-    def run_eval(self, laps=100, show=False):
+    def run_eval(self, laps=100, show=False, add_obs=True, save=False):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
-        env_map = ForestMap(self.config)
-        env = ForestSim(env_map)    
+        if self.env_kwarg == 'forest':
+            env_map = ForestMap(self.config)
+            env = ForestSim(env_map)    
+        else:
+            env_map = SimMap(self.config)
+            env = TrackSim(env_map)
+
+        path = 'Evals/imgs/'
+
 
         for i in range(laps):
-        # if add_obs:
-            # env_map.reset_map()
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show)
+                r, steps = self.run_lap(vehicle, env, show, add_obs)
+                
+                if save:
+                    plt.figure(4)
+                    plt.title(vehicle.name)
+                    plt.savefig(path + f"lap_{i}_{vehicle.name}")
+
+                
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
                 if r == -1 or r == 0:
@@ -179,15 +206,16 @@ class TestVehicles(TestData):
         self.save_txt_results()
         self.save_csv_results()
 
-    def run_lap(self, vehicle, env, show=False):
-        state, wpts, vs = env.reset()
+    def run_lap(self, vehicle, env, show=False, add_obs=True):
+        state, wpts, vs = env.reset(add_obs)
+        # env.render(wait=True)
         vehicle.init_agent(env.env_map)
         done = False
         while not done:
             a = vehicle.act(state)
             s_p, r, done, _ = env.step(a)
             state = s_p
-            # env.render(False, wpts)
+            # env.render(False)
 
         if show:
             # vehicle.show_vehicle_history()

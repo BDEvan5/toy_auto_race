@@ -1,0 +1,30 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModTime_medForest
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 14.0
+-----------------------------------------------------
+Vehicle: ModCth_medForest
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 23.0
+-----------------------------------------------------
+Vehicle: ModSteer_medForest
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 18.0
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 22.0
+-----------------------------------------------------
+Vehicle: Follow The Gap
+Crashes: 0.0 --> Completes 10.0
+% Finished = 100.00
+Avg lap times: 15.0
+-----------------------------------------------------

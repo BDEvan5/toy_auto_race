@@ -15,6 +15,12 @@ lims:
   max_d_dot: 3.2
   dis_scale: 0.5
 
+max_v: 7
+max_a: 8.5
+max_steer: 0.4
+max_d_dot: 3.2
+dis_scale: 0.5
+
 map:
   name: "med_forest"
   obs_size: 1.5
@@ -23,6 +29,19 @@ map:
   end:
     x: 3
     y: 14
+
+forest_len: 30
+forest_w: 6
+start: [3, 1]
+end: [3, 29]
+obs_buf: 5
+resolution: 0.1
+plan_scale: 1.2
+# n_obs: 8
+# obs_size: 0.5
+
+n_obs: 4
+obs_size: 1.5
 
 
 sim:

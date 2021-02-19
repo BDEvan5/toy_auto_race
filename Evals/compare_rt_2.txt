@@ -1,0 +1,35 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModCth_test
+Crashes: 51.0 --> Completes 49.0
+% Finished = 49.00
+Avg lap times: 117.40816326530613
+-----------------------------------------------------
+Vehicle: ModSteer_test_rt
+Crashes: 21.0 --> Completes 79.0
+% Finished = 79.00
+Avg lap times: 163.59493670886076
+-----------------------------------------------------
+Vehicle: ModDev_test_rt
+Crashes: 53.0 --> Completes 47.0
+% Finished = 47.00
+Avg lap times: 155.80851063829786
+-----------------------------------------------------
+Vehicle: ModOld_test_rt
+Crashes: 22.0 --> Completes 78.0
+% Finished = 78.00
+Avg lap times: 172.23076923076923
+-----------------------------------------------------
+Vehicle: ModStd_test_rt
+Crashes: 44.0 --> Completes 56.0
+% Finished = 56.00
+Avg lap times: 143.05357142857142
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 100.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
