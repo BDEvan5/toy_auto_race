@@ -3,8 +3,8 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
-Vehicle: ModCth_test
-Crashes: 4.0 --> Completes 6.0
-% Finished = 60.00
-Avg lap times: 122.0
+Vehicle: ModDev_raceTrack
+Crashes: 10.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
 -----------------------------------------------------

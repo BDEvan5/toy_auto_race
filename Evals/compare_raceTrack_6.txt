@@ -4,37 +4,37 @@ Map name:
 -----------------------------------------------------
 -----------------------------------------------------
 Vehicle: ModTime_raceTrack
-Crashes: 1.0 --> Completes 0.0
+Crashes: 10.0 --> Completes 0.0
 % Finished = 0.00
 Avg lap times: 0.0
 -----------------------------------------------------
 Vehicle: ModCth_raceTrack
-Crashes: 0.0 --> Completes 1.0
-% Finished = 100.00
-Avg lap times: 103.0
+Crashes: 6.0 --> Completes 4.0
+% Finished = 40.00
+Avg lap times: 105.5
 -----------------------------------------------------
 Vehicle: ModSteer_raceTrack
-Crashes: 0.0 --> Completes 1.0
-% Finished = 100.00
-Avg lap times: 103.0
+Crashes: 6.0 --> Completes 4.0
+% Finished = 40.00
+Avg lap times: 108.0
 -----------------------------------------------------
 Vehicle: ModDev_raceTrack
-Crashes: 1.0 --> Completes 0.0
+Crashes: 10.0 --> Completes 0.0
 % Finished = 0.00
 Avg lap times: 0.0
 -----------------------------------------------------
 Vehicle: ModOld_raceTrack
-Crashes: 0.0 --> Completes 1.0
-% Finished = 100.00
-Avg lap times: 112.0
+Crashes: 4.0 --> Completes 6.0
+% Finished = 60.00
+Avg lap times: 113.66666666666667
 -----------------------------------------------------
 Vehicle: ModStd_raceTrack
-Crashes: 0.0 --> Completes 1.0
-% Finished = 100.00
-Avg lap times: 115.0
+Crashes: 1.0 --> Completes 9.0
+% Finished = 90.00
+Avg lap times: 117.77777777777777
 -----------------------------------------------------
 Vehicle: TunerCar Agent: Following PP references
-Crashes: 0.0 --> Completes 1.0
-% Finished = 100.00
-Avg lap times: 72.0
+Crashes: 10.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
 -----------------------------------------------------
