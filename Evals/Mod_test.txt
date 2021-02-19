@@ -3,8 +3,8 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
-Vehicle: TunerCar Agent: Following PP references
-Crashes: 0.0 --> Completes 10.0
-% Finished = 100.00
-Avg lap times: 216.0
+Vehicle: ModDev_test_rt
+Crashes: 10.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: nan
 -----------------------------------------------------

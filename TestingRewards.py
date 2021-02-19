@@ -61,7 +61,7 @@ def train_mod_dev():
 
     reward = TrackDevReward(config)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 4000, 'track')
+    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
 
 
 """Tests """
@@ -291,8 +291,8 @@ def test_ftg():
     # config = load_config(config_med)
     config = load_config(config_rt)
 
-    # vehicle = TunerCar(config)
-    vehicle = FollowTheGap(config)
+    vehicle = TunerCar(config)
+    # vehicle = FollowTheGap(config)
 
     test = TestVehicles(config, "FTG", 'track')
     test.add_vehicle(vehicle)
@@ -303,7 +303,8 @@ def test_mod():
     config = load_config(config_rt)
     # agent_name = "ModTime_raceTrack"
 
-    agent_name = "ModSteer_test_rt"
+    # agent_name = "ModSteer_test_rt"
+    agent_name = "ModDev_test_rt"
     # agent_name = "ModTime_test_rt"
     # agent_name = "ModTime_medForest"
     vehicle = ModVehicleTest(config, agent_name)
@@ -328,7 +329,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
@@ -339,5 +340,5 @@ if __name__ == "__main__":
     # FullTest()
 
 
-    # test_ftg()
+    test_ftg()
     # test_mod()

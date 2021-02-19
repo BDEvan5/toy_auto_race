@@ -69,7 +69,7 @@ class SimMap:
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
-        map_img_path = f'maps/{self.map_name}.png'
+        map_img_path = f'maps/{self.map_name}' + self.config['map']['ext']
         np.array(Image.open(map_img_path))
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         self.map_img = self.map_img[:, :, 0] / 255

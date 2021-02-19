@@ -28,10 +28,12 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
 
 
     t_his = TrainHistory(agent_name)
+
     print_n = 500
+    add_obs = True
 
     done = False
-    state, wpts, vs = env.reset(add_obs=False)
+    state, wpts, vs = env.reset(add_obs=add_obs)
     vehicle.init_agent(env_map)
     reward.init_reward(wpts, vs)
 
@@ -55,11 +57,11 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
         
         if done:
             t_his.lap_done(True)
-            # vehicle.show_vehicle_history()
+            vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
             vehicle.reset_lap()
-            state, wpts, vs = env.reset(add_obs=False)
+            state, wpts, vs = env.reset(add_obs=add_obs)
             reward.init_reward(wpts, vs)
 
 
@@ -80,6 +82,7 @@ class TestData:
         self.lap_times = None
 
         self.names = []
+        self.lap_histories = None
 
         self.N = None
 
@@ -121,12 +124,13 @@ class TestData:
     def save_csv_results(self):
         test_name = 'Evals/'  + self.eval_name + '.csv'
 
-        data = [["#", "Name", "%Complete", "AvgTime"]]
+        data = [["#", "Name", "%Complete", "AvgTime", "Std"]]
         for i in range(self.N):
             v_data = [i]
             v_data.append(self.vehicle_list[i].name)
             v_data.append((self.completes[i] / (self.completes[i] + self.crashes[i]) * 100))
             v_data.append(np.mean(self.lap_times[i]))
+            v_data.append(np.std(self.lap_times[i]))
             data.append(v_data)
 
         with open(test_name, 'w') as csvfile:
@@ -213,8 +217,8 @@ class TestVehicles(TestData):
             # vehicle.show_vehicle_history()
             # env.show_history()
             # env.history.show_history()
-            # env.render(wait=False)
-            env.render(wait=True)
+            env.render(wait=False)
+            # env.render(wait=True)
 
         return r, env.steps
 
