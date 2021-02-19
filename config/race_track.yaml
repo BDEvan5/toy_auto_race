@@ -28,7 +28,7 @@ map:
 
 
 sim:
-  timestep: 0.02
+  timestep: 0.01
   update_f: 10
   beams: 10
 

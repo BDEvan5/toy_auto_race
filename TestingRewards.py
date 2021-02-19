@@ -330,7 +330,7 @@ def train():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
     # test_compare_mod()

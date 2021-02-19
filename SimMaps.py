@@ -157,7 +157,7 @@ class SimMap:
         val = self.dt[r, c]
         # plt.imshow(self.dt)
         # plt.show()
-        if val < 0.05:
+        if val < 0.1:
             return True
         if self.obs_img[r, c]:
             return True
@@ -182,7 +182,7 @@ class SimMap:
         # obs_size = [1, 1]
         obs_size = np.array(obs_size) / self.resolution
 
-        rands = np.random.randint(1, self.N-1, n)
+        rands = np.random.randint(5, self.N-5, n)
         obs_locs = []
         for i in range(n):
             pt = self.wpts[rands[i]][:, None]

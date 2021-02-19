@@ -208,7 +208,7 @@ class BaseSim:
         self.done_reason = ""
         self.y_forces = []
 
-    def base_step(self, action):
+    def base_step(self, action, done_fcn):
         self.steps += 1
 
         v_ref = action[0]
@@ -220,6 +220,8 @@ class BaseSim:
         for i in range(frequency_ratio):
             acceleration, steer_dot = self.control_system(v_ref, d_ref)
             self.car.update_kinematic_state(acceleration, steer_dot, self.timestep)
+            if done_fcn():
+                break
 
         self.history.velocities.append(self.car.velocity)
         self.history.steering.append(self.car.steering)
@@ -283,12 +285,8 @@ class BaseSim:
             self.reward = 1
             self.done_reason = f"Lap complete"
 
-        # check for turn around.
-        near_idx = self.env_map.find_nearest_pt(car)
-        # if abs(self.env_map.thetas[near_idx] - self.car.theta) > np.pi*1.8:
-        #     self.done = True
-        #     self.done_reason = f"Turned around"
-        #     self.reward = -1
+
+        return self.done
 
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
@@ -426,9 +424,10 @@ class TrackSim(BaseSim):
         BaseSim.__init__(self, env_map)
 
     def step(self, action):
-        self.base_step(action)
+        d_func = self.check_done_reward_track_train
+        self.base_step(action, d_func)
 
-        self.check_done_reward_track_train()
+        # self.check_done_reward_track_train()
 
         obs = self.car.get_car_state()
         done = self.done
