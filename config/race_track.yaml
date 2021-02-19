@@ -17,9 +17,9 @@ lims:
 
 map:
   # name: "race_track"
-  name: "berlin"
+  name: "porto"
   ext: ".png"
-  obs_size: 1.5
+  obs_size: 0.6
   n_obs: 10
   # obs_buf: 3
   # end:

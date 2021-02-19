@@ -205,6 +205,7 @@ class TestVehicles(TestData):
 
     def run_lap(self, vehicle, env, show=False, add_obs=True):
         state, wpts, vs = env.reset(add_obs)
+        # env.render(wait=True)
         vehicle.init_agent(env.env_map)
         done = False
         while not done:

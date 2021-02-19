@@ -312,7 +312,8 @@ def test_mod():
 
     test = TestVehicles(config, "Mod_test", 'track')
     test.add_vehicle(vehicle)
-    test.run_eval(10, True, add_obs=False)
+    # test.run_eval(10, True, add_obs=False)
+    test.run_eval(10, True, add_obs=True)
 
 
 def train():
@@ -340,5 +341,5 @@ if __name__ == "__main__":
     # FullTest()
 
 
-    test_ftg()
-    # test_mod()
+    # test_ftg()
+    test_mod()

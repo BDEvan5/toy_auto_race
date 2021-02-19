@@ -69,16 +69,18 @@ class SimMap:
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
-        map_img_path = f'maps/{self.map_name}' + self.config['map']['ext']
+        map_img_path = 'maps/' + self.yaml_file['image']
         np.array(Image.open(map_img_path))
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
-        self.map_img = self.map_img[:, :, 0] / 255
-        
+        try:
+            self.map_img = self.map_img[:, :, 0] / 255
+        except:
+            self.map_img = self.map_img / 255
+
         self.dt = ndimage.distance_transform_edt(self.map_img) 
         self.dt = np.array(self.dt *self.resolution)
 
         self.map_img = np.ones_like(self.map_img) - self.map_img
-
 
         self.obs_img = np.zeros_like(self.map_img)
         self.obs_img_plan = np.zeros_like(self.map_img)
@@ -128,8 +130,8 @@ class SimMap:
         cx, cy = self.convert_positions(self.wpts)
         plt.plot(cx, cy, '--', linewidth=1)
 
-        tx, ty = self.convert_positions(self.targets)
-        plt.plot(tx, ty, 'o')
+        # tx, ty = self.convert_positions(self.targets)
+        # plt.plot(tx, ty, 'o')
 
         if self.obs_img is None:
             plt.imshow(self.map_img, origin='lower')
@@ -157,6 +159,8 @@ class SimMap:
         # plt.show()
         if val < 0.05:
             return True
+        if self.obs_img[r, c]:
+            return True
         return False
 
     def convert_positions(self, pts):
@@ -171,7 +175,9 @@ class SimMap:
     def reset_map(self, n=10):
         self.obs_img = np.zeros_like(self.obs_img)
 
-        obs_size = [self.width/600, self.height/600]
+        # obs_size = [self.width/600, self.height/600]
+        obs_size = self.config['map']['obs_size']
+        obs_size = [obs_size, obs_size]
         # obs_size = [0.3, 0.3]
         # obs_size = [1, 1]
         obs_size = np.array(obs_size) / self.resolution
@@ -204,6 +210,8 @@ class SimMap:
 
         return min_dist_segment
   
+
+
 
 class MapBase:
     """
@@ -256,6 +264,7 @@ class MapBase:
         self.yaml_file = dict(yaml_file)
 
         self.resolution = self.yaml_file['resolution']
+        
         try:
             self.start = self.yaml_file['start']
         except KeyError:
@@ -280,8 +289,9 @@ class MapBase:
         self.nvecs = track[:, 2: 4]
         self.ws = track[:, 4:6]
 
-        self.map_img = plt.imread(f'maps/{self.name}.png')
-        map_img_path = f'maps/{self.name}.png'
+        # self.map_img = plt.imread(f'maps/{self.name}.png')
+        # map_img_path = f'maps/{self.name}.png'
+        map_img_path = self.yaml_file['image']
         np.array(Image.open(map_img_path))
         self.map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         self.map_img = self.map_img[:, :, 0] / 255
