@@ -1,12 +1,13 @@
 import numpy as np
 import csv, yaml
-from Rewards import CthReward, TimeReward, SteerReward
+from Rewards import CthReward, TimeReward, SteerReward, TrackStdReward2
 from Rewards import TrackCthReward, TrackTimeReward, TrackSteerReward
 from Rewards import TrackDevReward, TrackOldReward, TrackStdReward
 
 
 import LibFunctions as lib
 from LibFunctions import load_config
+from matplotlib import pyplot as plt
 
 # from AgentOptimal import OptimalAgent
 from AgentOptimal import FollowTheGap, TunerCar
@@ -69,7 +70,16 @@ def train_mod_std():
 
     reward = TrackStdReward(config)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track')
+
+def train_mod_std2():
+    agent_name = "ModStd_test_rt2"
+    config = load_config(config_rt)
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
+
+    reward = TrackStdReward2(config)
+
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track')
 
 def train_mod_old():
     agent_name = "ModOld_test_rt"
@@ -345,11 +355,13 @@ def test_ftg():
 
     test = TestVehicles(config, "FTG", 'track')
     test.add_vehicle(vehicle)
-    test.run_eval(10, True, add_obs=False)
+    # test.run_eval(10, True, add_obs=False)
+    test.run_eval(100, True, add_obs=True)
     # testVehicle(config, vehicle, True, 10)
 
 def test_mod():
     config = load_config(config_rt)
+    test = TestVehicles(config, "Mod_test2", 'track')
     # agent_name = "ModTime_raceTrack"
 
     # agent_name = "ModTime_test_rt"
@@ -366,10 +378,18 @@ def test_mod():
     vehicle = ModVehicleTest(config, agent_name)
     # vehicle = TunerCar(config)
 
-    test = TestVehicles(config, "Mod_test", 'track')
+
     test.add_vehicle(vehicle)
+
+    agent_name = "ModStd_test_rt2"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
     # test.run_eval(10, True, add_obs=False)
-    test.run_eval(100, True, add_obs=True)
+    # test.run_eval(100, True, add_obs=True, wait=True)
+    # test.run_eval(100, True, add_obs=True, wait=False)
+    test.run_eval(1, True, add_obs=False)
+    # plt.show()
 
 
 def train():
@@ -381,6 +401,7 @@ def train():
 
     # train_mod_dev()
     train_mod_std()
+    train_mod_std2()
     # train_mod_old()
 
     # train_time_sweep()
@@ -388,7 +409,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
