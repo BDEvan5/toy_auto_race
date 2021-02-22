@@ -220,9 +220,9 @@ class TestVehicles(TestData):
         if show:
             # vehicle.show_vehicle_history()
             # env.show_history()
-            env.history.show_history()
-            env.render(wait=False)
-            # env.render(wait=True)
+            # env.history.show_history()
+            # env.render(wait=False)
+            env.render(wait=True)
 
         return r, env.steps
 

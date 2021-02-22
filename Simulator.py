@@ -263,31 +263,7 @@ class BaseSim:
         self.action_memory.clear()
         self.done = False
 
-    def check_done_reward_track_train(self):
-        self.reward = 0 # normal
-        if self.env_map.check_scan_location([self.car.x, self.car.y]):
-            self.done = True
-            self.reward = -1
-            self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
-        horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
-        self.y_forces.append(horizontal_force)
-        if horizontal_force > self.car.max_friction_force:
-            # self.done = True
-            self.reward = -1
-            self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
-        if self.steps > 500:
-            self.done = True
-            self.done_reason = f"Max steps"
-
-        car = [self.car.x, self.car.y]
-        if lib.get_distance(car, self.env_map.start) < 1 and self.steps > 50:
-            self.done = True
-            self.reward = 1
-            self.done_reason = f"Lap complete"
-
-
-        return self.done
-
+    
     def render(self, wait=False, scan_sim=None, save=False, pts1=None, pts2=None):
         self.env_map.render_map(4)
         fig = plt.figure(4)
@@ -454,6 +430,32 @@ class TrackSim(BaseSim):
         s = self.base_reset()
 
         return s, wpts, vs
+
+    def check_done_reward_track_train(self):
+        self.reward = 0 # normal
+        if self.env_map.check_scan_location([self.car.x, self.car.y]):
+            self.done = True
+            self.reward = -1
+            self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
+        horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
+        self.y_forces.append(horizontal_force)
+        if horizontal_force > self.car.max_friction_force:
+            # self.done = True
+            self.reward = -1
+            self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
+        if self.steps > 500:
+            self.done = True
+            self.done_reason = f"Max steps"
+
+        car = [self.car.x, self.car.y]
+        if lib.get_distance(car, self.env_map.start) < 1 and self.steps > 50:
+            self.done = True
+            self.reward = 1
+            self.done_reason = f"Lap complete"
+
+
+        return self.done
+
 
 
 class ForestSim(BaseSim):

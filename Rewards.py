@@ -64,7 +64,8 @@ class SteerReward:
 
             new_r = self.mv * vel - self.ms * steer 
 
-            return new_r + r + shaped_r 
+            # return new_r + r + shaped_r 
+            return new_r + shaped_r 
 
 class CthReward:
     def __init__(self, config, mh, md) -> None:
@@ -160,11 +161,11 @@ class TrackRewardBase:
 
         return s 
 
-    def get_shpaed_r(self, pt1, pt2):
+    def get_shpaed_r(self, pt1, pt2, beta=0.2):
         s = self.find_s(pt1)
         ss = self.find_s(pt2)
         ds = ss - s
-        r = ds * 0.2
+        r = ds * beta
         shaped_r = np.clip(r, -0.5, 0.5)
 
         return shaped_r
@@ -213,7 +214,7 @@ class TrackStdReward(TrackRewardBase):
         if r == -1:
             return -1
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
 
             return shaped_r
 
@@ -241,8 +242,7 @@ class TrackSteerReward(TrackRewardBase):
         self.max_v = config['lims']['max_v']
         self.mv = mv 
         self.ms = ms 
-
-            
+           
     def __call__(self, s, a, s_p, r, dev) -> float:
         if r == -1:
             return r
@@ -254,7 +254,7 @@ class TrackSteerReward(TrackRewardBase):
 
             new_r = self.mv * vel - self.ms * steer 
 
-            return new_r + shaped_r 
+            return new_r + shaped_r + r
 
 class TrackCthReward(TrackRewardBase):
     def __init__(self, config, mh, md) -> None:

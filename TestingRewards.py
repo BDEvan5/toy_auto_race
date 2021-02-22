@@ -352,15 +352,17 @@ def test_mod():
     config = load_config(config_rt)
     # agent_name = "ModTime_raceTrack"
 
+    # agent_name = "ModTime_test_rt"
     # agent_name = "ModSteer_test_rt"
     # agent_name = "ModCth_test_rt"
-    # agent_name = "ModCth_test"
-    # agent_name = "ModDev_test_rt"
+
     # agent_name = "ModDev_test_rt"
     # agent_name = "ModOld_test_rt"
-    # agent_name = "ModTime_test_rt"
+    agent_name = "ModStd_test_rt"
+    
     # agent_name = "ModTime_medForest"
-    agent_name = "ModDev_raceTrack"
+    # agent_name = "ModDev_raceTrack"
+    # agent_name = "ModSteer_test_om"
     vehicle = ModVehicleTest(config, agent_name)
     # vehicle = TunerCar(config)
 
@@ -378,7 +380,7 @@ def train():
     # train_mod_time()
 
     # train_mod_dev()
-    # train_mod_std()
+    train_mod_std()
     # train_mod_old()
 
     # train_time_sweep()
@@ -386,7 +388,7 @@ def train():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
     # test_compare_mod()
@@ -394,8 +396,8 @@ if __name__ == "__main__":
     # test_steer_sweep()
 
     # FullTrainRT()
-    FullTest()
+    # FullTest()
 
 
-    # test_mod()
+    test_mod()
     # test_ftg()

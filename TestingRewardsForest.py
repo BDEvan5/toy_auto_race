@@ -20,14 +20,15 @@ from Testing import TestVehicles, TrainVehicle
 config_sf = "small_forest"
 config_std = "std_config"
 config_med = "med_forest"
+config_old = "old_med"
 
 
 """Mod training"""
 def train_mod_steer():
-    agent_name = "ModSteer_test_f"
+    agent_name = "ModSteer_test_omr"
 
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name)
+    config = load_config(config_old)
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
     reward = SteerReward(config, 0.1, 0.1)
 
     TrainVehicle(config, agent_name, vehicle, reward, 4000)
@@ -345,10 +346,10 @@ def test_ftg():
     # testVehicle(config, vehicle, True, 10)
 
 def test_mod():
-    config = load_config(config_med)
+    config = load_config(config_old)
     # agent_name = "ModTime_raceTrack"
 
-    agent_name = "ModSteer_test_f"
+    agent_name = "ModSteer_test_omr"
     # agent_name = "ModCth_test_f"
     # agent_name = "ModCth_test"
     # agent_name = "ModDev_test_f"
@@ -362,8 +363,13 @@ def test_mod():
 
     test = TestVehicles(config, "Mod_test_f")
     test.add_vehicle(vehicle)
+
+    agent_name = "ModSteer_test_om"
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
     # test.run_eval(10, True, add_obs=False)
-    test.run_eval(10, True, add_obs=True)
+    test.run_eval(100, True, add_obs=True)
 
 
 def train():
@@ -382,7 +388,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
 
     # test_compare()
