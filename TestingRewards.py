@@ -65,7 +65,7 @@ def train_mod_dev():
 def train_mod_std():
     agent_name = "ModStd_test_rt"
     config = load_config(config_rt)
-    vehicle = ModVehicleTrain(config, agent_name)
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
 
     reward = TrackStdReward(config)
 
@@ -369,7 +369,7 @@ def test_mod():
     test = TestVehicles(config, "Mod_test", 'track')
     test.add_vehicle(vehicle)
     # test.run_eval(10, True, add_obs=False)
-    test.run_eval(10, True, add_obs=True)
+    test.run_eval(100, True, add_obs=True)
 
 
 def train():

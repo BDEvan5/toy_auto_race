@@ -216,7 +216,7 @@ class TrackStdReward(TrackRewardBase):
         else:
             shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
 
-            return shaped_r
+            return shaped_r + r
 
 # newbies for testing
 class TrackTimeReward(TrackRewardBase):

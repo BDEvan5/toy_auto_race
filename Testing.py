@@ -56,8 +56,8 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             vehicle.agent.save(directory=path)
         
         if done:
-            # t_his.lap_done(True)
-            t_his.lap_done(False)
+            t_his.lap_done(True)
+            # t_his.lap_done(False)
             # vehicle.show_vehicle_history()
             env.render(wait=False, save=False)
 
@@ -221,8 +221,8 @@ class TestVehicles(TestData):
             # vehicle.show_vehicle_history()
             # env.show_history()
             # env.history.show_history()
-            # env.render(wait=False)
-            env.render(wait=True)
+            env.render(wait=False)
+            # env.render(wait=True)
 
         return r, env.steps
 

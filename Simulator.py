@@ -437,12 +437,12 @@ class TrackSim(BaseSim):
             self.done = True
             self.reward = -1
             self.done_reason = f"Crash obstacle: [{self.car.x:.2f}, {self.car.y:.2f}]"
-        horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
-        self.y_forces.append(horizontal_force)
-        if horizontal_force > self.car.max_friction_force:
+        # horizontal_force = self.car.mass * self.car.th_dot * self.car.velocity
+        # self.y_forces.append(horizontal_force)
+        # if horizontal_force > self.car.max_friction_force:
             # self.done = True
-            self.reward = -1
-            self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
+            # self.reward = -1
+            # self.done_reason = f"Friction limit reached: {horizontal_force} > {self.car.max_friction_force}"
         if self.steps > 500:
             self.done = True
             self.done_reason = f"Max steps"
