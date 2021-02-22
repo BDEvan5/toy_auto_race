@@ -120,6 +120,9 @@ class SimMap:
 
         return self.wpts, self.vs
 
+    def get_optimal_path(self):
+        raise NotImplementedError
+
     def render_map(self, figure_n=4, wait=False):
         f = plt.figure(figure_n)
         plt.clf()
@@ -175,24 +178,32 @@ class SimMap:
     def reset_map(self, n=10):
         self.obs_img = np.zeros_like(self.obs_img)
 
-        # obs_size = [self.width/600, self.height/600]
-        obs_size = self.config['map']['obs_size']
-        obs_size = [obs_size, obs_size]
-        # obs_size = [0.3, 0.3]
-        # obs_size = [1, 1]
-        obs_size = np.array(obs_size) / self.resolution
+        if n != 0:
+            # obs_size = [self.width/600, self.height/600]
+            obs_size = self.config['map']['obs_size']
+            obs_size = [obs_size, obs_size]
+            # obs_size = [0.3, 0.3]
+            # obs_size = [1, 1]
+            obs_size = np.array(obs_size) / self.resolution
 
-        rands = np.random.randint(5, self.N-5, n)
-        obs_locs = []
-        for i in range(n):
-            pt = self.wpts[rands[i]][:, None]
-            obs_locs.append(pt[:, 0])
+            buffer = 4
+            rands = np.random.randint(5, self.N-5, n)
+            rands = np.sort(rands)
+            diffs = rands[1:] - rands[:-1]
+            diffs = np.insert(diffs, 0, buffer+1)
+            rands = rands[diffs>buffer]
 
-        for obs in obs_locs:
-            for i in range(0, int(obs_size[0])):
-                for j in range(0, int(obs_size[1])):
-                    x, y = self.xy_to_row_column([obs[0], obs[1]])
-                    self.obs_img[y+j, x+i] = 1
+            n = len(rands)
+            obs_locs = []
+            for i in range(n):
+                pt = self.wpts[rands[i]][:, None]
+                obs_locs.append(pt[:, 0])
+
+            for obs in obs_locs:
+                for i in range(0, int(obs_size[0])):
+                    for j in range(0, int(obs_size[1])):
+                        x, y = self.xy_to_row_column([obs[0], obs[1]])
+                        self.obs_img[y+j, x+i] = 1
 
         return self.get_reference_path()
 
@@ -322,6 +333,7 @@ class ForestMap:
         if wait:
             plt.show()
             pass
+
 
 class MapBase:
     """

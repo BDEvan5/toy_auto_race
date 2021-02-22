@@ -59,7 +59,7 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             # t_his.lap_done(True)
             t_his.lap_done(False)
             # vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
+            # env.render(wait=False, save=False)
 
             vehicle.reset_lap()
             state, wpts, vs = env.reset(add_obs=add_obs)
@@ -168,7 +168,7 @@ class TestVehicles(TestData):
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
-    def run_eval(self, laps=100, show=False, add_obs=True, save=False):
+    def run_eval(self, laps=100, show=False, add_obs=True, save=False, wait=False):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
@@ -186,7 +186,7 @@ class TestVehicles(TestData):
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show, add_obs)
+                r, steps = self.run_lap(vehicle, env, show, add_obs, wait)
                 
                 if save:
                     plt.figure(4)
@@ -206,7 +206,7 @@ class TestVehicles(TestData):
         self.save_txt_results()
         self.save_csv_results()
 
-    def run_lap(self, vehicle, env, show=False, add_obs=True):
+    def run_lap(self, vehicle, env, show, add_obs, wait):
         state, wpts, vs = env.reset(add_obs)
         # env.render(wait=True)
         vehicle.init_agent(env.env_map)
@@ -220,9 +220,10 @@ class TestVehicles(TestData):
         if show:
             # vehicle.show_vehicle_history()
             # env.show_history()
-            env.history.show_history()
+            # env.history.show_history()
             env.render(wait=False)
-            # env.render(wait=True)
+            if wait:
+                env.render(wait=True)
 
         return r, env.steps
 

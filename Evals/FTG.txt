@@ -4,7 +4,7 @@ Map name:
 -----------------------------------------------------
 -----------------------------------------------------
 Vehicle: TunerCar Agent: Following PP references
-Crashes: 0.0 --> Completes 10.0
-% Finished = 100.00
-Avg lap times: 72.0
+Crashes: 100.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
 -----------------------------------------------------
