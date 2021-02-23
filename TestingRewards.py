@@ -36,15 +36,15 @@ def train_mod_steer():
 
     TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
 
-# def train_mod_steer():
-#     agent_name = "ModSteer_test_rt"
+def train_mod_emp():
+    agent_name = "ModEmp_test_rt"
 
-#     config = load_config(config_rt)
-#     vehicle = ModVehicleTrain(config, agent_name, load=True)
-#     reward = TrackSteerReward(config, 0.01, 0.01)
+    config = load_config(config_rt)
+    vehicle = ModVehicleTrain(config, agent_name, load=True)
+    reward = EmptyR()
 
-#     TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
-#     # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track', show=True)
+    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
     agent_name = "ModTime_test_rt"
@@ -381,11 +381,11 @@ def test_ftg():
 
 def test_mod():
     config = load_config(config_rt)
-    test = TestVehicles(config, "Mod_test_st", 'track')
+    test = TestVehicles(config, "Mod_test", 'track')
     # agent_name = "ModTime_raceTrack"
 
-    # agent_name = "ModTime_test_rt"
-    agent_name = "ModSteer_test_rt"
+    agent_name = "ModTime_test_rt"
+    # agent_name = "ModSteer_test_rt"
     # agent_name = "ModCth_test_rt"
 
     # agent_name = "ModDev_test_rt"
@@ -440,5 +440,5 @@ if __name__ == "__main__":
     # FullTest()
 
 
-    # test_mod()
+    test_mod()
     # test_ftg()
