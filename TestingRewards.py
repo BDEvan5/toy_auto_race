@@ -35,25 +35,24 @@ def train_mod_steer():
     reward = TrackSteerReward(config, 0.01, 0.01)
 
     TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
-    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
-def train_mod_steer():
-    agent_name = "ModSteer_test_rt"
+# def train_mod_steer():
+#     agent_name = "ModSteer_test_rt"
 
-    config = load_config(config_rt)
-    vehicle = ModVehicleTrain(config, agent_name, load=True)
-    reward = TrackSteerReward(config, 0.01, 0.01)
+#     config = load_config(config_rt)
+#     vehicle = ModVehicleTrain(config, agent_name, load=True)
+#     reward = TrackSteerReward(config, 0.01, 0.01)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
-    # TrainVehicle(config, agent_name, vehicle, reward, 4000)
+#     TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
+#     # TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
     agent_name = "ModTime_test_rt"
     config = load_config(config_rt)
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackTimeReward(config, 0.12)
+    reward = TrackTimeReward(config, 0.025)
 
-    TrainVehicle(config, agent_name, vehicle, reward, 20000, 'track')
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track', show=True)
 
 def train_mod_cth():
     agent_name = "ModCth_test_rt"
@@ -157,7 +156,7 @@ def FullTest():
     config = load_config(config_rt)
 
     env_name = "porto"
-    test_name = "compare_" + env_name + "_small"
+    test_name = "compare_" + env_name + "_small_noObs"
     test = TestVehicles(config, test_name, 'track')
 
     # mod
@@ -187,9 +186,9 @@ def FullTest():
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModEmp_" + env_name
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
+    # agent_name = "ModEmp_" + env_name
+    # vehicle = ModVehicleTest(config, agent_name)
+    # test.add_vehicle(vehicle)
 
     # PP
     vehicle = TunerCar(config)
@@ -199,10 +198,10 @@ def FullTest():
     # vehicle = FollowTheGap(config)
     # test.add_vehicle(vehicle)
 
-    # test.run_eval(1, True, add_obs=False)
+    test.run_eval(1, True, add_obs=False)
     # test.run_eval(10, True, add_obs=True, save=True)
     # test.run_eval(100, True, add_obs=True, save=False)
-    test.run_eval(1, True, add_obs=True, save=False)
+    # test.run_eval(1, True, add_obs=True, save=False)
 
     # test.run_eval(10, True)
 
@@ -416,9 +415,9 @@ def test_mod():
 def train():
     pass
 
-    train_mod_steer()
+    # train_mod_steer()
     # train_mod_cth()
-    # train_mod_time()
+    train_mod_time()
 
     # train_mod_dev()
     # train_mod_std()
@@ -430,15 +429,15 @@ def train():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
 
     # test_compare()
     # test_compare_mod()
     # test_time_sweep()
     # test_steer_sweep()
 
-    FullTrainRT()
-    FullTest()
+    # FullTrainRT()
+    # FullTest()
 
 
     # test_mod()
