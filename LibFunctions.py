@@ -184,6 +184,9 @@ def get_moving_average(period, values):
 
     for i, avg in enumerate(moving_avg):
         # if i > period:
+        if i == 0:
+            moving_avg[0] = 0
+            continue
         moving_avg[i] = np.mean(values[max(i-period, 0):i])
         # else already zero
     return moving_avg[1:]
