@@ -28,11 +28,11 @@ config_rt = "race_track"
 
 """Mod training"""
 def train_mod_steer():
-    agent_name = "ModSteer_test_rt"
+    agent_name = "ModSteer_test_rt2"
 
     config = load_config(config_rt)
-    vehicle = ModVehicleTrain(config, agent_name, load=True)
-    reward = TrackSteerReward(config, 0.01, 0.01)
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
+    reward = TrackSteerReward(config, 0.005, 0.005)
 
     TrainVehicle(config, agent_name, vehicle, reward, 10000, 'track', show=True)
 
@@ -40,10 +40,10 @@ def train_mod_emp():
     agent_name = "ModEmp_test_rt"
 
     config = load_config(config_rt)
-    vehicle = ModVehicleTrain(config, agent_name, load=True)
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
     reward = EmptyR()
 
-    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track', show=True)
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track', show=False)
     # TrainVehicle(config, agent_name, vehicle, reward, 4000)
 
 def train_mod_time():
@@ -384,14 +384,17 @@ def test_mod():
     test = TestVehicles(config, "Mod_test", 'track')
     # agent_name = "ModTime_raceTrack"
 
-    agent_name = "ModTime_test_rt"
+    # agent_name = "ModTime_test_rt"
     # agent_name = "ModSteer_test_rt"
-    # agent_name = "ModCth_test_rt"
+    # agent_name = "ModCth_test"
 
     # agent_name = "ModDev_test_rt"
     # agent_name = "ModOld_test_rt"
     # agent_name = "ModStd_test_rt"
     
+    # agent_name = "ModEmp_test_rt"
+    agent_name = "ModSteer_test_rt2"
+
     # agent_name = "ModTime_medForest"
     # agent_name = "ModDev_raceTrack"
     # agent_name = "ModSteer_test_om"
@@ -407,9 +410,31 @@ def test_mod():
 
     # test.run_eval(10, True, add_obs=False)
     # test.run_eval(100, True, add_obs=True, wait=True)
+    # test.run_eval(1, show=True, add_obs=False, wait=True)
+    # test.run_eval(10, show=True, add_obs=True, wait=True)
     test.run_eval(100, True, add_obs=True, wait=False)
     # test.run_eval(1, True, add_obs=False)
     # plt.show()
+
+def train_test():
+    config = load_config(config_rt)
+
+    agent_name = "ModSteer_test_rt2"
+    reward = TrackSteerReward(config, 0.005, 0.005)
+    
+
+
+    vehicle = ModVehicleTrain(config, agent_name, load=False)
+    TrainVehicle(config, agent_name, vehicle, reward, 100000, 'track', show=True)
+
+    test = TestVehicles(config, "Mod_test", 'track')
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+
+    test.run_eval(1, True, add_obs=False)
+    test.run_eval(100, True, add_obs=True, wait=False)
+
 
 
 def train():
@@ -417,8 +442,9 @@ def train():
 
     # train_mod_steer()
     # train_mod_cth()
-    train_mod_time()
+    # train_mod_time()
 
+    train_mod_emp()
     # train_mod_dev()
     # train_mod_std()
     # train_mod_std2()
@@ -429,7 +455,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    # train()
 
     # test_compare()
     # test_compare_mod()
@@ -439,6 +465,6 @@ if __name__ == "__main__":
     # FullTrainRT()
     # FullTest()
 
-
+    # train_test()
     test_mod()
     # test_ftg()
