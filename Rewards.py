@@ -161,7 +161,7 @@ class TrackRewardBase:
 
         return s 
 
-    def get_shpaed_r(self, pt1, pt2, beta=0.2):
+    def get_shaped_r(self, pt1, pt2, beta=0.02):
         s = self.find_s(pt1)
         ss = self.find_s(pt2)
         ds = ss - s
@@ -172,8 +172,9 @@ class TrackRewardBase:
 
 #golden oldies
 class TrackDevReward(TrackRewardBase):
-    def __init__(self, config) -> None:
+    def __init__(self, config, b1) -> None:
         TrackRewardBase.__init__(self)
+        self.b1 = b1
         self.dis_scale = config['lims']["dis_scale"]
         self.max_steer = config['lims']['max_steer']
 
@@ -181,16 +182,17 @@ class TrackDevReward(TrackRewardBase):
         if r == -1:
             return -1
         else:
-            beta = 0.2
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
-            ret_r = shaped_r - beta * abs(dev)
-            # ret_r = 0.2 - 0.2 * abs(dev)
+    
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2])
+            ret_r = shaped_r - self.b1 * abs(dev)
 
             return ret_r
 
 class TrackOldReward:
-    def __init__(self, config) -> None:
+    def __init__(self, config, b1, b2) -> None:
         pass
+        self.b1 = b1 
+        self.b2 = b2
 
     def init_reward(self, wpts, vs):
         pass
@@ -199,8 +201,7 @@ class TrackOldReward:
         if r == -1:
             return -1
         else:
-            beta = 0.2
-            ret_r = 0.2 - beta * abs(dev)
+            ret_r = self.b1 - self.b2 * abs(dev)
 
             return ret_r
 
@@ -214,7 +215,7 @@ class TrackStdReward(TrackRewardBase):
         if r == -1:
             return -1
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2], 0.02)
 
             return shaped_r + r
 
@@ -228,7 +229,7 @@ class TrackStdReward2(TrackRewardBase):
         if r == -1:
             return -1
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2], 0.02)
 
             return shaped_r 
 
@@ -244,7 +245,7 @@ class TrackTimeReward(TrackRewardBase):
         if r == -1:
             return -1
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2])
             ret_r = shaped_r - self.mt
 
             return ret_r
@@ -261,7 +262,7 @@ class TrackSteerReward(TrackRewardBase):
         if r == -1:
             return r
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2], beta=0.02)
 
             vel = a[0] / self.max_v 
             steer = abs(a[1]) / self.max_steer
@@ -282,7 +283,7 @@ class TrackCthReward(TrackRewardBase):
         if r == -1:
             return r
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
+            shaped_r = self.get_shaped_r(s[0:2], s_p[0:2])
 
             pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.wpts)
             d = lib.get_distance(pt_i, pt_ii)
@@ -297,7 +298,12 @@ class TrackCthReward(TrackRewardBase):
 
             return new_r + shaped_r 
 
-
+class EmptyR:
+    def init_reward(self, w, v):
+        pass 
+    
+    def __call__(self, s, a, s_p, r, dev) -> float:
+        return r
 
 
 
