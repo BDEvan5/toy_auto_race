@@ -19,8 +19,6 @@ map:
   # name: "race_track"
   name: "porto"
   # name: "torino"
-  # name: "berlin"
-  # name: "levine"
   ext: ".png"
   obs_size: 0.6
   n_obs: 8

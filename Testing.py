@@ -15,7 +15,7 @@ import LibFunctions as lib
 
 
 """Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='forest', show=False):
+def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='forest'):
     path = 'Vehicles/' + agent_name
     buffer = ReplayBufferTD3()
 
@@ -56,12 +56,10 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='fo
             vehicle.agent.save(directory=path)
         
         if done:
-            if show:
-                t_his.lap_done(True)
-                env.render(wait=False, save=False)
-                # vehicle.show_vehicle_history()
-            else:
-                t_his.lap_done(False)
+            # t_his.lap_done(True)
+            t_his.lap_done(False)
+            # vehicle.show_vehicle_history()
+            # env.render(wait=False, save=False)
 
             vehicle.reset_lap()
             state, wpts, vs = env.reset(add_obs=add_obs)
