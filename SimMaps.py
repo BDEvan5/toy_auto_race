@@ -44,7 +44,6 @@ class SimMap:
         self.origin = self.yaml_file['origin']
 
         # load traj
-
         track_data = []
         filename = 'maps/' + self.map_name + '_opti.csv'
         
@@ -119,6 +118,31 @@ class SimMap:
         # self.render_map(wait=True)
 
         return self.wpts, self.vs
+
+    def load_center_path(self):
+        if self.t_pts is None:
+            track_data = []
+            filename = 'maps/' + self.map_name + '_std.csv'
+            
+            try:
+                with open(filename, 'r') as csvfile:
+                    csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+            
+                    for lines in csvFile:  
+                        track_data.append(lines)
+            except FileNotFoundError:
+                raise FileNotFoundError("No map file center pts")
+
+            track = np.array(track_data)
+            print(f"Track Loaded: {filename} in env map")
+
+            self.t_pts = track[:, 0:2]
+        else:
+            return 
+
+    def get_center_path(self):
+        return self.t_pts
+
 
     def get_optimal_path(self):
         raise NotImplementedError

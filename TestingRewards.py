@@ -1,9 +1,6 @@
 import numpy as np
 import csv, yaml
-from Rewards import CthReward, TimeReward, SteerReward, TrackStdReward2, EmptyR
-from Rewards import TrackCthReward, TrackTimeReward, TrackSteerReward
-from Rewards import TrackDevReward, TrackOldReward, TrackStdReward
-
+import Rewards as r
 
 import LibFunctions as lib
 from LibFunctions import load_config
@@ -101,54 +98,75 @@ def train_mod_old():
 
 
 """Tests """
-
 def FullTrainRT():
     # config = load_config(config_med)
     config = load_config(config_rt)
     env_name = "porto"
+    train_name = "_fin1"
     n_train = 100000
+    # n_train = 100
 
-    agent_name = "ModSteer_"  + env_name
+    # 1) no racing reward
+    agent_name = "ModEmpty_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackSteerReward(config, 0.01, 0.01)
-
+    reward = r.EmptyR()
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModTime_" + env_name
+    # 2) Original  mod reward
+    agent_name = "ModOriginal_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackTimeReward(config, 0.012)
-
+    reward = r.TrackOriginalReward(config, 0.02, 0.02)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModCth_" + env_name
+    # 3) Distance Centerline
+    agent_name = "ModCenterDis_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackCthReward(config, 0.04, 0.004)
-
+    reward = r.CenterDistanceReward(config, 0.02)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModOld_" + env_name
+    # 4) CTH center
+    agent_name = "ModCenterCth_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackOldReward(config, 0.02, 0.02)
-
+    reward = r.CenterCTHReward(config, 0.04, 0.004)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModStd_" + env_name
+    # 5) Time
+    agent_name = "ModTime_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackStdReward(config)
-
+    reward = r.TrackTimeReward(config, 0.012)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModDev_" + env_name
+    # 6) distance ref
+    agent_name = "ModRefDis_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = TrackDevReward(config, 0.02)
-
+    reward = r.RefDistanceReward(config, 0.02)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
 
-    agent_name = "ModEmp_" + env_name
+    # 7) CTH ref
+    agent_name = "ModRefCth_" + env_name + train_name
     vehicle = ModVehicleTrain(config, agent_name)
-    reward = EmptyR()
-
+    reward = r.RefCTHReward(config, 0.04, 0.004)
     TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    # 8) Steering and Velocity
+    agent_name = "ModSteer_"  + env_name + train_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = r.TrackSteerReward(config, 0.01, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    # 9) Steering only
+    agent_name = "ModSteer_"  + env_name + train_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = r.TrackSteerReward(config, 0.0, 0.01)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+    # Deviation action
+    agent_name = "ModDeviation_" + env_name + train_name
+    vehicle = ModVehicleTrain(config, agent_name)
+    reward = r.TrackOriginalReward(config, 0.0, 0.02)
+    TrainVehicle(config, agent_name, vehicle, reward, n_train, 'track')
+
+
 
 def FullTest():
     # config = load_config(config_med)
@@ -156,39 +174,61 @@ def FullTest():
     config = load_config(config_rt)
 
     env_name = "porto"
-    test_name = "compare_" + env_name + "_small_noObs"
+    train_name = "_fin1"
+    test_name = "compare_" + env_name + train_name
     test = TestVehicles(config, test_name, 'track')
 
-    # mod
-    agent_name = "ModTime_" + env_name
+    # 1) no racing reward
+    agent_name = "ModEmpty_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModCth_" + env_name
-    # agent_name = "ModCth_test"
+    # 2) Original  mod reward
+    agent_name = "ModOriginal_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModSteer_" + env_name
+    # 3) Distance Centerline
+    agent_name = "ModCenterDis_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    # old
-    agent_name = "ModDev_" + env_name
+    # 4) CTH center
+    agent_name = "ModCenterCth_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModOld_" + env_name
+    # 5) Time
+    agent_name = "ModTime_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    agent_name = "ModStd_" + env_name
+    # 6) distance ref
+    agent_name = "ModRefDis_" + env_name + train_name
     vehicle = ModVehicleTest(config, agent_name)
     test.add_vehicle(vehicle)
 
-    # agent_name = "ModEmp_" + env_name
-    # vehicle = ModVehicleTest(config, agent_name)
-    # test.add_vehicle(vehicle)
+    # 7) CTH ref
+    agent_name = "ModRefCth_" + env_name + train_name
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # 8) Steering and Velocity
+    agent_name = "ModSteer_"  + env_name + train_name
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # 9) Steering only
+    agent_name = "ModSteer_"  + env_name + train_name
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+    # Deviation action
+    agent_name = "ModDeviation_" + env_name + train_name
+    vehicle = ModVehicleTest(config, agent_name)
+    test.add_vehicle(vehicle)
+
+
 
     # PP
     vehicle = TunerCar(config)
@@ -198,9 +238,9 @@ def FullTest():
     # vehicle = FollowTheGap(config)
     # test.add_vehicle(vehicle)
 
-    test.run_eval(1, True, add_obs=False)
+    # test.run_eval(1, True, add_obs=False)
     # test.run_eval(10, True, add_obs=True, save=True)
-    # test.run_eval(100, True, add_obs=True, save=False)
+    test.run_eval(1000, True, add_obs=True, save=False)
     # test.run_eval(1, True, add_obs=True, save=False)
 
     # test.run_eval(10, True)
@@ -462,9 +502,9 @@ if __name__ == "__main__":
     # test_time_sweep()
     # test_steer_sweep()
 
-    # FullTrainRT()
-    # FullTest()
+    FullTrainRT()
+    FullTest()
 
     # train_test()
-    test_mod()
+    # test_mod()
     # test_ftg()
