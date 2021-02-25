@@ -1,12 +1,12 @@
 #,Name,%Complete,AvgTime,Std
-0,ModEmpty_porto_fin1,0.0,0.0,0.0
-1,ModOriginal_porto_fin1,0.0,0.0,0.0
-2,ModCenterDis_porto_fin1,0.0,0.0,0.0
-3,ModCenterCth_porto_fin1,0.0,0.0,0.0
-4,ModTime_porto_fin1,0.0,0.0,0.0
-5,ModRefDis_porto_fin1,0.0,0.0,0.0
-6,ModRefCth_porto_fin1,0.0,0.0,0.0
-7,ModSteer_porto_fin1,0.0,0.0,0.0
-8,ModSteer_porto_fin1,0.0,0.0,0.0
-9,ModDeviation_porto_fin1,0.0,0.0,0.0
-10,TunerCar Agent: Following PP references,0.0,0.0,0.0
+0,ModEmpty_porto_fin1,99.8,110.44288577154309,4.5904672166908
+1,ModOriginal_porto_fin1,99.9,109.77277277277277,3.538635522454976
+2,ModCenterDis_porto_fin1,95.8,100.05845511482255,4.853030660357018
+3,ModCenterCth_porto_fin1,99.9,94.42642642642643,5.165561476520249
+4,ModTime_porto_fin1,98.8,146.53744939271255,6.294205159956024
+5,ModRefDis_porto_fin1,96.8,101.15185950413223,6.37941846983867
+6,ModRefCth_porto_fin1,84.7,92.40259740259741,4.578027999143055
+7,ModSteer_porto_fin1,84.3,110.15421115065243,3.9857326440522574
+8,ModSteer_porto_fin1,84.89999999999999,109.96702002355713,3.9219530363266046
+9,ModDeviation_porto_fin1,100.0,107.879,3.5825073621696863
+10,TunerCar Agent: Following PP references,4.1000000000000005,72.0,0.0
