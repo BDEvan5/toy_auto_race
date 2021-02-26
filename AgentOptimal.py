@@ -362,10 +362,11 @@ class FollowTheGap:
     def act(self, obs):
         scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
         ranges = np.array(scan, dtype=np.float)
+        o_ranges = ranges
         angle_increment = np.pi / len(ranges)
 
         max_range = 1
-        ranges = preprocess_lidar(ranges, max_range)
+        # ranges = preprocess_lidar(ranges, max_range)
 
         bubble_r = 0.1
         ranges = create_zero_bubble(ranges, bubble_r)
@@ -383,7 +384,7 @@ class FollowTheGap:
         self.env_map.targets.append(pt)
 
         speed = self.max_speed * ranges[aim] / max_range * 0.5
-        steering_angle = self.limit_inputs(speed, steering_angle)
+        # steering_angle = self.limit_inputs(speed, steering_angle)
 
         return np.array([speed, steering_angle])
 
@@ -410,7 +411,7 @@ def preprocess_lidar(ranges, max_range):
 
     return proc_ranges
 
-@njit
+# @njit
 def create_zero_bubble(input_vector, bubble_r):
     centre = np.argmin(input_vector)
     min_dist = input_vector[centre]
@@ -429,7 +430,7 @@ def create_zero_bubble(input_vector, bubble_r):
 
     return input_vector
     
-@njit
+# @njit
 def find_max_gap(input_vector):
     max_start = 0
     max_size = 0
@@ -455,9 +456,13 @@ def find_max_gap(input_vector):
         max_start = current_start
         max_size = current_size
 
+    if max_size == 1:
+        # max_start -= 1
+        max_size = 3
+
     return max_start, max_start + max_size - 1
 
-@njit  
+# @njit  
 def find_best_point(start_i, end_i, ranges):
     # return best index to goto
     mid_i = (start_i + end_i) /2

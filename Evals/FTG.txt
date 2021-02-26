@@ -3,8 +3,8 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
-Vehicle: TunerCar Agent: Following PP references
-Crashes: 100.0 --> Completes 0.0
-% Finished = 0.00
-Avg lap times: 0.0
+Vehicle: Follow The Gap
+Crashes: 88.0 --> Completes 12.0
+% Finished = 12.00
+Avg lap times: 98.75
 -----------------------------------------------------

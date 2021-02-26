@@ -1,0 +1,60 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModEmpty_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 107.0
+-----------------------------------------------------
+Vehicle: ModOriginal_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 103.0
+-----------------------------------------------------
+Vehicle: ModCenterDis_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 85.0
+-----------------------------------------------------
+Vehicle: ModCenterCth_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 100.0
+-----------------------------------------------------
+Vehicle: ModTime_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 117.0
+-----------------------------------------------------
+Vehicle: ModRefDis_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 96.0
+-----------------------------------------------------
+Vehicle: ModRefCth_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 85.0
+-----------------------------------------------------
+Vehicle: ModSteer_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 98.0
+-----------------------------------------------------
+Vehicle: ModSteer_porto_fin2
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 98.0
+-----------------------------------------------------
+Vehicle: ModDeviation_porto_fin2
+Crashes: 1.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 0.0 --> Completes 1.0
+% Finished = 100.00
+Avg lap times: 72.0
+-----------------------------------------------------

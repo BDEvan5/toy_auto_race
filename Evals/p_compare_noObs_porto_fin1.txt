@@ -1,0 +1,25 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModTime_porto_fin1
+Crashes: 14.0 --> Completes 86.0
+% Finished = 86.00
+Avg lap times: 115.0
+-----------------------------------------------------
+Vehicle: ModSteer_porto_fin1
+Crashes: 15.0 --> Completes 85.0
+% Finished = 85.00
+Avg lap times: 110.05882352941177
+-----------------------------------------------------
+Vehicle: ModStrVel_porto_fin1
+Crashes: 11.0 --> Completes 89.0
+% Finished = 89.00
+Avg lap times: 100.98876404494382
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 98.0 --> Completes 2.0
+% Finished = 2.00
+Avg lap times: 72.0
+-----------------------------------------------------

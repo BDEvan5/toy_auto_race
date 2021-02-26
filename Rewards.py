@@ -288,7 +288,7 @@ class TrackTimeReward():
         if r == -1:
             return -1
         else:
-            return self.mt + r 
+            return -self.mt + r 
 
 # 6) Distance ref
 class RefDistanceReward(TrackPtsBase):
