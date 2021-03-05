@@ -131,6 +131,7 @@ class TrackPtsBase:
         self.wpts = None
         self.ss = None
         self.map_name = config['map_name']
+        self.total_s = None
 
     def load_center_pts(self):
         track_data = []
@@ -154,6 +155,8 @@ class TrackPtsBase:
         ss = np.cumsum(ss)
         self.ss = np.insert(ss, 0, 0)
 
+        self.total_s = self.ss[-1]
+
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
@@ -175,6 +178,8 @@ class TrackPtsBase:
 
         self.ss = track[:, 0]
         self.wpts = track[:, 1:3]
+
+        self.total_s = self.ss[-1]
 
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
@@ -199,11 +204,12 @@ class TrackPtsBase:
 
         return s 
 
-    def get_distance_r(self, pt1, pt2, beta=0.02):
+    def get_distance_r(self, pt1, pt2, beta):
         s = self.find_s(pt1)
         ss = self.find_s(pt2)
         ds = ss - s
-        r = ds * beta
+        scale_ds = ds / self.total_s
+        r = scale_ds * beta
         shaped_r = np.clip(r, -0.5, 0.5)
 
         return shaped_r
@@ -350,7 +356,7 @@ class TrackSteerReward:
             vel = a[0] / self.max_v 
             steer = abs(a[1]) / self.max_steer
 
-            new_r = self.mv * vel - self.ms * steer 
+            new_r = self.mv * vel - self.ms * (steer ** 2)
 
             return new_r  + r
 

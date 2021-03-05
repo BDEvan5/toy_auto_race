@@ -462,6 +462,7 @@ def find_max_gap(input_vector):
 
     return max_start, max_start + max_size - 1
 
+
 # @njit  
 def find_best_point(start_i, end_i, ranges):
     # return best index to goto

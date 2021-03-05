@@ -60,6 +60,7 @@ class ScanSimulator:
         self.number_of_beams = number_of_beams
         self.fov = fov 
         self.std_noise = std_noise
+        self.rng = np.random.default_rng(seed=12345)
 
         self.dth = self.fov / (self.number_of_beams -1)
         self.scan_output = np.zeros(number_of_beams)
@@ -75,6 +76,9 @@ class ScanSimulator:
         for i in range(self.number_of_beams):
             scan_theta = theta + self.dth * i - self.fov/2
             self.scan_output[i] = self.trace_ray(x, y, scan_theta)
+
+        noise = self.rng.normal(0., self.std_noise, size=self.number_of_beams)
+        self.scan_output = self.scan_output + noise
 
         return self.scan_output
 
@@ -448,7 +452,7 @@ class TrackSim(BaseSim):
             self.done_reason = f"Max steps"
 
         car = [self.car.x, self.car.y]
-        if lib.get_distance(car, self.env_map.start) < 1 and self.steps > 50:
+        if lib.get_distance(car, self.env_map.start) < 0.6 and self.steps > 50:
             self.done = True
             self.reward = 1
             self.done_reason = f"Lap complete"
