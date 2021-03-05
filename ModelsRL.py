@@ -233,7 +233,7 @@ class TD3(object):
                 print(f"Unable to load model")
                 pass
         else:
-            print(f"Not loading - restarting training")
+            print(f"Not loading - restarting training for: {self.name}")
             self.create_agent(h_size)
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-3)

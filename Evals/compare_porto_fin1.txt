@@ -1,0 +1,60 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: ModEmpty_porto_fin1
+Crashes: 2.0 --> Completes 998.0
+% Finished = 99.80
+Avg lap times: 110.44288577154309
+-----------------------------------------------------
+Vehicle: ModOriginal_porto_fin1
+Crashes: 1.0 --> Completes 999.0
+% Finished = 99.90
+Avg lap times: 109.77277277277277
+-----------------------------------------------------
+Vehicle: ModCenterDis_porto_fin1
+Crashes: 42.0 --> Completes 958.0
+% Finished = 95.80
+Avg lap times: 100.05845511482255
+-----------------------------------------------------
+Vehicle: ModCenterCth_porto_fin1
+Crashes: 1.0 --> Completes 999.0
+% Finished = 99.90
+Avg lap times: 94.42642642642643
+-----------------------------------------------------
+Vehicle: ModTime_porto_fin1
+Crashes: 12.0 --> Completes 988.0
+% Finished = 98.80
+Avg lap times: 146.53744939271255
+-----------------------------------------------------
+Vehicle: ModRefDis_porto_fin1
+Crashes: 32.0 --> Completes 968.0
+% Finished = 96.80
+Avg lap times: 101.15185950413223
+-----------------------------------------------------
+Vehicle: ModRefCth_porto_fin1
+Crashes: 153.0 --> Completes 847.0
+% Finished = 84.70
+Avg lap times: 92.40259740259741
+-----------------------------------------------------
+Vehicle: ModSteer_porto_fin1
+Crashes: 157.0 --> Completes 843.0
+% Finished = 84.30
+Avg lap times: 110.15421115065243
+-----------------------------------------------------
+Vehicle: ModSteer_porto_fin1
+Crashes: 151.0 --> Completes 849.0
+% Finished = 84.90
+Avg lap times: 109.96702002355713
+-----------------------------------------------------
+Vehicle: ModDeviation_porto_fin1
+Crashes: 0.0 --> Completes 1000.0
+% Finished = 100.00
+Avg lap times: 107.879
+-----------------------------------------------------
+Vehicle: TunerCar Agent: Following PP references
+Crashes: 959.0 --> Completes 41.0
+% Finished = 4.10
+Avg lap times: 72.0
+-----------------------------------------------------

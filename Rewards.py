@@ -1,5 +1,7 @@
 import numpy as np 
+import csv
 
+from numpy.core import machar
 import LibFunctions as lib
 
 
@@ -122,21 +124,62 @@ class TimeReward:
             return new_r + r + shaped_r
 
 
-# Track rewards
-class TrackRewardBase:
-    def __init__(self) -> None:
+
+# Track base
+class TrackPtsBase:
+    def __init__(self, config) -> None:
         self.wpts = None
         self.ss = None
-        self.vs = None
+        self.map_name = config['map_name']
+        self.total_s = None
 
-    def init_reward(self, pts, vs):
-        self.wpts = pts
-        self.vs = vs
+    def load_center_pts(self):
+        track_data = []
+        filename = 'maps/' + self.map_name + '_std.csv'
+        
+        try:
+            with open(filename, 'r') as csvfile:
+                csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+                for lines in csvFile:  
+                    track_data.append(lines)
+        except FileNotFoundError:
+            raise FileNotFoundError("No map file center pts")
 
-        N = len(pts)
-        ss = np.array([lib.get_distance(pts[i], pts[i+1]) for i in range(N-1)])
+        track = np.array(track_data)
+        print(f"Track Loaded: {filename} in reward")
+
+        N = len(track)
+        self.wpts = track[:, 0:2]
+        ss = np.array([lib.get_distance(self.wpts[i], self.wpts[i+1]) for i in range(N-1)])
         ss = np.cumsum(ss)
         self.ss = np.insert(ss, 0, 0)
+
+        self.total_s = self.ss[-1]
+
+        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
+        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
+
+    def load_reference_pts(self):
+        track_data = []
+        filename = 'maps/' + self.map_name + '_opti.csv'
+        
+        try:
+            with open(filename, 'r') as csvfile:
+                csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+                for lines in csvFile:  
+                    track_data.append(lines)
+        except FileNotFoundError:
+            raise FileNotFoundError("No reference path")
+
+        track = np.array(track_data)
+        print(f"Track Loaded: {filename} in reward")
+
+        self.ss = track[:, 0]
+        self.wpts = track[:, 1:3]
+
+        self.total_s = self.ss[-1]
 
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
@@ -161,35 +204,28 @@ class TrackRewardBase:
 
         return s 
 
-    def get_shpaed_r(self, pt1, pt2, beta=0.2):
+    def get_distance_r(self, pt1, pt2, beta):
         s = self.find_s(pt1)
         ss = self.find_s(pt2)
         ds = ss - s
-        r = ds * beta
+        scale_ds = ds / self.total_s
+        r = scale_ds * beta
         shaped_r = np.clip(r, -0.5, 0.5)
 
         return shaped_r
 
-#golden oldies
-class TrackDevReward(TrackRewardBase):
-    def __init__(self, config) -> None:
-        TrackRewardBase.__init__(self)
-        self.dis_scale = config['lims']["dis_scale"]
-        self.max_steer = config['lims']['max_steer']
 
-    def __call__(self, s, a, s_p, r, dev):
-        if r == -1:
-            return -1
-        else:
-            beta = 0.2
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
-            ret_r = shaped_r - beta * abs(dev)
-            # ret_r = 0.2 - 0.2 * abs(dev)
+# 1) no racing Rewar
+class EmptyR:
+    def init_reward(self, w, v):
+        pass 
+    
+    def __call__(self, s, a, s_p, r, dev) -> float:
+        return r
 
-            return ret_r
-
-class TrackOldReward:
-    def __init__(self, config) -> None:
+# 2) Original reward
+class TrackOriginalReward:
+    def __init__(self, config, b1, b2) -> None:
         pass
 
     def init_reward(self, wpts, vs):
@@ -202,88 +238,39 @@ class TrackOldReward:
             beta = 0.2
             ret_r = 0.2 - beta * abs(dev)
 
-            return ret_r
+            return ret_r + r
 
-class TrackStdReward(TrackRewardBase):
-    def __init__(self, config) -> None:
-        TrackRewardBase.__init__(self)
-        self.dis_scale = config['lims']["dis_scale"]
-        self.max_steer = config['lims']['max_steer']
+# 3) distance centerline
+class CenterDistanceReward(TrackPtsBase):
+    def __init__(self, config, b_distance) -> None:
+        TrackPtsBase.__init__(self, config)
+
+        self.load_center_pts()
+        self.b_distance = b_distance
 
     def __call__(self, s, a, s_p, r, dev):
         if r == -1:
             return -1
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
+            shaped_r = self.get_distance_r(s[0:2], s_p[0:2], self.b_distance)
 
             return shaped_r + r
 
-class TrackStdReward2(TrackRewardBase):
-    def __init__(self, config) -> None:
-        TrackRewardBase.__init__(self)
-        self.dis_scale = config['lims']["dis_scale"]
-        self.max_steer = config['lims']['max_steer']
-
-    def __call__(self, s, a, s_p, r, dev):
-        if r == -1:
-            return -1
-        else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2], 0.02)
-
-            return shaped_r 
-
-# newbies for testing
-class TrackTimeReward(TrackRewardBase):
-    def __init__(self, config, mt) -> None:
-        TrackRewardBase.__init__(self)
-        self.mt = mt 
-        self.dis_scale = config['lims']["dis_scale"]
-        self.max_steer = config['lims']['max_steer']
-        
-    def __call__(self, s, a, s_p, r, dev) -> float:
-        if r == -1:
-            return -1
-        else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
-            ret_r = shaped_r - self.mt
-
-            return ret_r
-
-class TrackSteerReward(TrackRewardBase):
-    def __init__(self, config, mv, ms) -> None:
-        TrackRewardBase.__init__(self)
-        self.max_steer = config['lims']['max_steer']
-        self.max_v = config['lims']['max_v']
-        self.mv = mv 
-        self.ms = ms 
-           
-    def __call__(self, s, a, s_p, r, dev) -> float:
-        if r == -1:
-            return r
-        else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
-
-            vel = a[0] / self.max_v 
-            steer = abs(a[1]) / self.max_steer
-
-            new_r = self.mv * vel - self.ms * steer 
-
-            return new_r + shaped_r + r
-
-class TrackCthReward(TrackRewardBase):
+# 4) CTH center
+class CenterCTHReward(TrackPtsBase):
     def __init__(self, config, mh, md) -> None:
-        TrackRewardBase.__init__(self)
-        self.mh = mh 
-        self.md = md
+        TrackPtsBase.__init__(self, config)
+        self.max_v = config['lims']['max_v']
         self.dis_scale = config['lims']["dis_scale"]
-        self.max_v = config['lims']["max_v"]
+
+        self.load_center_pts()
+        self.mh = mh 
+        self.md = md 
 
     def __call__(self, s, a, s_p, r, dev):
         if r == -1:
             return r
         else:
-            shaped_r = self.get_shpaed_r(s[0:2], s_p[0:2])
-
             pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.wpts)
             d = lib.get_distance(pt_i, pt_ii)
             d_c = get_tiangle_h(d_i, d_ii, d) / self.dis_scale
@@ -295,9 +282,81 @@ class TrackCthReward(TrackRewardBase):
 
             new_r =  self.mh * np.cos(d_th) * v_scale - self.md * d_c
 
-            return new_r + shaped_r 
+            return new_r + r
 
+# 5) Time
+class TrackTimeReward():
+    def __init__(self, config, mt) -> None:
+        self.mt = mt 
+        
+    def __call__(self, s, a, s_p, r, dev) -> float:
+        if r == -1:
+            return -1
+        else:
+            return -self.mt + r 
 
+# 6) Distance ref
+class RefDistanceReward(TrackPtsBase):
+    def __init__(self, config, b_distance) -> None:
+        TrackPtsBase.__init__(self, config)
 
+        self.load_reference_pts()
+        self.b_distance = b_distance
+
+    def __call__(self, s, a, s_p, r, dev):
+        if r == -1:
+            return -1
+        else:
+            shaped_r = self.get_distance_r(s[0:2], s_p[0:2], self.b_distance)
+
+            return shaped_r + r
+
+# 7) CTH ref
+class RefCTHReward(TrackPtsBase):
+    def __init__(self, config, mh, md) -> None:
+        TrackPtsBase.__init__(self, config)
+        self.max_v = config['lims']['max_v']
+        self.dis_scale = config['lims']["dis_scale"]
+
+        self.load_reference_pts()
+        self.mh = mh 
+        self.md = md 
+
+    def __call__(self, s, a, s_p, r, dev):
+        if r == -1:
+            return r
+        else:
+            pt_i, pt_ii, d_i, d_ii = find_closest_pt(s_p[0:2], self.wpts)
+            d = lib.get_distance(pt_i, pt_ii)
+            d_c = get_tiangle_h(d_i, d_ii, d) / self.dis_scale
+
+            th_ref = lib.get_bearing(pt_i, pt_ii)
+            th = s_p[2]
+            d_th = abs(lib.sub_angles_complex(th_ref, th))
+            v_scale = s_p[3] / self.max_v
+
+            new_r =  self.mh * np.cos(d_th) * v_scale - self.md * d_c
+
+            return new_r + r
+
+# 8) steering and velocity
+# for 9) too
+class TrackSteerReward:
+    def __init__(self, config, mv, ms) -> None:
+        self.max_steer = config['lims']['max_steer']
+        self.max_v = config['lims']['max_v']
+        self.mv = mv 
+        self.ms = ms 
+           
+    def __call__(self, s, a, s_p, r, dev) -> float:
+        if r == -1:
+            return r
+        else:
+            vel = a[0] / self.max_v 
+            steer = abs(a[1]) / self.max_steer
+
+            new_r = self.mv * vel - self.ms * (steer ** 2)
+
+            return new_r  + r
 
 

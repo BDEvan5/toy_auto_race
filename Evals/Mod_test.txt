@@ -3,6 +3,7 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
+<<<<<<< HEAD
 Vehicle: ModStd_test_rt
 Crashes: 0.0 --> Completes 100.0
 % Finished = 100.00
@@ -12,4 +13,20 @@ Vehicle: ModStd_test_rt2
 Crashes: 0.0 --> Completes 100.0
 % Finished = 100.00
 Avg lap times: 101.93
+=======
+Vehicle: ModCenterDis_porto_s1
+Crashes: 8.0 --> Completes 92.0
+% Finished = 92.00
+Avg lap times: 111.6195652173913
+-----------------------------------------------------
+Vehicle: ModCenterDis_porto_s2
+Crashes: 8.0 --> Completes 92.0
+% Finished = 92.00
+Avg lap times: 152.20652173913044
+-----------------------------------------------------
+Vehicle: ModCenterDis_porto_s3
+Crashes: 11.0 --> Completes 89.0
+% Finished = 89.00
+Avg lap times: 102.02247191011236
+>>>>>>> Testing
 -----------------------------------------------------

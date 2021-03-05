@@ -1,0 +1,5 @@
+#,Name,%Complete,AvgTime,Std
+0,ModTime_porto_fin1,86.0,115.0,7.470873676376284
+1,ModSteer_porto_fin1,85.0,110.05882352941177,3.9892589350919643
+2,ModStrVel_porto_fin1,89.0,100.98876404494382,3.4134380244223563
+3,TunerCar Agent: Following PP references,2.0,72.0,0.0
