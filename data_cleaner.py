@@ -41,4 +41,5 @@ def get_moving_avg(vehicle_name, show=False):
 
 
 # get_moving_avg('ModSteer_porto_fin2', True)
-get_moving_avg('ModRefDis_porto_fin2', True)
+# get_moving_avg('ModRefDis_porto_fin2', True)
+get_moving_avg('ModCenterDis_porto_s1', True)

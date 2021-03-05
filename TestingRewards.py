@@ -549,12 +549,12 @@ if __name__ == "__main__":
     # sweep_distance_center()
     # test_distance_sweep()
 
-    FullTrainRT()
-    FullTest()
+    # FullTrainRT()
+    # FullTest()
 
     # PartialTrain()
     # PartialTest()
 
     # train_test()
     # test_mod()
-    # test_ftg()
+    test_ftg()

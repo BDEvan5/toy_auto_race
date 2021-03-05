@@ -216,6 +216,7 @@ class SimMap:
             diffs = rands[1:] - rands[:-1]
             diffs = np.insert(diffs, 0, buffer+1)
             rands = rands[diffs>buffer]
+            rands = rands[rands>8 ]
 
             n = len(rands)
             obs_locs = []
