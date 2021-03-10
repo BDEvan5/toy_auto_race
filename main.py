@@ -1,3 +1,7 @@
+import importlib
+sim = importlib.__import__("ToySimulator")
+
+
 from Testing import TestVehicles
 import numpy as np
 from HistoryStructs import RewardAnalyser, TrainHistory
@@ -5,8 +9,9 @@ from HistoryStructs import RewardAnalyser, TrainHistory
 import timeit
 import yaml
 
-from Simulator import ForestSim
-from SimMaps import  ForestMap
+# from Simulator import ForestSim
+# from SimMaps import  ForestMap
+
 from ModelsRL import  ReplayBufferTD3
 import LibFunctions as lib
 from LibFunctions import load_config
