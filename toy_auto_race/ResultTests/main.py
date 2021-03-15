@@ -1,31 +1,15 @@
-import importlib
-sim = importlib.__import__("ToySimulator")
+from toy_auto_race.ResultTests.TrainTest import TestVehicles
+from toy_auto_race.Utils.HistoryStructs import RewardAnalyser, TrainHistory
+from toy_auto_race.Utils import LibFunctions as lib
+from toy_auto_race.Vehicles.Rewards import *
+from toy_auto_race.Vehicles.AgentOptimal import OptimalAgent, TunerCar
+from toy_auto_race.Vehicles.AgentMod import ModVehicleTest, ModVehicleTrain
 
+from toy_f110 import TrackSim, ForestSim
 
-from Testing import TestVehicles
 import numpy as np
-from HistoryStructs import RewardAnalyser, TrainHistory
-
 import timeit
 import yaml
-
-# from Simulator import ForestSim
-# from SimMaps import  ForestMap
-
-from ModelsRL import  ReplayBufferTD3
-import LibFunctions as lib
-from LibFunctions import load_config
-from Rewards import *
-
-from AgentOptimal import OptimalAgent, TunerCar
-
-from AgentMod import ModVehicleTest, ModVehicleTrain
-from RefGen import GenVehicle, GenTest
-
-
-config_sf = "small_forest"
-config_std = "std_config"
-config_med = "med_forest"
 
 
 

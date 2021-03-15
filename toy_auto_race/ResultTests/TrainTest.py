@@ -1,16 +1,16 @@
 
 
 from matplotlib import pyplot as plt
-from HistoryStructs import TrainHistory
-from Simulator import ForestSim, TrackSim
-from SimMaps import  ForestMap, SimMap
+from Utils.HistoryStructs import TrainHistory
+# from  Simulator import ForestSim, TrackSim
 
-from ModelsRL import ReplayBufferDQN, ReplayBufferTD3
+from toy_f110 import ForestSim, TrackSim
+
 import numpy as np
 import csv
 
 
-import LibFunctions as lib
+import Utils.LibFunctions as lib
 
 
 
