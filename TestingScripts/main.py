@@ -58,60 +58,6 @@ def train_ref_mod():
 
 
 
-"""Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
-    path = 'Vehicles/' + agent_name
-    buffer = ReplayBufferTD3()
-
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
-
-    env_map = ForestMap(config)
-    env = ForestSim(env_map)
-
-    t_his = TrainHistory(agent_name)
-    print_n = 500
-
-    done = False
-    state, wpts, vs = env.reset()
-    vehicle.init_agent(env_map)
-    reward.init_reward(wpts, vs)
-
-    for n in range(steps):
-        a = vehicle.act(state)
-        s_prime, r, done, _ = env.step(a)
-
-        new_r = reward(state, a, s_prime, r)
-        vehicle.add_memory_entry(new_r, done, s_prime, buffer)
-        t_his.add_step_data(new_r)
-
-        state = s_prime
-        vehicle.agent.train(buffer, 2)
-        
-        # env.render(False)
-
-        if n % print_n == 0 and n > 0:
-            t_his.print_update()
-            vehicle.agent.save(directory=path)
-        
-        if done:
-            t_his.lap_done(True)
-            # vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
-
-            vehicle.reset_lap()
-            state, wpts, vs = env.reset()
-            reward.init_reward(wpts, vs)
-
-
-    vehicle.agent.save(directory=path)
-    t_his.save_csv_data()
-
-    print(f"Finished Training: {agent_name}")
-
-    return t_his.rewards
-
-
 
 """General test function"""
 def testVehicle(config, vehicle, show=False, laps=100):
@@ -158,83 +104,6 @@ def testVehicle(config, vehicle, show=False, laps=100):
     print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
 
-""" Training sets"""
-def train_gen_time():
-    load = False
-
-    agent_name = "GenTime_test"
-    config = load_config(config_med)
-    vehicle = GenVehicle(config, agent_name, load)
-    reward = TimeReward(config, 0.06)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-def train_gen_cth():
-    load = False
-
-    agent_name = "GenCth_test"
-    config = load_config(config_med)
-    vehicle = GenVehicle(config, agent_name, load)
-    reward = CthReward(config, 0.4, 0.04)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-def train_gen_steer():
-    load = False
-
-    agent_name = "GenSteer_test"
-    config = load_config(config_med)
-    vehicle = GenVehicle(config, agent_name, load)
-    reward = SteerReward(config, 0.1, 0.1)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-"""Mod training"""
-def train_mod_steer():
-    load = False
-
-    agent_name = "ModSteer_test"
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = SteerReward(config, 0.1, 0.1)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-def train_mod_time():
-    load = False
-
-    agent_name = "ModTime_test"
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = TimeReward(config, 0.06)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-def train_mod_cth():
-    load = False
-
-    agent_name = "ModCth_test"
-    config = load_config(config_med)
-    vehicle = ModVehicleTrain(config, agent_name, load)
-    reward = CthReward(config, 0.4, 0.04)
-
-    TrainVehicle(config, agent_name, vehicle, reward, 4000)
-
-
-
-
-"""Total functions"""
-def test_Gen():
-    agent_name = "GenCth_test"
-    # agent_name = "GenTime_test"
-    # agent_name = "GenSteer_test"
-    
-
-    config = load_config(config_med)
-    vehicle = GenTest(config, agent_name)
-
-    testVehicle(config, vehicle, True, 10)
-    
 def test_Mod():
     agent_name = "ModSteer_test"
     # agent_name = "ModCth_test"
@@ -298,14 +167,6 @@ def test_compare():
 
 
         
-
-def timing():
-    # t = timeit.timeit(stmt=RunModAgent, number=1)
-    # print(f"Time: {t}")
-    
-    t = timeit.timeit(stmt=testOptimal, number=1)
-    print(f"Time: {t}")
-
 
 if __name__ == "__main__":
 
