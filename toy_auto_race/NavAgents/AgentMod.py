@@ -188,7 +188,7 @@ class BaseMod:
         vr_scale = [(speed_ref)/self.max_v]
         dr_scale = [steer_ref/self.max_steer]
 
-        scan = obs[5:-2]
+        scan = obs[5:-1]
 
         nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
 

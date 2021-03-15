@@ -364,9 +364,9 @@ class RefModReward:
         self.b_mod = b_mod
 
     def __call__(self, state, action, s_prime, nn_act) -> float:
-        if s_prime[-2] is True: # colission
+        if s_prime[-1] == -1: # env reward
             return -1
-        if s_prime[-1] is True: # done but no colision
+        if s_prime[-1] == 1:
             return 1
         else:
             return - self.b_mod * abs(nn_act[0]) 

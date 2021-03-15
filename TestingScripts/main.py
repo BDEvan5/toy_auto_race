@@ -30,14 +30,12 @@ def train_mod_track(map_name, agent_name, reward, steps):
         vehicle.agent.train(2)
         
         # env.render(False)
-
-        if n % print_n == 0 and n > 0:
-            vehicle.agent.save()
         
         if done:
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             env.render(wait=False)
+            # env.render(wait=True)
 
             vehicle.reset_lap()
             state = env.reset()
