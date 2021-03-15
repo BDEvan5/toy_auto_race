@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-import LibFunctions as lib
+import toy_auto_race.Utils.LibFunctions as lib
 
 MEMORY_SIZE = 100000
 

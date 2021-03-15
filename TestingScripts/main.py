@@ -1,9 +1,9 @@
-from toy_auto_race.ResultTests.TrainTest import TestVehicles
+# from toy_auto_race.ResultTests.TrainTest import TestVehicles
 from toy_auto_race.Utils.HistoryStructs import RewardAnalyser, TrainHistory
 from toy_auto_race.Utils import LibFunctions as lib
-from toy_auto_race.Vehicles.Rewards import *
-from toy_auto_race.Vehicles.AgentOptimal import OptimalAgent, TunerCar
-from toy_auto_race.Vehicles.AgentMod import ModVehicleTest, ModVehicleTrain
+import toy_auto_race.NavAgents.Rewards as r
+# from toy_auto_race.NavAgents.AgentOptimal import OptimalAgent, TunerCar
+from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 
 from toy_f110 import TrackSim, ForestSim
 
@@ -13,9 +13,10 @@ import yaml
 
 def train_mod_track(map_name, agent_name, reward, steps):
     env = TrackSim(map_name)
-    sim_conf = env.sim_conf
-    vehicle = ModVehicleTrain(sim_conf, agent_name)
-    t_his = TrainHistory(agent_name)
+    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
+    vehicle.set_reward_fcn(reward)
+
+    print_n = 500
 
     done = False
     state = env.reset()
@@ -24,40 +25,38 @@ def train_mod_track(map_name, agent_name, reward, steps):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
-        new_r = reward(state, a, s_prime, r)
-        vehicle.add_memory_entry(new_r, done, s_prime, buffer)
-        t_his.add_step_data(new_r)
 
         state = s_prime
-        vehicle.agent.train(buffer, 2)
+        vehicle.agent.train(2)
         
         # env.render(False)
 
         if n % print_n == 0 and n > 0:
-            t_his.print_update()
-            vehicle.agent.save(directory=path)
+            vehicle.agent.save()
         
         if done:
-            t_his.lap_done(True)
+            vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
-            env.render(wait=False, save=False)
+            env.render(wait=False)
 
             vehicle.reset_lap()
-            state, wpts, vs = env.reset()
-            reward.init_reward(wpts, vs)
+            state = env.reset()
 
-
-    vehicle.agent.save(directory=path)
-    t_his.save_csv_data()
+    vehicle.t_his.save_csv_data()
 
     print(f"Finished Training: {agent_name}")
-
-    return t_his.rewards
-    
 
 
 # def train_vehicle_forest(agent_name, map_name, reward, steps):
 #     env = ForestSim
+
+
+def train_ref_mod():
+    agent_name = "RefModTest"
+    map_name = "torino"
+    reward = r.RefModReward(0.002)
+
+    train_mod_track(map_name, agent_name, reward, 20000)
 
 
 
@@ -113,6 +112,8 @@ def TrainVehicle(config, agent_name, vehicle, reward, steps=20000):
     print(f"Finished Training: {agent_name}")
 
     return t_his.rewards
+
+
 
 """General test function"""
 def testVehicle(config, vehicle, show=False, laps=100):
@@ -310,32 +311,7 @@ def timing():
 
 if __name__ == "__main__":
 
-    # train_gen_time()
-    # train_gen_steer()
-    # train_gen_cth()
-
-    # train_mod_steer()
-    # train_mod_cth()
-    # train_mod_time()
-
-
-    # train_mod_time_sweep_m1()
-    # train_mod_time_sweep_m2()
-    # train_mod_time_sweep_mt()
-
-    # test_mod_time_sweep_m1()
-    # test_mod_time_sweep_m2()
-    # test_mod_time_sweep_mt()
-
-    # test_Gen()
-    test_Mod()
-    # testOptimal()
-    # test_compare()
-
-    # timing()
-
-    # RunMpcAgent()
-    # test_mapping()
+    train_ref_mod()
 
 
 

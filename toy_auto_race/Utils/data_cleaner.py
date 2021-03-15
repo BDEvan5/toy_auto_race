@@ -1,5 +1,5 @@
 import numpy as np 
-import LibFunctions as lib 
+import toy_auto_race.Utils.LibFunctions as lib 
 import csv 
 from matplotlib import pyplot as plt
 

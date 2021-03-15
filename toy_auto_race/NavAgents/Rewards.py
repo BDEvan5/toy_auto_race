@@ -1,8 +1,7 @@
 import numpy as np 
 import csv
 
-from numpy.core import machar
-import LibFunctions as lib
+import toy_auto_race.Utils.LibFunctions as lib
 
 
 def find_closest_pt(pt, wpts):
@@ -359,4 +358,15 @@ class TrackSteerReward:
 
             return new_r  + r
 
+# 9) RefMod reward
+class RefModReward:
+    def __init__(self, b_mod) -> None:
+        self.b_mod = b_mod
 
+    def __call__(self, state, action, s_prime, nn_act) -> float:
+        if s_prime[-2] is True: # colission
+            return -1
+        if s_prime[-1] is True: # done but no colision
+            return 1
+        else:
+            return - self.b_mod * abs(nn_act[0]) 

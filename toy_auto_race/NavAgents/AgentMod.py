@@ -1,49 +1,99 @@
 import numpy as np 
+import csv
 from matplotlib import pyplot as plt
 
-from toy_auto_race.Vehicles.TD3 import TD3
+from toy_auto_race.NavAgents.TD3 import TD3
 from toy_auto_race.Utils import LibFunctions as lib
-
+from toy_auto_race.Utils.HistoryStructs import TrainHistory
 
 
 class BaseMod:
-    def __init__(self, mod_conf, sim_conf, agent_name) -> None:
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf) -> None:
         self.name = agent_name
-        self.env_map = None
+        self.map_name = map_name
         self.path_name = None
 
-        sim_conf = None 
+        mu = sim_conf.mu
+        g = sim_conf.g
+        self.m = sim_conf.m
+        self.max_v = sim_conf.max_v
+        self.max_steer = sim_conf.max_steer
+        self.wheelbase = sim_conf.l_r + sim_conf.l_f
+        self.n_beams = sim_conf.n_beams
 
-        mu = config['car']['mu']
-        self.m = config['car']['m']
-        g = config['car']['g']
-        safety_f = config['pp']['force_f']
+        self.lookahead = mod_conf.lookahead
+        self.vgain = mod_conf.v_gain 
+        self.plan_f = mod_conf.plan_frequency #TODO: refactor name to be clear if it is the ratio or frequency
+
         self.f_max = mu * self.m * g #* safety_f
-        self.max_v = config['lims']['max_v']
-        self.max_d = config['lims']['max_steer']
-        self.lookahead = config['pp']['lookahead']
-        self.vgain = config['pp']['v_gain']
-        self.wheelbase =  config['car']['l_f'] + config['car']['l_r']
 
         self.wpts = None
         self.vs = None
         self.steps = 0
 
+        # TODO: move to agent history class
         self.mod_history = []
         self.d_ref_history = []
         self.reward_history = []
         self.critic_history = []
 
-        n_beams = config['sim']['beams']
-        self.scan_sim = ScanSimulator(n_beams, np.pi)
-        self.n_beams = n_beams
+        self.loop_counter = 0
+        self.plan_f = mod_conf.plan_frequency
+        self.action = None
 
-    def init_agent(self, env_map):
-        self.env_map = env_map
-        self.scan_sim.set_check_fcn(self.env_map.check_scan_location)
+        try:
+            # raise FileNotFoundError
+            self._load_csv_track()
+        except FileNotFoundError:
+            print(f"Problem Loading map - generate new one")
 
+    def _load_csv_track(self):
+        track = []
+        filename = 'maps/' + self.map_name + "_opti.csv"
+        with open(filename, 'r') as csvfile:
+            csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+            for lines in csvFile:  
+                track.append(lines)
 
-        self.reset_lap()
+        track = np.array(track)
+        print(f"Track Loaded: {filename}")
+
+        self.N = len(track)
+        self.ss = track[:, 0]
+        self.wpts = track[:, 1:3]
+        self.vs = track[:, 5]
+
+        self.expand_wpts()
+
+        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
+        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
+
+    def expand_wpts(self):
+        n = 5 # number of pts per orig pt
+        dz = 1 / n
+        o_line = self.wpts
+        o_ss = self.ss
+        o_vs = self.vs
+        new_line = []
+        new_ss = []
+        new_vs = []
+        for i in range(self.N-1):
+            dd = lib.sub_locations(o_line[i+1], o_line[i])
+            for j in range(n):
+                pt = lib.add_locations(o_line[i], dd, dz*j)
+                new_line.append(pt)
+
+                ds = o_ss[i+1] - o_ss[i]
+                new_ss.append(o_ss[i] + dz*j*ds)
+
+                dv = o_vs[i+1] - o_vs[i]
+                new_vs.append(o_vs[i] + dv * j * dz)
+
+        self.wpts = np.array(new_line)
+        self.ss = np.array(new_ss)
+        self.vs = np.array(new_vs)
+        self.N = len(new_line)
 
     def _get_current_waypoint(self, position):
         nearest_pt, nearest_dist, t, i = self.nearest_pt(position)
@@ -65,7 +115,6 @@ class BaseMod:
 
         if lookahead_point is None:
             return 4.0, 0.0
-        self.env_map.targets.append(lookahead_point[0:2])
 
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed
@@ -84,11 +133,6 @@ class BaseMod:
         return new_steer
 
     def reset_lap(self):
-        # self.wpts, self.vs = self.env_map.get_optimal_path()
-        self.wpts, self.vs = self.env_map.get_reference_path()
-
-        self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
-        self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
         self.steps = 0
         self.mod_history = []
@@ -137,37 +181,32 @@ class BaseMod:
         plt.pause(0.001)
 
     def transform_obs(self, obs):
-        v_ref, d_ref = self.act_pp(obs)
+        steer_ref, speed_ref = self.act_pp(obs)
 
         cur_v = [obs[3]/self.max_v]
-        cur_d = [obs[4]/self.max_d]
-        vr_scale = [(v_ref)/self.max_v]
-        dr_scale = [d_ref/self.max_d]
+        cur_d = [obs[4]/self.max_steer]
+        vr_scale = [(speed_ref)/self.max_v]
+        dr_scale = [steer_ref/self.max_steer]
 
-        scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
+        scan = obs[5:-2]
 
         nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
 
-        return nn_obs
+        return nn_obs, steer_ref, speed_ref
 
-    def modify_references(self, nn_action, v_ref, d_ref, obs):
-        d_max = 0.4 #- use this instead
+    def modify_references(self, nn_action, d_ref):
+        d_max = self.max_steer
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
-        d_new = np.clip(d_new, -d_max, d_max)
 
-        if abs(d_new) > abs(d_ref):
-            max_friction_force = 3.74 * 9.81 * 0.523 *0.5
-            d_plan = max(abs(d_ref), abs(obs[4]), abs(d_new))
-            theta_dot = abs(obs[3] / 0.33 * np.tan(d_plan))
-            v_ref_new = max_friction_force / (3.74 * max(theta_dot, 0.01)) 
-            v_ref_mod = min(v_ref_new, self.max_v)
-        else:
-            v_ref_mod = v_ref
+        return d_new
 
-
-        return v_ref_mod, d_new
-
+    def act(self, obs):
+        if self.action is None or self.loop_counter == self.plan_f:
+            self.loop_counter = 0
+            self.action = self.act_nn(obs)
+        self.loop_counter += 1
+        return self.action
 
 # @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):
@@ -256,50 +295,113 @@ def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0
 
 
 class ModVehicleTrain(BaseMod):
-    def __init__(self, config, name, load=False):
-        BaseMod.__init__(self, config, name)
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
+        """
+        Training vehicle using the reference modification navigation stack
 
-        self.current_v_ref = None
-        self.current_phi_ref = None
+        Args:
+            agent_name: name of the agent for saving and reference
+            sim_conf: namespace with simulation parameters
+            mod_conf: namespace with modification planner parameters
+            load: if the network should be loaded or recreated.
+        """
+        if mod_conf is None:
+            mod_conf = lib.load_conf("mod_conf")
 
+        BaseMod.__init__(self, agent_name, map_name, sim_conf, mod_conf)
+
+        self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
-        self.agent = TD3(state_space, 1, 1, name)
-        h_size = config['nn']['h']
+        self.agent = TD3(state_space, 1, 1, agent_name)
+        h_size = mod_conf.h
         self.agent.try_load(load, h_size)
 
-        self.m1 = None
-        self.m2 = None
+        self.reward_fcn = None
+        self.state = None
+        self.nn_state = None
+        self.nn_act = None
 
-    def act(self, obs):
-        # v_ref, d_ref = self.get_target_references(obs)
-        v_ref, d_ref = self.act_pp(obs)
+        self.t_his = TrainHistory(agent_name)
 
-        nn_obs = self.transform_obs(obs)
+
+    def set_reward_fcn(self, r_fcn):
+        self.reward_fcn = r_fcn
+
+    def act_nn(self, obs):
+        nn_obs, steer_ref, speed_ref = self.transform_obs(obs)
+        self.add_memory_entry(obs, nn_obs)
+
+        self.state = obs
         nn_action = self.agent.act(nn_obs)
-        self.cur_nn_act = nn_action
+        self.nn_act = nn_action
 
-        self.d_ref_history.append(d_ref)
-        self.mod_history.append(self.cur_nn_act[0])
+        self.d_ref_history.append(steer_ref)
+        self.mod_history.append(self.nn_act[0])
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
+        self.nn_state = nn_obs
 
-        v_ref, d_ref = self.modify_references(self.cur_nn_act, v_ref, d_ref, obs)
+        steering_angle = self.modify_references(self.nn_act, steer_ref)
 
-        self.steps += 1
+        return np.array([steering_angle, speed_ref])
 
-        return [v_ref, d_ref]
+    def add_memory_entry(self, s_prime, nn_s_prime):
+        if self.state is not None:
+            reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
 
-    def add_memory_entry(self, new_reward, done, s_prime, buffer):
-        self.prev_nn_act = self.state_action[1][0]
+            self.t_his.add_step_data(reward)
+            mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
-        nn_s_prime = self.transform_obs(s_prime)
+            self.agent.replay_buffer.add(mem_entry)
 
-        mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
+    def done_entry(self, s_prime):
+        """
+        To be called when ep is done.
+        """
+        nn_s_prime, d, v = self.transform_obs(s_prime)
+        reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
 
-        buffer.add(mem_entry)
+        self.t_his.add_step_data(reward)
+        self.t_his.lap_done(False)
+        # self.t_his.lap_done(True)
+        if len(self.t_his.ep_rewards) % 10 == 0:
+            self.t_his.print_update()
+            self.agent.save(self.path)
+        self.state = None
+        mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
 
-    def get_deviation(self):
-        return self.cur_nn_act[0]
+        self.agent.replay_buffer.add(mem_entry)
+
+
+    # def act(self, obs):
+    #     # v_ref, d_ref = self.get_target_references(obs)
+    #     v_ref, d_ref = self.act_pp(obs)
+
+    #     nn_obs = self.transform_obs(obs)
+    #     nn_action = self.agent.act(nn_obs)
+    #     self.cur_nn_act = nn_action
+
+    #     self.d_ref_history.append(d_ref)
+    #     self.mod_history.append(self.cur_nn_act[0])
+    #     self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
+    #     self.state_action = [nn_obs, self.cur_nn_act]
+
+    #     v_ref, d_ref = self.modify_references(self.cur_nn_act, v_ref, d_ref, obs)
+
+    #     self.steps += 1
+
+    #     return [v_ref, d_ref]
+
+    # def add_memory_entry(self, new_reward, done, s_prime, buffer):
+    #     self.prev_nn_act = self.state_action[1][0]
+
+    #     nn_s_prime = self.transform_obs(s_prime)
+
+    #     mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
+
+    #     buffer.add(mem_entry)
+
+    # def get_deviation(self):
+    #     return self.cur_nn_act[0]
 
 
 class ModVehicleTest(BaseMod):
