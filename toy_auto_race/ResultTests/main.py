@@ -11,6 +11,54 @@ import numpy as np
 import timeit
 import yaml
 
+def train_mod_track(map_name, agent_name, reward, steps):
+    env = TrackSim(map_name)
+    sim_conf = env.sim_conf
+    vehicle = ModVehicleTrain(sim_conf, agent_name)
+    t_his = TrainHistory(agent_name)
+
+    done = False
+    state = env.reset()
+
+    for n in range(steps):
+        a = vehicle.act(state)
+        s_prime, r, done, _ = env.step(a)
+
+        new_r = reward(state, a, s_prime, r)
+        vehicle.add_memory_entry(new_r, done, s_prime, buffer)
+        t_his.add_step_data(new_r)
+
+        state = s_prime
+        vehicle.agent.train(buffer, 2)
+        
+        # env.render(False)
+
+        if n % print_n == 0 and n > 0:
+            t_his.print_update()
+            vehicle.agent.save(directory=path)
+        
+        if done:
+            t_his.lap_done(True)
+            # vehicle.show_vehicle_history()
+            env.render(wait=False, save=False)
+
+            vehicle.reset_lap()
+            state, wpts, vs = env.reset()
+            reward.init_reward(wpts, vs)
+
+
+    vehicle.agent.save(directory=path)
+    t_his.save_csv_data()
+
+    print(f"Finished Training: {agent_name}")
+
+    return t_his.rewards
+    
+
+
+# def train_vehicle_forest(agent_name, map_name, reward, steps):
+#     env = ForestSim
+
 
 
 """Train"""
