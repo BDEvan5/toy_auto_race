@@ -117,6 +117,15 @@ class BaseMod:
 
 
     def act_pp(self, obs):
+        """
+        Takes the action of a pure pursuit controller
+
+        Args:
+            obs: Observation array from toy_f110
+
+        Returns
+            action (ndarray(2)): action in form of [steering, speed]
+        """
         pose_th = obs[2]
         pos = np.array(obs[0:2], dtype=np.float)
 
@@ -126,7 +135,7 @@ class BaseMod:
             return 4.0, 0.0
 
         self.aim_pts.append(lookahead_point)
-        print(f"Lhd Pt: {lookahead_point}")
+        # print(f"Lhd Pt: {lookahead_point}")
 
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed
@@ -206,8 +215,17 @@ class BaseMod:
 
 
     def transform_obs(self, obs):
-        # steer_ref, speed_ref = self.act_pp(obs)
-        speed_ref, steer_ref = self.act_pp(obs)
+        """
+        Transforms the observation received from the environment into a vector which can be used with a neural network.
+    
+        Args:
+            obs: observation from env
+        Returns:
+            nn_obs: observation vector for neural network
+            steer_ref: pure pursuit steering reference
+            speed_ref: pure pursuit speed reference
+        """
+        steer_ref, speed_ref = self.act_pp(obs)
 
         cur_v = [obs[3]/self.max_v]
         cur_d = [obs[4]/self.max_steer]
@@ -227,11 +245,11 @@ class BaseMod:
 
         return d_new
 
-    def act(self, obs):
+    def act(self, obs) -> np.ndarray(2): 
         if self.action is None or self.loop_counter == self.plan_f:
+            self.action = self.update_action(obs)
+            pp = self.act_pp(obs)
             self.loop_counter = 0
-            # self.action = self.act_nn(obs)
-            self.action = self.act_pp(obs)
         self.loop_counter += 1
         return self.action
 
@@ -320,7 +338,6 @@ def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0
 
 
 
-
 class ModVehicleTrain(BaseMod):
     def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
         """
@@ -353,7 +370,7 @@ class ModVehicleTrain(BaseMod):
     def set_reward_fcn(self, r_fcn):
         self.reward_fcn = r_fcn
 
-    def act_nn(self, obs):
+    def update_action(self, obs):
         nn_obs, steer_ref, speed_ref = self.transform_obs(obs)
         self.add_memory_entry(obs, nn_obs)
 
@@ -401,38 +418,49 @@ class ModVehicleTrain(BaseMod):
 
 
 class ModVehicleTest(BaseMod):
-    def __init__(self, config, name):
-        path = 'Vehicles/' + name + ''
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
+        """
+        Testing vehicle using the reference modification navigation stack
+
+        Args:
+            agent_name: name of the agent for saving and reference
+            sim_conf: namespace with simulation parameters
+            mod_conf: namespace with modification planner parameters
+        """
+        if mod_conf is None:
+            mod_conf = lib.load_conf("mod_conf")
+
+        BaseMod.__init__(self, agent_name, map_name, sim_conf, mod_conf)
+
+        self.path = 'Vehicles/' + agent_name
         state_space = 4 
-        self.agent = TD3(state_space, 1, 1, name)
-        self.agent.load(directory=path)
+        self.agent = TD3(state_space, 1, 1, agent_name)
+        self.agent.load(directory=self.path)
 
         print(f"NN: {self.agent.actor.type}")
 
         nn_size = self.agent.actor.l1.in_features
         n_beams = nn_size - 4
-        BaseMod.__init__(self, config, name)
-        print(f"Agent loaded: {name}")
+        print(f"Agent loaded: {agent_name}")
 
         self.current_v_ref = None
         self.current_phi_ref = None
 
-    def act(self, obs):
-        v_ref, d_ref = self.act_pp(obs)
+    def update_action(self, obs):
+        nn_obs, steer_ref, speed_ref = self.transform_obs(obs)
+        # nn_action = self.agent.act(nn_obs, noise=0)
+        nn_action = [0]
+        self.nn_act = nn_action
 
-        nn_obs = self.transform_obs(obs)
-        nn_action = self.agent.act(nn_obs, noise=0)
-        self.cur_nn_act = nn_action
-
-        self.d_ref_history.append(d_ref)
-        self.mod_history.append(self.cur_nn_act[0])
+        self.d_ref_history.append(steer_ref)
+        self.mod_history.append(self.nn_act[0])
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.cur_nn_act]
+        self.state_action = [nn_obs, self.nn_act]
 
-        v_ref, d_ref = self.modify_references(self.cur_nn_act, v_ref, d_ref, obs)
+        steer_ref = self.modify_references(self.nn_act, steer_ref)
 
         self.steps += 1
 
-        return [v_ref, d_ref]
+        return np.array([steer_ref, speed_ref])
 
 

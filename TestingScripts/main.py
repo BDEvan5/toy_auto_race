@@ -43,11 +43,21 @@ def test_gap_follow():
     test_single_vehicle(env, vehicle, True, 10)
 
 
+def test_ref_mod():
+    agent_name = "RefModTest"
+    # map_name = "torino"
+    map_name = "porto"
+
+    env = TrackSim(map_name)
+    vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 10)
 
 
 if __name__ == "__main__":
 
     train_ref_mod()
+    # test_ref_mod()
 
 
     # test_pp()
