@@ -1,177 +1,45 @@
-# from toy_auto_race.ResultTests.TrainTest import TestVehicles
-from toy_auto_race.Utils.HistoryStructs import RewardAnalyser, TrainHistory
-from toy_auto_race.Utils import LibFunctions as lib
-import toy_auto_race.NavAgents.Rewards as r
-# from toy_auto_race.NavAgents.AgentOptimal import OptimalAgent, TunerCar
-from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
-
-from toy_f110 import TrackSim, ForestSim
-
 import numpy as np
 import timeit
 import yaml
 
-def train_mod_track(map_name, agent_name, reward, steps):
-    env = TrackSim(map_name)
-    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
-    vehicle.set_reward_fcn(reward)
+from toy_auto_race.Utils import LibFunctions as lib
+import toy_auto_race.Rewards as r
+from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
+from toy_auto_race.NavAgents.PurePursuit import PurePursuit
+# from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap
+from TestingScripts.TrainTest import *
 
-    print_n = 500
-
-    done = False
-    state = env.reset()
-
-    for n in range(steps):
-        a = vehicle.act(state)
-        s_prime, r, done, _ = env.step(a)
-
-
-        state = s_prime
-        vehicle.agent.train(2)
-        
-        # env.render(False)
-        
-        if done:
-            vehicle.done_entry(s_prime)
-            # vehicle.show_vehicle_history()
-            env.render(wait=False)
-            # env.render(wait=True)
-
-            vehicle.reset_lap()
-            state = env.reset()
-
-    vehicle.t_his.save_csv_data()
-
-    print(f"Finished Training: {agent_name}")
-
-
-# def train_vehicle_forest(agent_name, map_name, reward, steps):
-#     env = ForestSim
+from toy_f110 import TrackSim, ForestSim
 
 
 def train_ref_mod():
     agent_name = "RefModTest"
-    map_name = "torino"
+    # map_name = "torino"
+    map_name = "porto"
     reward = r.RefModReward(0.002)
 
-    train_mod_track(map_name, agent_name, reward, 20000)
+    env = TrackSim(map_name)
+    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
+    vehicle.set_reward_fcn(reward)
+
+    train_vehicle(env, vehicle, 20000)
 
 
-
-
-"""General test function"""
-def testVehicle(config, vehicle, show=False, laps=100):
-    # env_map = SimMap(name)
-    # env = TrackSim(env_map)
-
-    env_map = ForestMap(config)
-    env = ForestSim(env_map)
-
-    crashes = 0
-    completes = 0
-    lap_times = [] 
-
-    state, w, v = env.reset()
-    vehicle.init_agent(env_map)
-    done, score = False, 0.0
-    for i in range(laps):
-        print(f"Running lap: {i}")
-        while not done:
-            a = vehicle.act(state)
-            s_p, r, done, _ = env.step(a)
-            state = s_p
-            # env.render(False, vehicle.scan_sim)
-        print(f"Lap time updates: {env.steps}")
-        if show:
-            # env.history.show_history(vs=env_map.vs)
-            # env.history.show_forces()
-            env.render(wait=False)
-            # plt.pause(1)
-            # env.render(wait=True)
-
-        if r == -1:
-            crashes += 1
-        else:
-            completes += 1
-            lap_times.append(env.steps)
-        state, w, v = env.reset()
-        
-        vehicle.reset_lap()
-        done = False
-
-    print(f"Crashes: {crashes}")
-    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
-    print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
-
-
-def test_Mod():
-    agent_name = "ModSteer_test"
-    # agent_name = "ModCth_test"
-    # agent_name = "ModTime_test"
+def test_pp():
+    map_name = "porto"
     
-    config = load_config("std_config")
-    config = load_config(config_med)
-    # config = load_config(config_sf)
-    vehicle = ModVehicleTest(config, agent_name)
+    env = TrackSim(map_name)
+    vehicle = PurePursuit(map_name, env.sim_conf)
 
-    testVehicle(config, vehicle, True, laps=20)
+    test_single_vehicle(env, vehicle, True, 10)
 
 
-def testOptimal():
 
-    # config = load_config(config_std)
-    config = load_config(config_med)
-    vehicle = TunerCar(config)
-    # vehicle = OptimalAgent(config) # to be deprecated for tuner car
-
-    testVehicle(config, vehicle, True, 10)
-
-def test_compare():
-    config = load_config(config_med)
-    # config = load_config(config_std)
-    # test = TestVehicles(config, "test_compare_mod")
-    # test = TestVehicles(config, "test_compare_gen")
-    test = TestVehicles(config, "test_compare")
-
-    # mod
-    agent_name = "ModTime_test"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModCth_test"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "ModSteer_test"
-    vehicle = ModVehicleTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    # gen
-    agent_name = "GenTime_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "GenCth_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    agent_name = "GenSteer_test"
-    vehicle = GenTest(config, agent_name)
-    test.add_vehicle(vehicle)
-
-    # PP
-    vehicle = TunerCar(config)
-    test.add_vehicle(vehicle)
-
-    test.run_eval(100, True)
-
-
-        
 
 if __name__ == "__main__":
 
-    train_ref_mod()
-
+    # train_ref_mod()
+    test_pp()
 
 
 

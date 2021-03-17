@@ -2,7 +2,7 @@ import numpy as np
 import csv
 from matplotlib import pyplot as plt
 
-from toy_auto_race.NavAgents.TD3 import TD3
+from toy_auto_race.TD3 import TD3
 from toy_auto_race.Utils import LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
 
@@ -133,7 +133,7 @@ class BaseMod:
         return new_steer
 
     def reset_lap(self):
-
+        # TODO: reset all the history objects 
         self.steps = 0
         self.mod_history = []
 
@@ -199,7 +199,8 @@ class BaseMod:
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
 
-        return d_new
+        # return d_new
+        return d_ref
 
     def act(self, obs):
         if self.action is None or self.loop_counter == self.plan_f:

@@ -1,24 +1,20 @@
-from locale import windows_locale
-from numpy.core.fromnumeric import clip
-from LibFunctions import load_config_namespace
 import yaml 
 import numpy as np 
 import matplotlib.pyplot as plt
-import matplotlib.image as img
 from PIL import Image
 import csv
-
-import LibFunctions as lib
+import casadi as ca 
 from scipy import ndimage 
 
-import casadi as ca 
+
+import toy_auto_race.Utils.LibFunctions as lib
 
 
 
 class PreMap:
-    def __init__(self, conf) -> None:
-        self.conf = conf 
-        self.map_name = conf.map_name
+    def __init__(self, conf, map_name) -> None:
+        self.conf = conf #TODO: update to use new config style
+        self.map_name = map_name
 
         self.map_img = None
         self.origin = None
@@ -656,13 +652,11 @@ def convert_pts_s_th(pts):
 
 
 if __name__ == "__main__":
-    # fname = "config_example_map"
     fname = "config_test"
-    # fname = "vegas"
-    conf = lib.load_config_namespace(fname)
-
+    conf = lib.load_conf(fname)
+    map_name = "porto"
     
 
-    pre_map = PreMap(conf)
+    pre_map = PreMap(conf, map_name)
     pre_map.run_conversion()
     # pre_map.run_opti()
