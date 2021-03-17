@@ -123,7 +123,7 @@ class PurePursuit:
         # avg_speed = max(speed, obs[3])
         # steering_angle = self.limit_inputs(avg_speed, steering_angle)
 
-        return [speed, steering_angle]
+        return [steering_angle, speed]
 
     def limit_inputs(self, speed, steering_angle):
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))

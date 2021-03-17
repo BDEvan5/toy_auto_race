@@ -47,11 +47,11 @@ def test_gap_follow():
 
 if __name__ == "__main__":
 
-    # train_ref_mod()
+    train_ref_mod()
 
 
     # test_pp()
-    test_gap_follow()
+    # test_gap_follow()
 
 
 

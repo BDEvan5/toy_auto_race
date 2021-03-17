@@ -41,6 +41,8 @@ class BaseMod:
         self.plan_f = mod_conf.plan_frequency
         self.action = None
 
+        self.aim_pts = []
+
         try:
             # raise FileNotFoundError
             self._load_csv_track()
@@ -95,33 +97,44 @@ class BaseMod:
         self.vs = np.array(new_vs)
         self.N = len(new_line)
 
-    def _get_current_waypoint(self, position):
+    def _get_current_waypoint(self, position, theta):
+        # nearest_pt, nearest_dist, t, i = nearest_point_on_trajectory_py2(position, self.wpts)
         nearest_pt, nearest_dist, t, i = self.nearest_pt(position)
 
-        # if nearest_dist < self.lookahead:
-        #     lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
-        #     if i2 == None:
-        #         return None
-        #     i = i2
-        # elif nearest_dist < 20:
-        #     return np.append(self.wpts[i], self.vs[i])
-        return np.append(self.wpts[i], self.vs[i])
+        if nearest_dist < self.lookahead:
+            lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
+            if i2 == None:
+                return None
+            i = i2
+            current_waypoint = np.empty((3, ))
+            # x, y
+            current_waypoint[0:2] = self.wpts[i2]
+            # speed
+            current_waypoint[2] = self.vs[i]
+            return current_waypoint
+        elif nearest_dist < 20:
+            return np.append(self.wpts[i], self.vs[i])
+
 
     def act_pp(self, obs):
         pose_th = obs[2]
         pos = np.array(obs[0:2], dtype=np.float)
 
-        lookahead_point = self._get_current_waypoint(pos)
+        lookahead_point = self._get_current_waypoint(pos, pose_th)
 
         if lookahead_point is None:
             return 4.0, 0.0
 
+        self.aim_pts.append(lookahead_point)
+        print(f"Lhd Pt: {lookahead_point}")
+
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.vgain * speed
 
-        steering_angle = self.limit_inputs(max(speed, obs[3]), steering_angle)
+        # steering_angle = self.limit_inputs(max(speed, obs[3]), steering_angle)
 
-        return speed, steering_angle
+        # return speed, steering_angle
+        return np.array([steering_angle, speed])
 
     def limit_inputs(self, speed, steering_angle):
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
@@ -172,16 +185,29 @@ class BaseMod:
         # plt.legend(['NN'])
 
 
-        plt.figure(3)
-        plt.clf()
-        plt.title('Rewards')
-        plt.ylim([-1.5, 4])
-        plt.plot(self.reward_history, 'x', markersize=12)
-        plt.plot(self.critic_history)
+        # plt.figure(3)
+        # plt.clf()
+        # plt.title('Rewards')
+        # plt.ylim([-1.5, 4])
+        # plt.plot(self.reward_history, 'x', markersize=12)
+        # plt.plot(self.critic_history)
+        # plt.pause(0.001)
+
+        plt.figure(5)
+        pts = np.array(self.aim_pts)
+        plt.plot(pts[:, 0], pts[:, 1])
         plt.pause(0.001)
 
+    def show_wpts(self):
+        plt.figure(6)
+        pts = np.array(self.wpts)
+        plt.plot(pts[:, 0], pts[:, 1])
+        plt.pause(0.001)
+
+
     def transform_obs(self, obs):
-        steer_ref, speed_ref = self.act_pp(obs)
+        # steer_ref, speed_ref = self.act_pp(obs)
+        speed_ref, steer_ref = self.act_pp(obs)
 
         cur_v = [obs[3]/self.max_v]
         cur_d = [obs[4]/self.max_steer]
@@ -199,13 +225,13 @@ class BaseMod:
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
 
-        # return d_new
-        return d_ref
+        return d_new
 
     def act(self, obs):
         if self.action is None or self.loop_counter == self.plan_f:
             self.loop_counter = 0
-            self.action = self.act_nn(obs)
+            # self.action = self.act_nn(obs)
+            self.action = self.act_pp(obs)
         self.loop_counter += 1
         return self.action
 
@@ -324,7 +350,6 @@ class ModVehicleTrain(BaseMod):
 
         self.t_his = TrainHistory(agent_name)
 
-
     def set_reward_fcn(self, r_fcn):
         self.reward_fcn = r_fcn
 
@@ -333,7 +358,8 @@ class ModVehicleTrain(BaseMod):
         self.add_memory_entry(obs, nn_obs)
 
         self.state = obs
-        nn_action = self.agent.act(nn_obs)
+        # nn_action = self.agent.act(nn_obs)
+        nn_action = [0]
         self.nn_act = nn_action
 
         self.d_ref_history.append(steer_ref)
@@ -372,37 +398,6 @@ class ModVehicleTrain(BaseMod):
 
         self.agent.replay_buffer.add(mem_entry)
 
-
-    # def act(self, obs):
-    #     # v_ref, d_ref = self.get_target_references(obs)
-    #     v_ref, d_ref = self.act_pp(obs)
-
-    #     nn_obs = self.transform_obs(obs)
-    #     nn_action = self.agent.act(nn_obs)
-    #     self.cur_nn_act = nn_action
-
-    #     self.d_ref_history.append(d_ref)
-    #     self.mod_history.append(self.cur_nn_act[0])
-    #     self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-    #     self.state_action = [nn_obs, self.cur_nn_act]
-
-    #     v_ref, d_ref = self.modify_references(self.cur_nn_act, v_ref, d_ref, obs)
-
-    #     self.steps += 1
-
-    #     return [v_ref, d_ref]
-
-    # def add_memory_entry(self, new_reward, done, s_prime, buffer):
-    #     self.prev_nn_act = self.state_action[1][0]
-
-    #     nn_s_prime = self.transform_obs(s_prime)
-
-    #     mem_entry = (self.state_action[0], self.state_action[1], nn_s_prime, new_reward, done)
-
-    #     buffer.add(mem_entry)
-
-    # def get_deviation(self):
-    #     return self.cur_nn_act[0]
 
 
 class ModVehicleTest(BaseMod):
