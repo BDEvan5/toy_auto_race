@@ -168,6 +168,7 @@ class PurePursuit:
         plt.figure(5)
         pts = np.array(self.aim_pts)
         plt.plot(pts[:, 0], pts[:, 1])
+        plt.pause(0.001)
 
 # @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):

@@ -207,13 +207,14 @@ def test_single_vehicle(env, vehicle, show=False, laps=100):
     for i in range(laps):
         print(f"Running lap: {i}")
         while not done:
-            a = vehicle.act(state)
+            # a = vehicle.act(state)
+            a = vehicle.act_ten(state)
             s_p, r, done, _ = env.step(a)
             state = s_p
-            # env.render(False, vehicle.scan_sim)
+            # env.render(False)
         print(f"Lap time updates: {env.steps}")
         if show:
-            vehicle.show_vehicle_history()
+            # vehicle.show_vehicle_history()
             env.history.show_history()
             # env.history.show_forces()
             # env.render(wait=False)

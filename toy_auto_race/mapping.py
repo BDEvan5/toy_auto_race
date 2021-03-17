@@ -19,6 +19,8 @@ class PreMap:
         self.map_img = None
         self.origin = None
         self.resolution = None
+        self.stheta = None
+        self.map_img_name = None
 
         self.cline = None
         self.nvecs = None
@@ -78,15 +80,15 @@ class PreMap:
         with open(file_name) as file:
             documents = yaml.full_load(file)
 
-        self.yaml_file = dict(documents.items())
+        yaml_file = dict(documents.items())
 
-        self.resolution = self.yaml_file['resolution']
-        self.origin = self.yaml_file['origin']
+        self.resolution = yaml_file['resolution']
+        self.origin = yaml_file['origin']
+        self.stheta = yaml_file['start_pose'][2]
+        self.map_img_name = yaml_file['image']
 
     def load_map(self):
-
-        map_file_name = self.yaml_file['image']
-        map_img_name = 'maps/' + map_file_name
+        map_img_name = 'maps/' + self.map_img_name
 
         try:
             self.map_img = np.array(Image.open(map_img_name).transpose(Image.FLIP_TOP_BOTTOM))
@@ -122,7 +124,7 @@ class PreMap:
         self.cline = [pt]
         # th = self.conf.stheta - np.pi/2 
         #TODO: load the start theta from the yaml file
-        th = np.pi / 2
+        th = self.stheta
         while (lib.get_distance(pt, start) > d_search or len(self.cline) < 10) and len(self.cline) < 200:
             vals = []
             self.search_space = []

@@ -10,37 +10,31 @@ import toy_auto_race.Utils.LibFunctions as lib
 #TODO: add imports and update to use scan from state.
 
 class FollowTheGap:
-    def __init__(self, config):
+    def __init__(self, sim_conf):
         self.name = "Follow The Gap"
-        self.config = config
-        self.env_map = None
-        self.map = None
         self.cur_scan = None
         self.cur_odom = None
     
-        self.max_speed = config['lims']['max_v']
-        self.max_steer = config['lims']['max_steer']
-        self.wheelbase = config['car']['l_r'] + config['car']['l_f']
-        mu = config['car']['mu']
-        self.m = config['car']['m']
-        g = config['car']['g']
-        safety_f = config['pp']['force_f']
-        self.f_max = mu * self.m * g * safety_f
+        self.max_speed = sim_conf.max_v
+        self.max_steer = sim_conf.max_steer
+        self.wheelbase = sim_conf.l_r + sim_conf.l_f
+        mu = sim_conf.mu
+        self.m = sim_conf.m
+        g = sim_conf.g
+        self.f_max = mu * self.m * g
 
-        # n_beams = config['sim']['beams']
-        n_beams = 20
-        self.scan_sim = ScanSimulator(n_beams, np.pi)
-        self.n_beams = n_beams
-        
-    def init_agent(self, env_map):
-        self.scan_sim.set_check_fcn(env_map.check_scan_location)
-        self.env_map = env_map
+        self.n_beams = sim_conf.n_beams
+        self.plan_f = 10
+        self.loop_counter = 0
+        self.action = None
 
+    def reset_lap(self):
+        pass # called for likeness with other vehicles
 
     def act(self, obs):
-        scan = self.scan_sim.get_scan(obs[0], obs[1], obs[2])
+        scan = obs[5:-1]
         ranges = np.array(scan, dtype=np.float)
-        o_ranges = ranges
+        o_ranges = np.copy(ranges)
         angle_increment = np.pi / len(ranges)
 
         max_range = 1
@@ -53,15 +47,11 @@ class FollowTheGap:
 
         aim = find_best_point(start_i, end_i, ranges[start_i:end_i])
 
-        half_pt = len(ranges) /2
-        steering_angle =  angle_increment * (aim - half_pt)
+        half_pt = (len(ranges) -1) /2
+        steering_angle =  angle_increment * (aim - half_pt) * 0.5  # steering smoothing
 
-        val = ranges[aim] * 4
-        th = lib.add_angles_complex(obs[2], steering_angle)
-        pt = lib.theta_to_xy(th) * val
-        self.env_map.targets.append(pt)
 
-        speed = self.max_speed * ranges[aim] / max_range * 0.5
+        speed = self.max_speed * ranges[aim] / max_range * 0.9 # v_safety factor
         # steering_angle = self.limit_inputs(speed, steering_angle)
 
         return np.array([speed, steering_angle])
@@ -74,6 +64,13 @@ class FollowTheGap:
             print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
 
         return new_steer
+
+    def act_ten(self, obs):
+        if self.action is None or self.loop_counter == self.plan_f:
+            self.loop_counter = 0
+            self.action = self.act(obs)
+        self.loop_counter += 1
+        return self.action
 
 
 @njit
@@ -117,7 +114,7 @@ def find_max_gap(input_vector):
     size = len(input_vector)
 
     # exclude gaps that are smaller than this. Currently 1m
-    min_distance = 0.5
+    min_distance = 0.25
 
     while current_idx < size:
         current_start = current_idx
