@@ -213,7 +213,8 @@ def test_single_vehicle(env, vehicle, show=False, laps=100):
             # env.render(False, vehicle.scan_sim)
         print(f"Lap time updates: {env.steps}")
         if show:
-            # env.history.show_history(vs=env_map.vs)
+            vehicle.show_vehicle_history()
+            env.history.show_history()
             # env.history.show_forces()
             # env.render(wait=False)
             env.render(wait=True)

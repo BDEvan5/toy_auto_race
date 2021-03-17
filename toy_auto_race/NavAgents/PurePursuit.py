@@ -30,6 +30,8 @@ class PurePursuit:
         self.N = None
         self.ss = None #TODO: I think this isn't needed and can be removed
 
+        self.aim_pts = []
+
         try:
             # raise FileNotFoundError
             self._load_csv_track()
@@ -112,6 +114,8 @@ class PurePursuit:
         if lookahead_point is None:
             return 4.0, 0.0
 
+        self.aim_pts.append(lookahead_point)
+
         speed, steering_angle = self.get_actuation(pose_th, lookahead_point, pos)
         speed = self.v_gain * speed
 
@@ -160,6 +164,10 @@ class PurePursuit:
         min_dist_segment = np.argmin(dists)
         return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
 
+    def show_vehicle_history(self):
+        plt.figure(5)
+        pts = np.array(self.aim_pts)
+        plt.plot(pts[:, 0], pts[:, 1])
 
 # @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):

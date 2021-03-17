@@ -120,7 +120,9 @@ class PreMap:
 
         pt = start = np.array([self.conf.sx, self.conf.sy])
         self.cline = [pt]
-        th = self.conf.stheta - np.pi/2
+        # th = self.conf.stheta - np.pi/2 
+        #TODO: load the start theta from the yaml file
+        th = np.pi / 2
         while (lib.get_distance(pt, start) > d_search or len(self.cline) < 10) and len(self.cline) < 200:
             vals = []
             self.search_space = []
