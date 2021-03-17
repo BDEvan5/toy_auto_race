@@ -54,7 +54,7 @@ class FollowTheGap:
         speed = self.max_speed * ranges[aim] / max_range * 0.9 # v_safety factor
         # steering_angle = self.limit_inputs(speed, steering_angle)
 
-        return np.array([speed, steering_angle])
+        return np.array([steering_angle, speed])
 
     def limit_inputs(self, speed, steering_angle):
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))

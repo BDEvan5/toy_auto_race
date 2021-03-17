@@ -33,8 +33,8 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            # env.render(wait=False)
-            env.render(wait=True)
+            env.render(wait=False)
+            # env.render(wait=True)
 
             vehicle.reset_lap()
             state = env.reset()
@@ -50,7 +50,7 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     completes = 0
     lap_times = [] 
 
-    state = env.reset()
+    state = env.reset(True)
     done, score = False, 0.0
     for i in range(laps):
         print(f"Running lap: {i}")
@@ -65,15 +65,15 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             # vehicle.show_vehicle_history()
             env.history.show_history()
             # env.history.show_forces()
-            # env.render(wait=False)
-            env.render(wait=True)
+            env.render(wait=False)
+            # env.render(wait=True)
 
         if r == -1:
             crashes += 1
         else:
             completes += 1
             lap_times.append(env.steps)
-        state = env.reset()
+        state = env.reset(True)
         
         vehicle.reset_lap()
         done = False

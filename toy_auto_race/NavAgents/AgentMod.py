@@ -220,6 +220,7 @@ class BaseMod:
     
         Args:
             obs: observation from env
+
         Returns:
             nn_obs: observation vector for neural network
             steer_ref: pure pursuit steering reference
@@ -239,6 +240,17 @@ class BaseMod:
         return nn_obs, steer_ref, speed_ref
 
     def modify_references(self, nn_action, d_ref):
+        """
+        Modifies the reference quantities for the steering.
+        Mutliplies the nn_action with the max steering and then sums with the reference
+
+        Args:
+            nn_action: action from neural network in range [-1, 1]
+            d_ref: steering reference from PP
+
+        Returns:
+            d_new: modified steering reference
+        """
         d_max = self.max_steer
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
@@ -375,8 +387,8 @@ class ModVehicleTrain(BaseMod):
         self.add_memory_entry(obs, nn_obs)
 
         self.state = obs
-        # nn_action = self.agent.act(nn_obs)
-        nn_action = [0]
+        nn_action = self.agent.act(nn_obs)
+        # nn_action = [0]
         self.nn_act = nn_action
 
         self.d_ref_history.append(steer_ref)
@@ -448,8 +460,8 @@ class ModVehicleTest(BaseMod):
 
     def update_action(self, obs):
         nn_obs, steer_ref, speed_ref = self.transform_obs(obs)
-        # nn_action = self.agent.act(nn_obs, noise=0)
-        nn_action = [0]
+        nn_action = self.agent.act(nn_obs, noise=0)
+        # nn_action = [0]
         self.nn_act = nn_action
 
         self.d_ref_history.append(steer_ref)
