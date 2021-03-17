@@ -1,75 +1,45 @@
-
-
+import numpy as np
+import csv
 from matplotlib import pyplot as plt
-from Utils.HistoryStructs import TrainHistory
-# from  Simulator import ForestSim, TrackSim
 
 from toy_f110 import ForestSim, TrackSim
 
-import numpy as np
-import csv
+from toy_auto_race.Utils.HistoryStructs import TrainHistory
+import toy_auto_race.Utils.LibFunctions as lib
+
+from toy_auto_race.NavAgents.AgentMod import ModVehicleTrain, ModVehicleTest
+#TODO: consider if the vehicles should be created in the train function or passed to the train function? What do you do with the sim_conf transfer then?
 
 
-import Utils.LibFunctions as lib
 
 
-
-"""Train"""
-def TrainVehicle(config, agent_name, vehicle, reward, steps=20000, env_kwarg='forest'):
-    path = 'Vehicles/' + agent_name
-    buffer = ReplayBufferTD3()
-
-    if env_kwarg == 'forest':
-        env_map = ForestMap(config)
-        env = ForestSim(env_map)
-    else:
-        env_map = SimMap(config)
-        env = TrackSim(env_map)
-
-
-    t_his = TrainHistory(agent_name)
-
-    print_n = 500
-    add_obs = True
-
+# train mod agent
+def train_vehicle(env, vehicle, steps):
     done = False
-    state, wpts, vs = env.reset(add_obs=add_obs)
-    vehicle.init_agent(env_map)
+    state = env.reset()
 
     for n in range(steps):
         a = vehicle.act(state)
         s_prime, r, done, _ = env.step(a)
 
-        deviation = vehicle.get_deviation()
-        new_r = reward(state, a, s_prime, r, deviation)
-        vehicle.add_memory_entry(new_r, done, s_prime, buffer)
-        t_his.add_step_data(new_r)
 
         state = s_prime
-        vehicle.agent.train(buffer, 2)
+        vehicle.agent.train(2)
         
         # env.render(False)
-
-        if n % print_n == 0 and n > 0:
-            t_his.print_update()
-            vehicle.agent.save(directory=path)
         
         if done:
-            # t_his.lap_done(True)
-            t_his.lap_done(False)
+            vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
-            # env.render(wait=False, save=False)
+            env.render(wait=False)
+            # env.render(wait=True)
 
             vehicle.reset_lap()
-            state, wpts, vs = env.reset(add_obs=add_obs)
+            state = env.reset()
 
+    vehicle.t_his.save_csv_data()
 
-    vehicle.agent.save(directory=path)
-    t_his.save_csv_data()
-
-    print(f"Finished Training: {agent_name}")
-
-    return t_his.rewards
+    print(f"Finished Training: {vehicle.name}")
 
 
 """Testing Function"""
@@ -224,4 +194,44 @@ class TestVehicles(TestData):
                 env.render(wait=True)
 
         return r, env.steps
+
+
+"""General test function"""
+def test_single_vehicle(env, vehicle, show=False, laps=100):
+    crashes = 0
+    completes = 0
+    lap_times = [] 
+
+    state = env.reset()
+    done, score = False, 0.0
+    for i in range(laps):
+        print(f"Running lap: {i}")
+        while not done:
+            # a = vehicle.act(state)
+            a = vehicle.act_ten(state)
+            s_p, r, done, _ = env.step(a)
+            state = s_p
+            # env.render(False)
+        print(f"Lap time updates: {env.steps}")
+        if show:
+            # vehicle.show_vehicle_history()
+            env.history.show_history()
+            # env.history.show_forces()
+            # env.render(wait=False)
+            env.render(wait=True)
+
+        if r == -1:
+            crashes += 1
+        else:
+            completes += 1
+            lap_times.append(env.steps)
+        state = env.reset()
+        
+        vehicle.reset_lap()
+        done = False
+
+    print(f"Crashes: {crashes}")
+    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
+    print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+
 

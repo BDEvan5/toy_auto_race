@@ -1,4 +1,4 @@
-import LibFunctions as lib
+import toy_auto_race.Utils.LibFunctions as lib
 import os, shutil
 import csv
 import numpy as np
@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 class TrainHistory():
     def __init__(self, agent_name) -> None:
         self.agent_name = agent_name
-        self.path = 'Vehicles/' + self.agent_name 
+        self.path = '/Vehicles/' + self.agent_name 
 
         # training data
         self.lengths = []
@@ -23,12 +23,13 @@ class TrainHistory():
         self.init_file_struct()
 
     def init_file_struct(self):
-        if os.path.exists(self.path):
+        path = os.getcwd() + self.path
+        if os.path.exists(path):
             try:
-                os.rmdir(self.path)
+                os.rmdir(path)
             except:
-                shutil.rmtree(self.path)
-        os.mkdir(self.path)
+                shutil.rmtree(path)
+        os.mkdir(path)
 
     def add_step_data(self, new_r):
         self.ep_reward += new_r

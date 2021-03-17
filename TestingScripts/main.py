@@ -1,0 +1,58 @@
+import numpy as np
+import timeit
+import yaml
+
+from toy_auto_race.Utils import LibFunctions as lib
+import toy_auto_race.Rewards as r
+from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
+from toy_auto_race.NavAgents.PurePursuit import PurePursuit
+from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap
+from TestingScripts.TrainTest import *
+
+from toy_f110 import TrackSim, ForestSim
+
+
+def train_ref_mod():
+    agent_name = "RefModTest"
+    # map_name = "torino"
+    map_name = "porto"
+    reward = r.RefModReward(0.002)
+
+    env = TrackSim(map_name)
+    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
+    vehicle.set_reward_fcn(reward)
+
+    train_vehicle(env, vehicle, 20000)
+
+"""Tests"""
+def test_pp():
+    map_name = "porto"
+    
+    env = TrackSim(map_name)
+    vehicle = PurePursuit(map_name, env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 10)
+
+
+def test_gap_follow():
+    map_name = "porto"
+    
+    env = TrackSim(map_name)
+    vehicle = FollowTheGap(env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 10)
+
+
+
+
+if __name__ == "__main__":
+
+    # train_ref_mod()
+
+
+    # test_pp()
+    test_gap_follow()
+
+
+
+    
