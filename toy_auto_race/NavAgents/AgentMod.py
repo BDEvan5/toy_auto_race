@@ -12,7 +12,7 @@ from toy_auto_race.NavAgents.PurePursuit import PurePursuit
 class BaseMod(PurePursuit):
     def __init__(self, agent_name, map_name, sim_conf, pp_conf) -> None:
         super().__init__(map_name, sim_conf, pp_conf)
-        self.name = name
+        self.name = agent_name
         self.n_beams = sim_conf.n_beams
         self.max_v = sim_conf.max_v
         self.max_steer = sim_conf.max_steer
