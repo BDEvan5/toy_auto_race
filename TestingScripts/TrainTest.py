@@ -20,8 +20,8 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
     # vehicle.show_wpts()
 
     for n in range(steps):
-        a = vehicle.act(state)
-        s_prime, r, done, _ = env.step(a)
+        a = vehicle.plan_act(state)
+        s_prime, r, done, _ = env.step_plan(a)
 
 
         state = s_prime
@@ -55,7 +55,7 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     for i in range(laps):
         print(f"Running lap: {i}")
         while not done:
-            a = vehicle.act(state)
+            a = vehicle.plan_act(state)
             # a = vehicle.act_ten(state)
             s_p, r, done, _ = env.step(a)
             state = s_p

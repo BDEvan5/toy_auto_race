@@ -7,6 +7,8 @@ from numba import njit
 import toy_auto_race.Utils.LibFunctions as lib
 
 
+# keep in mind that this is used in the mod network
+#consider rather keeping a copy to be used in mod network
 class PurePursuit:
     def __init__(self, map_name, sim_conf, pp_conf=None) -> None:
         if pp_conf is None:
@@ -37,7 +39,6 @@ class PurePursuit:
             self._load_csv_track()
         except FileNotFoundError:
             print(f"Problem Loading map - generate map pts")
-
 
     def _load_csv_track(self):
         track = []
@@ -169,6 +170,7 @@ class PurePursuit:
         pts = np.array(self.aim_pts)
         plt.plot(pts[:, 0], pts[:, 1])
         plt.pause(0.001)
+
 
 # @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):

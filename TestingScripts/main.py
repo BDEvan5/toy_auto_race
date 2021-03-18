@@ -19,6 +19,19 @@ def train_ref_mod():
     reward = r.RefModReward(0.002)
 
     env = TrackSim(map_name)
+    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf, load=False)
+    vehicle.set_reward_fcn(reward)
+
+    train_vehicle(env, vehicle, 1000000)
+
+
+def train_ref_mod_forest():
+    agent_name = "RefModTestF"
+    # map_name = "torino"
+    map_name = "porto"
+    reward = r.RefModReward(0.002)
+
+    env = ForestSim(map_name)
     vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
     vehicle.set_reward_fcn(reward)
 
@@ -31,7 +44,7 @@ def test_pp():
     env = TrackSim(map_name)
     vehicle = PurePursuit(map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 10)
+    test_single_vehicle(env, vehicle, True, 100)
 
 
 def test_gap_follow():

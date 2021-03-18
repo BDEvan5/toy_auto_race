@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 
 class TrainHistory():
-    def __init__(self, agent_name) -> None:
+    def __init__(self, agent_name, load=False) -> None:
         self.agent_name = agent_name
         self.path = '/Vehicles/' + self.agent_name 
 
@@ -20,7 +20,8 @@ class TrainHistory():
         self.ep_reward = 0
         self.ep_rewards = []
 
-        self.init_file_struct()
+        if not load:
+            self.init_file_struct()
 
     def init_file_struct(self):
         path = os.getcwd() + self.path
