@@ -1,12 +1,35 @@
 import numpy as np 
-import random
 from matplotlib import pyplot as plt
 
-from ModelsRL import TD3
+from toy_auto_race.TD3 import TD3
+from toy_auto_race.Utils import LibFunctions as lib
 
-import LibFunctions as lib
-from Simulator import ScanSimulator
 
+class BaseGen:
+    def __init__(self, agnet_name, sim_conf) -> None:
+        self.name = agent_name
+
+    def transform_obs(self, obs, pp_action):
+        """
+        Transforms the observation received from the environment into a vector which can be used with a neural network.
+    
+        Args:
+            obs: observation from env
+            pp_action: [steer, speed] from pure pursuit controller
+
+        Returns:
+            nn_obs: observation vector for neural network
+        """
+        cur_v = [obs[3]/self.max_v]
+        cur_d = [obs[4]/self.max_steer]
+        vr_scale = [(pp_action[1])/self.max_v]
+        dr_scale = [pp_action[0]/self.max_steer]
+
+        scan = obs[5:-1]
+
+        nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
+
+        return nn_obs
 
 
 class BaseGenAgent:
