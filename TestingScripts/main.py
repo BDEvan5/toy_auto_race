@@ -28,7 +28,7 @@ def train_ref_mod():
 def train_ref_mod_forest():
     agent_name = "RefModTestF"
     # map_name = "torino"
-    map_name = "porto"
+    map_name = "forest"
     reward = r.RefModReward(0.002)
 
     env = ForestSim(map_name)
@@ -69,8 +69,9 @@ def test_ref_mod():
 
 if __name__ == "__main__":
 
-    train_ref_mod()
-    test_ref_mod()
+    # train_ref_mod()
+    train_ref_mod_forest()
+    # test_ref_mod()
 
 
     # test_pp()
