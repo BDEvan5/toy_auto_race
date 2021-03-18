@@ -29,9 +29,10 @@ def train_ref_mod_forest():
     agent_name = "RefModTestF"
     # map_name = "torino"
     map_name = "forest"
-    reward = r.RefModReward(0.002)
+    # reward = r.RefModReward(0.002)
 
     env = ForestSim(map_name)
+    reward = r.RefCTHReward(env.sim_conf, map_name, 0.04, 0.004)
     vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
     vehicle.set_reward_fcn(reward)
 
