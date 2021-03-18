@@ -43,8 +43,9 @@ class PreMap:
         self.render_map()
 
         self.save_map_std()
-        self.run_optimisation_no_obs()
-        self.save_map_opti()
+        self.save_map_centerline()
+        # self.run_optimisation_no_obs()
+        # self.save_map_opti()
 
         self.render_map(True)
 
@@ -122,10 +123,8 @@ class PreMap:
 
         pt = start = np.array([self.conf.sx, self.conf.sy])
         self.cline = [pt]
-        # th = self.conf.stheta - np.pi/2 
-        #TODO: load the start theta from the yaml file
         th = self.stheta
-        while (lib.get_distance(pt, start) > d_search or len(self.cline) < 10) and len(self.cline) < 200:
+        while (lib.get_distance(pt, start) > d_search/2 or len(self.cline) < 10) and len(self.cline) < 500:
             vals = []
             self.search_space = []
             for i in range(n_search):
@@ -151,7 +150,7 @@ class PreMap:
 
         self.cline = np.array(self.cline)
         self.N = len(self.cline)
-        print(f"Raceline found")
+        print(f"Raceline found --> n: {len(self.cline)}")
         if show:
             self.plot_raceline_finding(True)
         self.plot_raceline_finding(False)
@@ -377,6 +376,20 @@ class PreMap:
             csvwriter.writerows(track)
 
         print(f"Track Saved in File: {filename}")
+
+
+    def save_map_centerline(self):
+        filename = 'maps/' + self.map_name + '_centerline.csv'
+
+        track = np.concatenate([self.cline, self.widths], axis=-1)
+
+        with open(filename, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(track)
+
+        print(f"Track Saved in File: {filename}")
+
+
 
     def run_optimisation_no_obs(self):
         n_set = MinCurvatureTrajectory(self.cline, self.nvecs, self.widths)
@@ -740,7 +753,7 @@ class ForestPreMap:
 def run_pre_map():
     fname = "config_test"
     conf = lib.load_conf(fname)
-    map_name = "porto"
+    map_name = "example_map"
     
 
     pre_map = PreMap(conf, map_name)
@@ -756,5 +769,5 @@ def run_forest_gen():
     pre_map.run_generation()
 
 if __name__ == "__main__":
-    # run_pre_map()
-    run_forest_gen()
+    run_pre_map()
+    # run_forest_gen()
