@@ -45,35 +45,37 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
 
 
 """General test function"""
-def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100):
+def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True):
     crashes = 0
     completes = 0
     lap_times = [] 
 
-    state = env.reset(True)
+    state = env.reset(add_obs)
     done, score = False, 0.0
     for i in range(laps):
-        print(f"Running lap: {i}")
         while not done:
             a = vehicle.plan_act(state)
             # a = vehicle.act_ten(state)
-            s_p, r, done, _ = env.step(a)
+            s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
-        print(f"Lap time updates: {env.steps}")
         if show:
             # vehicle.show_vehicle_history()
-            env.history.show_history()
+            # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
             # env.render(wait=True)
 
         if r == -1:
             crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
         else:
             completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
             lap_times.append(env.steps)
-        state = env.reset(True)
+            completes += 1
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
         
         vehicle.reset_lap()
         done = False

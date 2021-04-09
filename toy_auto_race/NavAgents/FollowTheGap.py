@@ -31,7 +31,7 @@ class FollowTheGap:
     def reset_lap(self):
         pass # called for likeness with other vehicles
 
-    def act(self, obs):
+    def plan_act(self, obs):
         scan = obs[5:-1]
         ranges = np.array(scan, dtype=np.float)
         o_ranges = np.copy(ranges)
@@ -51,7 +51,9 @@ class FollowTheGap:
         steering_angle =  angle_increment * (aim - half_pt) * 0.5  # steering smoothing
 
 
-        speed = self.max_speed * ranges[aim] / max_range * 0.9 # v_safety factor
+        # speed = self.max_speed * ranges[aim] / max_range * 0.9 # 
+        speed = 4
+        # v_safety factor
         # steering_angle = self.limit_inputs(speed, steering_angle)
 
         return np.array([steering_angle, speed])
@@ -64,13 +66,6 @@ class FollowTheGap:
             print(f"Problem, Steering clipped from: {steering_angle} --> {max_steer}")
 
         return new_steer
-
-    def act_ten(self, obs):
-        if self.action is None or self.loop_counter == self.plan_f:
-            self.loop_counter = 0
-            self.action = self.act(obs)
-        self.loop_counter += 1
-        return self.action
 
 
 @njit
