@@ -167,14 +167,7 @@ class ModVehicleTest(BaseMod):
         self.agent = TD3(state_space, 1, 1, agent_name)
         self.agent.load(directory=self.path)
 
-        print(f"NN: {self.agent.actor.type}")
-
-        nn_size = self.agent.actor.l1.in_features
-        n_beams = nn_size - 4
         print(f"Agent loaded: {agent_name}")
-
-        # self.current_v_ref = None
-        # self.current_phi_ref = None
 
     def plan_act(self, obs):
         pp_action = super().act(obs)

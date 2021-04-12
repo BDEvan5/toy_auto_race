@@ -44,6 +44,9 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
     print(f"Finished Training: {vehicle.name}")
 
 
+
+
+
 """General test function"""
 def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True):
     crashes = 0
@@ -77,6 +80,46 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
         state = env.reset(add_obs)
         
         vehicle.reset_lap()
+        done = False
+
+    print(f"Crashes: {crashes}")
+    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+
+
+def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True):
+    crashes = 0
+    completes = 0
+    lap_times = [] 
+    done, score = False, 0.0
+
+    state = env.reset(add_obs)
+    vehicle.plan(env.env_map)
+    for i in range(laps):
+        while not done:
+            a = vehicle.plan_act(state)
+            s_p, r, done, _ = env.step_plan(a)
+            state = s_p
+            # env.render(False)
+        if show:
+            # vehicle.show_vehicle_history()
+            # env.history.show_history()
+            # env.history.show_forces()
+            env.render(wait=False)
+            # env.render(wait=True)
+
+        if r == -1:
+            crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
+        else:
+            completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
+            lap_times.append(env.steps)
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
+        vehicle.plan(env.env_map)
+        
         done = False
 
     print(f"Crashes: {crashes}")

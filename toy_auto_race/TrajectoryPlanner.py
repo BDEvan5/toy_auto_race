@@ -3,7 +3,7 @@ import numpy as np
 import casadi as ca 
 from matplotlib import pyplot as plt 
 
-import src.LibFunctions as lib 
+import toy_auto_race.Utils.LibFunctions as lib 
 
 def MinCurvatureTrajectory(pts, nvecs, ws):
     """
