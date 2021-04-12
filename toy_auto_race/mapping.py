@@ -750,6 +750,7 @@ class ForestPreMap:
 
         print(f"Track Saved in File: {filename}")
 
+
 def run_pre_map():
     fname = "config_test"
     conf = lib.load_conf(fname)
@@ -763,11 +764,11 @@ def run_pre_map():
 def run_forest_gen():
     fname = "config_test"
     sim_conf = lib.load_conf(fname)
-    map_name = "forest"
+    map_name = "forest2"
 
     pre_map = ForestPreMap(map_name, sim_conf)
     pre_map.run_generation()
 
 if __name__ == "__main__":
-    run_pre_map()
-    # run_forest_gen()
+    # run_pre_map()
+    run_forest_gen()

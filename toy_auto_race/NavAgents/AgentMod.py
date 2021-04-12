@@ -148,7 +148,7 @@ class ModVehicleTrain(BaseMod):
 
 
 class ModVehicleTest(BaseMod):
-    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None):
         """
         Testing vehicle using the reference modification navigation stack
 
@@ -173,24 +173,17 @@ class ModVehicleTest(BaseMod):
         n_beams = nn_size - 4
         print(f"Agent loaded: {agent_name}")
 
-        self.current_v_ref = None
-        self.current_phi_ref = None
+        # self.current_v_ref = None
+        # self.current_phi_ref = None
 
-    def update_action(self, obs):
-        nn_obs, steer_ref, speed_ref = self.transform_obs(obs)
+    def plan_act(self, obs):
+        pp_action = super().act(obs)
+        nn_obs = self.transform_obs(obs, pp_action)
+
         nn_action = self.agent.act(nn_obs, noise=0)
-        # nn_action = [0]
         self.nn_act = nn_action
 
-        self.d_ref_history.append(steer_ref)
-        self.mod_history.append(self.nn_act[0])
-        self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
-        self.state_action = [nn_obs, self.nn_act]
+        steering_angle = self.modify_references(self.nn_act, pp_action[0])
+        action = np.array([steering_angle, pp_action[1]])
 
-        steer_ref = self.modify_references(self.nn_act, steer_ref)
-
-        self.steps += 1
-
-        return np.array([steer_ref, speed_ref])
-
-
+        return action

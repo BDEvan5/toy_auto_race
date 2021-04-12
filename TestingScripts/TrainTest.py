@@ -73,7 +73,6 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             completes += 1
             print(f"({i}) Complete -> time: {env.steps}")
             lap_times.append(env.steps)
-            completes += 1
             lap_times.append(env.steps)
         state = env.reset(add_obs)
         
@@ -82,7 +81,8 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
 
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
-    print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
 
 

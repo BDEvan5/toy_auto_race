@@ -1,4 +1,5 @@
 
+from toy_auto_race.NavAgents.AgentNav import NavTrainVehicle, NavTestVehicle
 import numpy as np
 import timeit
 import yaml
@@ -16,17 +17,19 @@ map_name = "forest2"
 
 
 """
-Training Functions to write
+Training Functions
 """
 def train_nav():
-    # train a pure navigation planner
-    pass
+    agnet_name = "NavForest"
 
+    env = ForestSim(map_name)
+    vehicle = NavTrainVehicle(agnet_name, env.sim_conf)
+
+    train_vehicle(env, vehicle, 100000)
 
 
 def train_mod():
     agent_name = "ModForest"
-    map_name = "forest"
     # reward = r.RefModReward(0.002)
 
     env = ForestSim(map_name)
@@ -36,13 +39,18 @@ def train_mod():
 
     train_vehicle(env, vehicle, 100000)
 
-# Obstacles
+"""Test Functions"""
 def test_nav():
-    pass 
+    agent_name = "NavForest"
+
+    env = ForestSim(map_name)
+    vehicle = NavTestVehicle(agent_name, map_name, env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 10)
+
 
 
 def test_follow_the_gap():
-
     env = ForestSim(map_name)
     vehicle = FollowTheGap(env.sim_conf)
 
@@ -55,7 +63,12 @@ def test_oracle():
 
 
 def test_mod():
-    pass 
+    agent_name = "ModForest"
+
+    env = ForestSim(map_name)
+    vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 10)
 
 
 
@@ -72,9 +85,9 @@ if __name__ == "__main__":
     # train_mod()
 
     # test_nav()
-    test_follow_the_gap()
+    # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
 
 
