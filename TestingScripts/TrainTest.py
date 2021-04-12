@@ -1,3 +1,4 @@
+from shutil import Error
 import numpy as np
 import csv
 from matplotlib import pyplot as plt
@@ -44,43 +45,88 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
     print(f"Finished Training: {vehicle.name}")
 
 
+
+
+
 """General test function"""
-def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100):
+def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True):
     crashes = 0
     completes = 0
     lap_times = [] 
 
-    state = env.reset(True)
+    state = env.reset(add_obs)
     done, score = False, 0.0
     for i in range(laps):
-        print(f"Running lap: {i}")
         while not done:
             a = vehicle.plan_act(state)
             # a = vehicle.act_ten(state)
-            s_p, r, done, _ = env.step(a)
+            s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
-        print(f"Lap time updates: {env.steps}")
         if show:
             # vehicle.show_vehicle_history()
-            env.history.show_history()
+            # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
             # env.render(wait=True)
 
         if r == -1:
             crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
         else:
             completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
             lap_times.append(env.steps)
-        state = env.reset(True)
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
         
         vehicle.reset_lap()
         done = False
 
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
-    print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+
+
+def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True):
+    crashes = 0
+    completes = 0
+    lap_times = [] 
+    done, score = False, 0.0
+
+    state = env.reset(add_obs)
+    vehicle.plan(env.env_map)
+    for i in range(laps):
+        while not done:
+            a = vehicle.plan_act(state)
+            s_p, r, done, _ = env.step_plan(a)
+            state = s_p
+            # env.render(False)
+        if show:
+            # vehicle.show_vehicle_history()
+            # env.history.show_history()
+            # env.history.show_forces()
+            env.render(wait=False)
+            # env.render(wait=True)
+
+        if r == -1:
+            crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
+        else:
+            completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
+            lap_times.append(env.steps)
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
+        vehicle.plan(env.env_map)
+        
+        done = False
+
+    print(f"Crashes: {crashes}")
+    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
 
 
@@ -91,6 +137,7 @@ class TestData:
         self.crashes = None
         self.completes = None
         self.lap_times = None
+        self.lap_times_no_obs = None
 
         self.names = []
         self.lap_histories = None
@@ -101,6 +148,7 @@ class TestData:
         self.completes = np.zeros((N))
         self.crashes = np.zeros((N))
         self.lap_times = np.zeros((laps, N))
+        self.lap_times_no_obs = np.zeros((N))
         self.endings = np.zeros((laps, N)) #store env reward
         self.lap_times = [[] for i in range(N)]
         self.N = N
@@ -118,6 +166,8 @@ class TestData:
                 percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
                 file_obj.write(f"% Finished = {percent:.2f}\n")
                 file_obj.write(f"Avg lap times: {np.mean(self.lap_times[i])}\n")
+                file_obj.write(f"No Obs Time: {self.lap_times_no_obs[i]}")
+
                 file_obj.write(f"-----------------------------------------------------\n")
 
     def print_results(self):
@@ -132,6 +182,7 @@ class TestData:
             percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
             print(f"% Finished = {percent:.2f}")
             print(f"Avg lap times: {np.mean(self.lap_times[i])}")
+            print(f"No Obs Time: {self.lap_times_no_obs[i]}")
             print(f"-----------------------------------------------------")
         
     def save_csv_results(self):
@@ -178,32 +229,25 @@ class TestVehicles(TestData):
     def add_vehicle(self, vehicle):
         self.vehicle_list.append(vehicle)
 
-    def run_eval(self, laps=100, show=False, add_obs=True, save=False, wait=False):
+    def run_eval(self, env, laps=100, show=False, wait=False):
         N = self.N = len(self.vehicle_list)
         self.init_arrays(N, laps)
 
-        if self.env_kwarg == 'forest':
-            env_map = ForestMap(self.config)
-            env = ForestSim(env_map)    
-        else:
-            env_map = SimMap(self.config)
-            env = TrackSim(env_map)
+        # No obstacles
+        for j in range(N):
+            vehicle = self.vehicle_list[j]
 
-        path = 'Evals/imgs/'
+            r, steps = self.run_lap(vehicle, env, show, False, wait)
+            self.lap_times_no_obs[j] = env.steps
 
+            print(f"#NoObs: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
 
         for i in range(laps):
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show, add_obs, wait)
-                
-                if save:
-                    plt.figure(4)
-                    plt.title(vehicle.name)
-                    plt.savefig(path + f"lap_{i}_{vehicle.name}")
+                r, steps = self.run_lap(vehicle, env, show, True, wait)
 
-                
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
                 if r == -1 or r == 0:
@@ -217,13 +261,16 @@ class TestVehicles(TestData):
         self.save_csv_results()
 
     def run_lap(self, vehicle, env, show, add_obs, wait):
-        state, wpts, vs = env.reset(add_obs)
-        # env.render(wait=True)
-        vehicle.init_agent(env.env_map)
+        state = env.reset(add_obs)
+        try:
+            vehicle.plan(env.env_map)
+        except AttributeError as e:
+            pass
+
         done = False
         while not done:
-            a = vehicle.act(state)
-            s_p, r, done, _ = env.step(a)
+            a = vehicle.plan_act(state)
+            s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
 
