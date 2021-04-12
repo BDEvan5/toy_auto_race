@@ -45,14 +45,14 @@ class NavTrainVehicle(BaseNav):
         self.agent.try_load(load, h_size, self.path)
 
         self.t_his = TrainHistory(agent_name, load)
-        self.velocity = 4
+        self.velocity = 7
 
         self.state = None
         self.action = None
         self.nn_state = None
         self.nn_action = None
 
-    def act(self, obs):
+    def plan_act(self, obs):
         nn_obs = self.transform_obs(obs)
         self.add_memory_entry(obs, nn_obs)
 
@@ -103,18 +103,18 @@ class NavTrainVehicle(BaseNav):
 
 
 class NavTestVehicle(BaseNav):
-    def __init__(self, agent_name, sim_conf, load=False) -> None:
+    def __init__(self, agent_name, sim_conf) -> None:
         BaseNav.__init__(self, agent_name, sim_conf)
         self.path = 'Vehicles/' + agent_name
         state_space = 2 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
         h_size = 200
-        self.agent.try_load(load, h_size, self.path)
+        self.agent.try_load(True, h_size, self.path)
 
-        self.velocity = 4
+        self.velocity = 7
 
 
-    def act(self, obs):
+    def plan_act(self, obs):
         nn_obs = self.transform_obs(obs)
         nn_action = self.agent.act(nn_obs)
         steering_angle = self.max_steer * nn_action[0]

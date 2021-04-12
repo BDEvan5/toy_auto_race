@@ -40,12 +40,13 @@ def train_mod():
 
     train_vehicle(env, vehicle, 100000)
 
+
 """Test Functions"""
 def test_nav():
     agent_name = "NavForest"
 
     env = ForestSim(map_name)
-    vehicle = NavTestVehicle(agent_name, map_name, env.sim_conf)
+    vehicle = NavTestVehicle(agent_name, env.sim_conf)
 
     test_single_vehicle(env, vehicle, True, 10)
 
@@ -56,14 +57,14 @@ def test_follow_the_gap():
     vehicle = FollowTheGap(env.sim_conf)
 
     # test_single_vehicle(env, vehicle, True, 10, False)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True)
+    test_single_vehicle(env, vehicle, True, 10, add_obs=True)
 
 
 def test_oracle():
     env = ForestSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
-    test_oracle_vehicle(env, vehicle, True, 100, True)
+    test_oracle_vehicle(env, vehicle, True, 10, True)
 
 
 def test_mod():
@@ -90,10 +91,10 @@ if __name__ == "__main__":
 
     # test_nav()
     # test_follow_the_gap()
-    test_oracle()
+    # test_oracle()
     # test_mod()
 
-
+    run_all_tests()
 
 
 
