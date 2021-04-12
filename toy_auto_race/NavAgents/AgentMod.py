@@ -163,7 +163,7 @@ class ModVehicleTest(BaseMod):
         BaseMod.__init__(self, agent_name, map_name, sim_conf, mod_conf)
 
         self.path = 'Vehicles/' + agent_name
-        state_space = 4 
+        state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
         self.agent.load(directory=self.path)
 

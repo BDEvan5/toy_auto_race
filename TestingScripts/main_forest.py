@@ -83,6 +83,27 @@ def run_all_tests():
     test_oracle()
     test_mod()
 
+def big_test():
+    env = ForestSim(map_name)
+    test = TestVehicles(env.sim_conf, "BigTest")
+
+    agent_name = "NavForest"
+    vehicle = NavTestVehicle(agent_name, env.sim_conf)
+    test.add_vehicle(vehicle)
+
+    vehicle = FollowTheGap(env.sim_conf)
+    test.add_vehicle(vehicle)
+
+    vehicle = Oracle(env.sim_conf)
+    test.add_vehicle(vehicle)
+
+    agent_name = "ModForest"
+    vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
+    test.add_vehicle(vehicle)
+
+    test.run_eval(env, 10, True)
+    
+    
 
 if __name__ == "__main__":
 
@@ -94,8 +115,8 @@ if __name__ == "__main__":
     # test_oracle()
     # test_mod()
 
-    run_all_tests()
-
+    # run_all_tests()
+    big_test()
 
 
 
