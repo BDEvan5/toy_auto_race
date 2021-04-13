@@ -85,7 +85,7 @@ def run_all_tests():
 
 def big_test():
     env = ForestSim(map_name)
-    test = TestVehicles(env.sim_conf, "BigTest")
+    test = TestVehicles(env.sim_conf, "BigTrainTest")
 
     agent_name = "NavForest"
     vehicle = NavTestVehicle(agent_name, env.sim_conf)
@@ -101,14 +101,14 @@ def big_test():
     vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
-    test.run_eval(env, 10, True)
+    test.run_eval(env, 1000, True)
     
     
 
 if __name__ == "__main__":
 
-    # train_nav()
-    # train_mod()
+    train_nav()
+    train_mod()
 
     # test_nav()
     # test_follow_the_gap()
