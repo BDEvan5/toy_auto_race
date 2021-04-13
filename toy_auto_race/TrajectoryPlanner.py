@@ -9,8 +9,9 @@ def MinCurvatureTrajectory(pts, nvecs, ws):
     """
     This function uses optimisation to minimise the curvature of the path
     """
-    w_min = - ws[:, 0] * 0.9
-    w_max = ws[:, 1] * 0.9
+    # w_min = ws[:, 0] 
+    w_min = - ws[:, 0] 
+    w_max = ws[:, 1] 
     th_ns = [lib.get_bearing([0, 0], nvecs[i, 0:2]) for i in range(len(nvecs))]
 
     N = len(pts)

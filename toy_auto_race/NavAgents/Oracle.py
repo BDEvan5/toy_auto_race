@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit
 from matplotlib import pyplot as plt
 
-from toy_auto_race.TrajectoryPlanner import MinCurvatureTrajectoryForest
+from toy_auto_race.TrajectoryPlanner import MinCurvatureTrajectoryForest, MinCurvatureTrajectory
 import toy_auto_race.Utils.LibFunctions as lib
 
 from toy_auto_race.Utils import pure_pursuit_utils
@@ -80,7 +80,7 @@ class Oracle(OraclePP):
         # load center pts
         start_x = env_map.start_pose[0]
         start_y = env_map.start_pose[1]
-        max_width = env_map.start_pose[0]
+        max_width = env_map.start_pose[0] * 0.8
         length = env_map.end_y - start_y
         num_pts = 50
 
@@ -88,19 +88,21 @@ class Oracle(OraclePP):
         t_pts = np.concatenate([np.ones_like(y_pts)*start_x, y_pts], axis=-1)
         
         # set true widths
-        t_pts = set_viable_t_pts(t_pts, max_width, env_map.check_plan_location)
-        ws = find_true_widths(t_pts, max_width, env_map.check_plan_location)
+        # t_pts = set_viable_t_pts(t_pts, max_width, env_map.check_plan_location)
+        ws = find_true_widths2(t_pts, max_width, env_map.check_plan_location)
 
-        self.plot_plan(env_map, t_pts, ws, waypoints=None)
         # Optimise n_set
         N = len(t_pts)
-        n_set = MinCurvatureTrajectoryForest(t_pts, ws)
-        
+        nvecs = np.concatenate([np.ones((N, 1)), np.zeros((N, 1))], axis=-1)
+        n_set = MinCurvatureTrajectory(t_pts, nvecs, ws)
+
         waypoints = np.concatenate([np.ones((N, 1))*start_x + n_set, y_pts], axis=-1)
-        vs = np.ones((N, 1)) * 5
+        velocity = 4
+        vs = np.ones((N, 1)) * velocity
 
         self.waypoints = np.concatenate([waypoints, vs], axis=-1)
 
+        self.plot_plan(env_map, t_pts, ws, waypoints)
 
         self.reset_lap()
 
@@ -111,7 +113,7 @@ class Oracle(OraclePP):
 
         plt.figure(4)
         env_map.render_wpts(t_pts)
-        # env_map.render_wpts(waypoints)
+        env_map.render_wpts(waypoints)
         # env_map.render_aim_pts(t_pts)
 
         rs = t_pts[:, 0] - ws[:, 0]
@@ -123,9 +125,6 @@ class Oracle(OraclePP):
         l_pts = np.stack([ls, t_pts[:, 1]], axis=1)
         xs, ys = env_map.convert_positions(l_pts)
         plt.plot(xs, ys, 'b')
-
-
-
 
         plt.show()
 
@@ -172,14 +171,14 @@ def find_true_widths(t_pts, max_width, check_scan_location):
     for i in range(N):
         pt = np.array([tx[i], ty[i]])
 
-        j = stp_sze
+        j = 0
         s_pt = pt + [j, 0]
         while not check_scan_location(s_pt) and j < max_width:
             j += stp_sze
             s_pt = pt + [j, 0]
         pws.append((j-stp_sze)*sf)
 
-        j = stp_sze
+        j = 0
         s_pt = pt - np.array([j, 0])
         while not check_scan_location(s_pt) and j < max_width:
             j += stp_sze
@@ -191,5 +190,51 @@ def find_true_widths(t_pts, max_width, check_scan_location):
     nws, pws = np.array(nws)[:, None], np.array(pws)[:, None]
     ws = np.concatenate([nws, pws], axis=-1)
     print(f"Ws: {ws}")
+
+    return ws
+
+
+def find_true_widths2(t_pts, max_width, check_scan_location):
+    tx = t_pts[:, 0]
+    ty = t_pts[:, 1]
+
+    stp_sze = 0.1
+    sf = 1 # safety factor
+    N = len(t_pts)
+    nws, pws = [], []
+    for i in range(N):
+        pt = np.array([tx[i], ty[i]])
+
+        if not check_scan_location(pt):
+            j = stp_sze
+            s_pt = pt + [j, 0]
+            while not check_scan_location(s_pt) and j < max_width:
+                j += stp_sze
+                s_pt = pt + [j, 0]
+            pws.append(j*sf)
+
+            j = stp_sze
+            s_pt = pt - np.array([j, 0])
+            while not check_scan_location(s_pt) and j < max_width:
+                j += stp_sze
+                s_pt = pt - np.array([j, 0])
+            nws.append(j*sf)
+        else:
+            print(f"Obs in way of pt: {i}")
+
+            for j in np.linspace(0, max_width, 10):
+                p_pt = pt + [j, 0]
+                n_pt = pt - [j, 0]
+                if not check_scan_location(p_pt):
+                    nws.append(-j*(1))
+                    pws.append(max_width)
+                    break
+                elif not check_scan_location(n_pt):
+                    pws.append(-j*(1))
+                    nws.append(max_width)
+                    break 
+
+    nws, pws = np.array(nws)[:, None], np.array(pws)[:, None]
+    ws = np.concatenate([nws, pws], axis=-1)
 
     return ws

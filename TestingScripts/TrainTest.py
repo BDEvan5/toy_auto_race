@@ -118,7 +118,7 @@ def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
         if r == -1:
             crashes += 1
             print(f"({i}) Crashed -> time: {env.steps} ")
-            print(f"AimPts: {vehicle.aim_pts}")
+            # print(f"AimPts: {vehicle.aim_pts}")
             plt.show()
         else:
             completes += 1
