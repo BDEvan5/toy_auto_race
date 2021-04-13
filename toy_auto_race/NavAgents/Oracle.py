@@ -19,7 +19,7 @@ class OraclePP:
         # self.f_max = mu * self.m * g #* safety_f
 
         self.v_gain = 0.9
-        self.lookahead = 0.9
+        self.lookahead = 0.8
 
         self.waypoints = None
         self.vs = None
@@ -102,7 +102,7 @@ class Oracle(OraclePP):
 
         self.waypoints = np.concatenate([waypoints, vs], axis=-1)
 
-        self.plot_plan(env_map, t_pts, ws, waypoints)
+        # self.plot_plan(env_map, t_pts, ws, waypoints)
 
         self.reset_lap()
 
