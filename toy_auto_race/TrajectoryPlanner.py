@@ -92,6 +92,7 @@ def MinCurvatureTrajectory(pts, nvecs, ws):
     r = S(x0=x0, lbg=0, ubg=0, lbx=lbx, ubx=ubx)
 
     x_opt = r['x']
+    print(f"Sol Status (Optimal found?): {S.stats()['success']}")
 
     n_set = np.array(x_opt[:N])
     # thetas = np.array(x_opt[1*N:2*(N-1)])

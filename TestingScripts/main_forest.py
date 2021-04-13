@@ -1,4 +1,5 @@
 
+from os import wait
 from toy_auto_race.NavAgents.Oracle import Oracle
 from toy_auto_race.NavAgents.AgentNav import NavTrainVehicle, NavTestVehicle
 import numpy as np
@@ -66,7 +67,7 @@ def test_oracle():
     env = ForestSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
-    test_oracle_vehicle(env, vehicle, True, 10, True)
+    test_oracle_vehicle(env, vehicle, True, 100, True, wait=False)
 
 
 def test_mod():
@@ -114,8 +115,8 @@ if __name__ == "__main__":
 
     # test_nav()
     # test_follow_the_gap()
-    # test_oracle()
-    test_mod()
+    test_oracle()
+    # test_mod()
 
     # run_all_tests()
     # big_test()

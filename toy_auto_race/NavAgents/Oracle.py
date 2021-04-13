@@ -23,6 +23,8 @@ class OraclePP:
         self.wpts = None
         self.vs = None
 
+        self.aim_pts = []
+
     def _get_current_waypoint(self, position, theta):
         # nearest_pt, nearest_dist, t, i = nearest_point_on_trajectory_py2(position, self.wpts)
         nearest_pt, nearest_dist, t, i = self.nearest_pt(position)
@@ -30,6 +32,7 @@ class OraclePP:
         if nearest_dist < self.lookahead:
             lookahead_point, i2, t2 = first_point_on_trajectory_intersecting_circle(position, self.lookahead, self.wpts, i+t, wrap=True)
             if i2 == None:
+                print(f"No wpts to return: _get_current_waypoint returns None")
                 return None
             i = i2
             current_waypoint = np.empty((3, ))
@@ -46,6 +49,7 @@ class OraclePP:
         pos = np.array(obs[0:2], dtype=np.float)
 
         lookahead_point = self._get_current_waypoint(pos, pose_th)
+        self.aim_pts.append(lookahead_point)
 
         if lookahead_point is None:
             return [0, 4.0]
@@ -58,6 +62,8 @@ class OraclePP:
     def reset_lap(self):
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
+
+        self.aim_pts.clear()
 
     def get_actuation(self, pose_theta, lookahead_point, position):
         waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
@@ -196,9 +202,11 @@ class Oracle(OraclePP):
         n_set = MinCurvatureTrajectory(t_pts, nvecs, ws)
 
         self.wpts = np.concatenate([np.ones((N, 1))*start_x + n_set, y_pts], axis=-1)
-        self.vs = np.ones(N) * 7
+        self.vs = np.ones(N) * 3
 
         self.reset_lap()
+
+        return self.wpts
 
     def plan_act(self, obs):
         action = self.act_pp(obs)
