@@ -107,11 +107,11 @@ def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             # env.render(False)
         if show:
             # vehicle.show_vehicle_history()
-            env.history.show_history()
+            # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
             env.env_map.render_wpts(wpts)
-            env.env_map.render_aim_pts(vehicle.aim_pts)
+            # env.env_map.render_aim_pts(vehicle.aim_pts)
             if wait:
                 plt.show()
 
