@@ -348,6 +348,7 @@ class RefModReward:
         else:
             return - self.b_mod * abs(nn_act[0]) 
 
+
 class TrackPtsBase:
     def __init__(self, map_name) -> None:
         self.map_name = map_name

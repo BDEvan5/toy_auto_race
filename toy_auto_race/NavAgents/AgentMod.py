@@ -7,7 +7,7 @@ from toy_auto_race.TD3 import TD3
 from toy_auto_race.Utils import LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-
+from toy_auto_race.lidar_viz import LidarViz
 
 class BaseMod(PurePursuit):
     def __init__(self, agent_name, map_name, sim_conf, pp_conf) -> None:
@@ -120,12 +120,19 @@ class ModVehicleTrain(BaseMod):
 
     def add_memory_entry(self, s_prime, nn_s_prime):
         if self.state is not None:
-            reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
+            # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
+            reward = self.deviation_reward()
 
             self.t_his.add_step_data(reward)
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
             self.agent.replay_buffer.add(mem_entry)
+
+    def deviation_reward(self):
+        beta = 0.002
+        reward = - abs(self.nn_act[0]) * beta
+
+        return reward
 
     def done_entry(self, s_prime):
         """
@@ -133,7 +140,8 @@ class ModVehicleTrain(BaseMod):
         """
         pp_action = super().act(s_prime)
         nn_s_prime = self.transform_obs(s_prime, pp_action)
-        reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
+        # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
+        reward = s_prime[-1] + self.deviation_reward()
 
         self.t_his.add_step_data(reward)
         self.t_his.lap_done(False)
@@ -169,6 +177,8 @@ class ModVehicleTest(BaseMod):
 
         print(f"Agent loaded: {agent_name}")
 
+        self.vis = LidarViz(10)
+
     def plan_act(self, obs):
         pp_action = super().act(obs)
         nn_obs = self.transform_obs(obs, pp_action)
@@ -178,5 +188,7 @@ class ModVehicleTest(BaseMod):
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
         action = np.array([steering_angle, pp_action[1]])
+
+        self.vis.add_step(nn_obs, steering_angle/self.max_steer)
 
         return action

@@ -15,7 +15,8 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-
+nav_name = "Navforest"
+mod_name = "ModForest"
 
 """
 Training Functions
@@ -30,15 +31,16 @@ def train_nav():
 
 
 def train_mod():
-    agent_name = "ModForest"
+    agent_name = "ModForest_dev"
+    env = ForestSim(map_name)
+
+    # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
     # reward = r.RefModReward(0.002)
 
-    env = ForestSim(map_name)
-    reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
     vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf)
-    vehicle.set_reward_fcn(reward)
+    # vehicle.set_reward_fcn(reward)
 
-    train_vehicle(env, vehicle, 100000)
+    train_vehicle(env, vehicle, 30000)
 
 
 """Test Functions"""
@@ -48,7 +50,7 @@ def test_nav():
     env = ForestSim(map_name)
     vehicle = NavTestVehicle(agent_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 10)
+    test_single_vehicle(env, vehicle, True, 10, wait=True)
 
 
 
@@ -73,7 +75,7 @@ def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 10)
+    test_single_vehicle(env, vehicle, True, 10, wait=False)
 
 
 
@@ -107,16 +109,16 @@ def big_test():
 
 if __name__ == "__main__":
 
-    train_nav()
-    train_mod()
+    # train_nav()
+    # train_mod()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
     # run_all_tests()
-    big_test()
+    # big_test()
 
 
 
