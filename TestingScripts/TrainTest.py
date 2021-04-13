@@ -49,7 +49,7 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
 
 
 """General test function"""
-def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True, wait=False):
+def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True, wait=False, vis=False):
     crashes = 0
     completes = 0
     lap_times = [] 
@@ -79,7 +79,8 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             print(f"({i}) Complete -> time: {env.steps}")
             lap_times.append(env.steps)
             lap_times.append(env.steps)
-        vehicle.vis.play_visulisation()
+        if vis:
+            vehicle.vis.play_visulisation()
         state = env.reset(add_obs)
         
         vehicle.reset_lap()

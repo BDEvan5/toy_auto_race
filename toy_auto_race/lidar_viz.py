@@ -22,7 +22,8 @@ class LidarViz:
         N = len(self.state_mem)
         for i in range(N):
             state = self.state_mem[i]
-            ranges = state[4:]
+            ranges = state # for fgm
+            # ranges = state[4:] # for mod state
             action = self.action_mem[i]
             self.visualize(ranges, action, i)
 
@@ -32,6 +33,9 @@ class LidarViz:
         self.action_mem.clear()
 
     def visualize(self, ranges, action, number=0):
+        max_range = max(ranges)
+        ranges = ranges / max_range
+
         plt.figure(2)
         plt.clf()
 
@@ -54,7 +58,7 @@ class LidarViz:
 
         plt.text(0, -0.3, f"{number}")
 
-        plt.pause(0.2)
+        plt.pause(0.01)
         
 
 

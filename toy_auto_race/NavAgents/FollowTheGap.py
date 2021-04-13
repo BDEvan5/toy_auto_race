@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from numba import njit
  
 import toy_auto_race.Utils.LibFunctions as lib
+from toy_auto_race.lidar_viz import LidarViz
 
 
 #TODO: add imports and update to use scan from state.
@@ -27,6 +28,8 @@ class FollowTheGap:
         self.plan_f = 10
         self.loop_counter = 0
         self.action = None
+
+        self.vis = LidarViz(1000)
 
     def reset_lap(self):
         pass # called for likeness with other vehicles
@@ -56,7 +59,10 @@ class FollowTheGap:
         # v_safety factor
         # steering_angle = self.limit_inputs(speed, steering_angle)
 
-        return np.array([steering_angle, speed])
+        action = np.array([steering_angle, speed])
+        self.vis.add_step(ranges, steering_angle)
+
+        return action
 
     def limit_inputs(self, speed, steering_angle):
         max_steer = np.arctan(self.f_max * self.wheelbase / (speed**2 * self.m))
