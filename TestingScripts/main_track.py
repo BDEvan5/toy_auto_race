@@ -117,8 +117,8 @@ if __name__ == "__main__":
     # train_nav()
 
     # test_nav()
-    test_follow_the_gap()
-    # test_oracle()
+    # test_follow_the_gap()
+    test_oracle()
     # test_mod()
 
     # run_all_tests()

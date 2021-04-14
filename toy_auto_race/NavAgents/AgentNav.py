@@ -45,7 +45,7 @@ class NavTrainVehicle(BaseNav):
         self.agent.try_load(load, h_size, self.path)
 
         self.t_his = TrainHistory(agent_name, load)
-        self.velocity = 7
+        self.velocity = 4
 
         self.state = None
         self.action = None
@@ -68,7 +68,8 @@ class NavTrainVehicle(BaseNav):
         return self.action
 
     def calcualte_reward(self, s_prime):
-        reward = (s_prime[6] - self.state[6]) / self.distance_scale
+        reward = (self.state[6] - s_prime[6]) / self.distance_scale
+        # reward = (s_prime[6] - self.state[6]) / self.distance_scale
         reward += s_prime[-1]
 
         return reward
@@ -111,8 +112,7 @@ class NavTestVehicle(BaseNav):
         h_size = 200
         self.agent.try_load(True, h_size, self.path)
 
-        self.velocity = 6.3
-
+        self.velocity = 4
 
     def plan_act(self, obs):
         nn_obs = self.transform_obs(obs)
