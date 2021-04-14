@@ -8,7 +8,7 @@ from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap
+from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
 from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim, ForestSim
@@ -56,10 +56,11 @@ def test_gap_follow():
     
     sim_conf = lib.load_conf("fgm_config")
     env = TrackSim(map_name, sim_conf)
-    vehicle = FollowTheGap(env.sim_conf)
+    # vehicle = FollowTheGap(env.sim_conf)
+    vehicle = GapFollower()
 
     test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False)
-
+    plt.show()
 
 def test_ref_mod():
     agent_name = "RefModTest"
@@ -85,8 +86,15 @@ def generate_initial_data():
     oracle_vehicle = Oracle(env.sim_conf)
     imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
 
-    generat_oracle_data(env, oracle_vehicle, imitation_vehicle, 1000)
-    imitation_vehicle.buffer.save_buffer("ImitationData1")
+    generat_oracle_data(env, oracle_vehicle, imitation_vehicle, 20000)
+    imitation_vehicle.buffer.save_buffer("ImitationData2")
+
+def run_initial_train():
+    env = ForestSim("forest2")
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+
+    imitation_vehicle.buffer.load_data("ImitationData2")
+    imitation_vehicle.train(20000)
 
 def run_imitation_training():
     env = ForestSim("forest2")
@@ -115,10 +123,11 @@ if __name__ == "__main__":
 
 
     # test_pp()
-    # test_gap_follow()
+    test_gap_follow()
 
     # time_sim()
 
     # generate_initial_data()
+    # run_initial_train()
     # run_imitation_training()
-    test_imitation()
+    # test_imitation()

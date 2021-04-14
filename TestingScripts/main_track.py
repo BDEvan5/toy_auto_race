@@ -10,20 +10,19 @@ from toy_auto_race.NavAgents.PurePursuit import PurePursuit
 from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
 from TestingScripts.TrainTest import *
 
-from toy_f110 import ForestSim
+from toy_f110 import TrackSim
 
-map_name = "forest2"
-nav_name = "Navforest_nr"
-mod_name = "ModForest_nr"
-eval_name = "BigTest_nr"
+map_name = "torino"
+map_name = "porto"
+nav_name = "Nav_" + map_name
+mod_name = "Mod_" + map_name
+eval_name = "BigTest_track"
 
 """
 Training Functions
 """
 def train_nav():
-    # agnet_name = "NavForest"
-
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
     vehicle = NavTrainVehicle(nav_name, env.sim_conf)
 
     # train_vehicle(env, vehicle, 1000)
@@ -32,7 +31,7 @@ def train_nav():
 
 def train_mod():
     # agent_name = "ModForest_dev"
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
 
     # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
     # reward = r.RefModReward(0.002)
@@ -48,7 +47,7 @@ def train_mod():
 def test_nav():
     # agent_name = "NavForest"
 
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
     vehicle = NavTestVehicle(nav_name, env.sim_conf)
 
     test_single_vehicle(env, vehicle, True, 10, wait=True)
@@ -57,17 +56,17 @@ def test_nav():
 
 def test_follow_the_gap():
     sim_conf = lib.load_conf("fgm_config")
-    env = ForestSim(map_name, sim_conf)
+    env = TrackSim(map_name, sim_conf)
     # vehicle = FollowTheGap(env.sim_conf)
     vehicle = GapFollower()
 
     # test_single_vehicle(env, vehicle, True, 10, False)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
+    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
 def test_oracle():
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
     test_oracle_vehicle(env, vehicle, True, 100, True, wait=False)
@@ -76,7 +75,7 @@ def test_oracle():
 def test_mod():
     # agent_name = "ModForest"
 
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
     test_single_vehicle(env, vehicle, True, 100, wait=False, vis=True)
@@ -90,7 +89,7 @@ def run_all_tests():
     test_mod()
 
 def big_test():
-    env = ForestSim(map_name)
+    env = TrackSim(map_name)
     test = TestVehicles(env.sim_conf, eval_name)
 
     # agent_name = "NavForest"

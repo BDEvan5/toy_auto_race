@@ -7,7 +7,9 @@ from toy_auto_race.TD3 import TD3
 from toy_auto_race.Utils import LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.lidar_viz import LidarViz
+from toy_auto_race.lidar_viz import LidarViz, LidarVizMod
+
+
 
 class BaseMod(PurePursuit):
     def __init__(self, agent_name, map_name, sim_conf, pp_conf) -> None:
@@ -19,7 +21,7 @@ class BaseMod(PurePursuit):
 
         # TODO: move to agent history class
         self.mod_history = []
-        self.d_ref_history = []
+        self.pp_history = []
         self.reward_history = []
         self.critic_history = []
 
@@ -39,7 +41,7 @@ class BaseMod(PurePursuit):
         vr_scale = [(pp_action[1])/self.max_v]
         dr_scale = [pp_action[0]/self.max_steer]
 
-        scan = obs[5:-1]
+        scan = obs[7:-1]
 
         nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
 
@@ -62,6 +64,37 @@ class BaseMod(PurePursuit):
         d_new = d_ref + d_phi
 
         return d_new
+
+    def add_history_step(self, nn, pp):
+        self.mod_history.append(nn)
+        self.pp_history.append(pp)
+
+    def show_vehicle_history(self, wait=False):
+        plt.figure(3)
+        plt.clf()
+
+        plt.title("Mod Planner Steering actions")
+        mod_history = np.array(self.mod_history)
+        pp_history = np.array(self.pp_history)
+
+        plt.plot(mod_history)
+        plt.plot(pp_history)
+        plt.plot(mod_history + pp_history, linewidth=3)
+        plt.legend(["NN", "PP", "Action"])
+
+        plt.pause(0.0001)
+
+        plt.figure(5)
+        plt.clf()
+        plt.title("Critic history Mod planner")
+        plt.plot(self.critic_history)
+
+        self.mod_history.clear()
+        self.pp_history.clear()
+        self.critic_history.clear()
+
+        if wait:
+            plt.show()
 
 
 class ModVehicleTrain(BaseMod):
@@ -108,8 +141,7 @@ class ModVehicleTrain(BaseMod):
         self.nn_act = nn_action
 
         #TODO: move to history method
-        self.d_ref_history.append(pp_action[0])
-        self.mod_history.append(self.nn_act[0])
+        self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
         self.nn_state = nn_obs
 
@@ -177,7 +209,7 @@ class ModVehicleTest(BaseMod):
 
         print(f"Agent loaded: {agent_name}")
 
-        self.vis = LidarViz(10)
+        self.vis = LidarVizMod(10)
 
     def plan_act(self, obs):
         pp_action = super().act(obs)
@@ -186,9 +218,13 @@ class ModVehicleTest(BaseMod):
         nn_action = self.agent.act(nn_obs, noise=0)
         self.nn_act = nn_action
 
+        self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
+        self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
         action = np.array([steering_angle, pp_action[1]])
 
-        self.vis.add_step(nn_obs, steering_angle/self.max_steer)
+        # self.vis.add_step(nn_obs[4:], steering_angle/self.max_steer)
+        pp = pp_action[0]/self.max_steer
+        self.vis.add_step(nn_obs[4:], pp, nn_action)
 
         return action
