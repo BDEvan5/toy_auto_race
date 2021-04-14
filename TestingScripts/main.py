@@ -49,12 +49,14 @@ def test_pp():
 
 
 def test_gap_follow():
-    map_name = "porto"
+    map_name = "torino"
+    # map_name = "porto"
     
-    env = TrackSim(map_name)
+    sim_conf = lib.load_conf("fgm_config")
+    env = TrackSim(map_name, sim_conf)
     vehicle = FollowTheGap(env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100)
+    test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False)
 
 
 def test_ref_mod():
@@ -68,16 +70,24 @@ def test_ref_mod():
     test_single_vehicle(env, vehicle, True, 10)
 
 
+def time_sim():
+    t = timeit.timeit(stmt=test_gap_follow, number=1)
+    print(f"Time (1): {t}")
+
+    t = timeit.timeit(stmt=test_gap_follow, number=2)
+    print(f"Time (2): {t}")
+
+
 if __name__ == "__main__":
 
     # train_ref_mod()
-    train_ref_mod_forest()
+    # train_ref_mod_forest()
     # test_ref_mod()
 
 
     # test_pp()
     # test_gap_follow()
 
-
+    time_sim()
 
     

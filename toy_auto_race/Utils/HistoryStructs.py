@@ -57,6 +57,8 @@ class TrainHistory():
 
 
     def print_update(self):
+        if len(self.rewards) < 5:
+            return
         mean = np.mean(self.rewards)
         score = self.rewards[-1]
         print(f"Run: {self.t_counter} --> Score: {score:.2f} --> Mean: {mean:.2f} --> ")

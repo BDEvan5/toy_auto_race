@@ -111,7 +111,7 @@ class NavTestVehicle(BaseNav):
         h_size = 200
         self.agent.try_load(True, h_size, self.path)
 
-        self.velocity = 7
+        self.velocity = 6.3
 
 
     def plan_act(self, obs):
