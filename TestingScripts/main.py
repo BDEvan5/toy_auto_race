@@ -1,3 +1,5 @@
+from toy_auto_race.NavAgents.Imitation import ImitationTrain
+from toy_auto_race.NavAgents.Oracle import Oracle
 import numpy as np
 import timeit
 import yaml
@@ -78,6 +80,33 @@ def time_sim():
     print(f"Time (2): {t}")
 
 
+def generate_initial_data():
+    env = ForestSim("forest2")
+    oracle_vehicle = Oracle(env.sim_conf)
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+
+    generat_oracle_data(env, oracle_vehicle, imitation_vehicle, 1000)
+    imitation_vehicle.buffer.save_buffer("ImitationData1")
+
+def run_imitation_training():
+    env = ForestSim("forest2")
+    oracle_vehicle = Oracle(env.sim_conf)
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+
+    imitation_vehicle.buffer.load_data("ImitationData1")
+    imitation_vehicle.train(5000)
+
+    train_imitation_vehicle(env, oracle_vehicle, imitation_vehicle)
+
+def test_imitation():
+    env = ForestSim("forest2")
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+    imitation_vehicle.load()
+
+    test_single_vehicle(env, imitation_vehicle, True, 100)
+
+
+
 if __name__ == "__main__":
 
     # train_ref_mod()
@@ -88,6 +117,8 @@ if __name__ == "__main__":
     # test_pp()
     # test_gap_follow()
 
-    time_sim()
+    # time_sim()
 
-    
+    # generate_initial_data()
+    # run_imitation_training()
+    test_imitation()

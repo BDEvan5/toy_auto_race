@@ -7,6 +7,7 @@ import toy_auto_race.Utils.LibFunctions as lib
 
 from toy_auto_race.Utils import pure_pursuit_utils
 
+
 class OraclePP:
     def __init__(self, sim_conf) -> None:
         self.name = "Oracle Path Follower"
@@ -18,14 +19,14 @@ class OraclePP:
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
         # self.f_max = mu * self.m * g #* safety_f
 
-        self.v_gain = 0.9
+        self.v_gain = 1
         self.lookahead = 0.8
+        self.max_reacquire = 20
 
         self.waypoints = None
         self.vs = None
 
         self.aim_pts = []
-
 
     def _get_current_waypoint(self, position):
         lookahead_distance = self.lookahead
@@ -47,8 +48,6 @@ class OraclePP:
         else:
             return None
 
-
-
     def act_pp(self, obs):
         pose_th = obs[2]
         pos = np.array(obs[0:2], dtype=np.float)
@@ -68,8 +67,6 @@ class OraclePP:
 
     def reset_lap(self):
         self.aim_pts.clear()
-
-
 
 
 class Oracle(OraclePP):
@@ -128,11 +125,11 @@ class Oracle(OraclePP):
 
         plt.show()
 
-
     def plan_act(self, obs):
         action = self.act_pp(obs)
         
         return action
+
 
 def set_viable_t_pts(t_pts, max_width, check_scan_location):
     tx = t_pts[:, 0]
