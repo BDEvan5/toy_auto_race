@@ -152,7 +152,8 @@ def find_best_point(start_i, end_i, ranges):
 
 class GapFollower:    
 
-    BUBBLE_RADIUS = 160
+    # BUBBLE_RADIUS = 160
+    BUBBLE_RADIUS = 250
     PREPROCESS_CONV_SIZE = 3
     BEST_POINT_CONV_SIZE = 80
     MAX_LIDAR_DIST = 3000000
@@ -176,6 +177,8 @@ class GapFollower:
         # proc_ranges = np.array(ranges[135:-135])
         reduction = 200
         proc_ranges = np.array(ranges[reduction:-reduction])
+        max_range_val = 3
+        proc_ranges = np.clip(proc_ranges, 0, max_range_val)
         # proc_ranges = ranges
         # sets each value to the mean over a given window
         proc_ranges = np.convolve(proc_ranges, np.ones(self.PREPROCESS_CONV_SIZE), 'same') / self.PREPROCESS_CONV_SIZE

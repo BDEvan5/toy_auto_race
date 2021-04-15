@@ -9,8 +9,8 @@ class LidarViz:
         self.action_mem = []
 
         self.n_beams = n_beams
-        fov = np.pi 
-        # fov = np.pi * 6/10
+        # fov = np.pi 
+        fov = np.pi * 6/10
         angles = [-fov/2 + fov/(n_beams-1) * i  for i in range(n_beams)]
         self.sines = np.sin(angles)
         self.cosines = np.cos(angles)

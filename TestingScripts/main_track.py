@@ -13,8 +13,8 @@ from TestingScripts.TrainTest import *
 from toy_f110 import TrackSim
 
 map_name = "torino"
-# map_name = "porto"
-map_name = "berlin"
+map_name = "porto"
+# map_name = "berlin"
 nav_name = "Nav_" + map_name
 mod_name = "Mod_" + map_name
 eval_name = "BigTest_track"
@@ -27,7 +27,7 @@ def train_nav():
     vehicle = NavTrainVehicle(nav_name, env.sim_conf)
 
     # train_vehicle(env, vehicle, 1000)
-    train_vehicle(env, vehicle, 30000)
+    train_vehicle(env, vehicle, 100000)
 
 
 def train_mod():
@@ -70,7 +70,7 @@ def test_oracle():
     env = TrackSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
-    test_oracle_track(env, vehicle, True, 100, True, wait=False)
+    test_oracle_track(env, vehicle, True, 100, add_obs=False, wait=False)
 
 
 def test_mod():
