@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit
 from matplotlib import pyplot as plt
 
-from toy_auto_race.TrajectoryPlanner import MinCurvatureTrajectoryForest, MinCurvatureTrajectory
+from toy_auto_race.TrajectoryPlanner import Max_velocity, Max_velocity_conf, MinCurvatureTrajectoryForest, MinCurvatureTrajectory, ObsAvoidTraj
 import toy_auto_race.Utils.LibFunctions as lib
 
 from toy_auto_race.Utils import pure_pursuit_utils
@@ -72,8 +72,33 @@ class OraclePP:
 class Oracle(OraclePP):
     def __init__(self, sim_conf):
         OraclePP.__init__(self, sim_conf)
+        self.sim_conf = sim_conf # kept for optimisation
 
-    def plan(self, env_map):
+    def plan_track(self, env_map):
+        pts = env_map.t_pts
+        nvecs = env_map.nvecs
+        ws = env_map.ws
+        check_location = env_map.check_plan_location
+
+        try:
+            n_set = ObsAvoidTraj(pts, nvecs, ws, check_location)
+        except:
+            print(f"Problem with optimisation: defaulting to env_map opti pts")
+            self.waypoints = np.concatenate([env_map.wpts, env_map.vs[:, None]], axis=-1)
+            return self.waypoints[:, 0:2]
+        
+        deviation = np.array([nvecs[:, 0] * n_set[:, 0], nvecs[:, 1] * n_set[:, 0]]).T
+        wpts = pts + deviation
+
+        vs = Max_velocity_conf(wpts, self.sim_conf, False)
+        vs = np.append(vs, vs[-1])
+
+        self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
+
+        return self.waypoints[:, 0:2]
+
+
+    def plan_forest(self, env_map):
         # load center pts
         start_x = env_map.start_pose[0]
         start_y = env_map.start_pose[1]
@@ -94,7 +119,7 @@ class Oracle(OraclePP):
         n_set = MinCurvatureTrajectory(t_pts, nvecs, ws)
 
         waypoints = np.concatenate([np.ones((N, 1))*start_x + n_set, y_pts], axis=-1)
-        velocity = 4
+        velocity = 1
         vs = np.ones((N, 1)) * velocity
 
         self.waypoints = np.concatenate([waypoints, vs], axis=-1)

@@ -155,14 +155,14 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
 
-def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
+def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
     crashes = 0
     completes = 0
     lap_times = [] 
     done, score = False, 0.0
 
     state = env.reset(add_obs)
-    wpts = vehicle.plan(env.env_map)
+    wpts = vehicle.plan_forest(env.env_map)
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
@@ -190,7 +190,52 @@ def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             lap_times.append(env.steps)
             lap_times.append(env.steps)
         state = env.reset(add_obs)
-        wpts = vehicle.plan(env.env_map)
+        wpts = vehicle.plan_forest(env.env_map)
+        
+        done = False
+
+    print(f"Crashes: {crashes}")
+    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+
+
+def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
+    crashes = 0
+    completes = 0
+    lap_times = [] 
+    done, score = False, 0.0
+
+    state = env.reset(add_obs)
+    wpts = vehicle.plan_track(env.env_map)
+    for i in range(laps):
+        while not done:
+            a = vehicle.plan_act(state)
+            s_p, r, done, _ = env.step_plan(a)
+            state = s_p
+            # env.render(False)
+        if show:
+            # vehicle.show_vehicle_history()
+            # env.history.show_history()
+            # env.history.show_forces()
+            env.render(wait=False)
+            env.env_map.render_wpts(wpts)
+            # env.env_map.render_aim_pts(vehicle.aim_pts)
+            if wait:
+                plt.show()
+
+        if r == -1:
+            crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
+            # print(f"AimPts: {vehicle.aim_pts}")
+            plt.show()
+        else:
+            completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
+            lap_times.append(env.steps)
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
+        wpts = vehicle.plan_track(env.env_map)
         
         done = False
 

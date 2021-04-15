@@ -496,6 +496,127 @@ def Max_velocity(pts, config, show=False):
     return vs
 
 
+def Max_velocity_conf(pts, conf, show=False):
+    mu = conf.mu
+    m = conf.m
+    g = conf.g
+    l_f = conf.l_f
+    l_r = conf.l_r
+    safety_f = 0.9
+    f_max = mu * m * g * safety_f
+    f_long_max = l_f / (l_r + l_f) * f_max
+    max_v = conf.max_v  # parameter to be adapted so that optimiser isnt too fast
+    # max_a = config['lims']['max_a']
+
+    s_i, th_i = convert_pts_s_th(pts)
+    th_i_1 = th_i[:-1]
+    s_i_1 = s_i[:-1]
+    N = len(s_i)
+    N1 = len(s_i) - 1
+
+    # setup possible casadi functions
+    d_x = ca.MX.sym('d_x', N-1)
+    d_y = ca.MX.sym('d_y', N-1)
+    vel = ca.Function('vel', [d_x, d_y], [ca.sqrt(ca.power(d_x, 2) + ca.power(d_y, 2))])
+
+    dx = ca.MX.sym('dx', N)
+    dy = ca.MX.sym('dy', N)
+    dt = ca.MX.sym('t', N-1)
+    f_long = ca.MX.sym('f_long', N-1)
+    f_lat = ca.MX.sym('f_lat', N-1)
+
+    nlp = {\
+        'x': ca.vertcat(dx, dy, dt, f_long, f_lat),
+        'f': ca.sum1(dt), 
+        'g': ca.vertcat(
+                    # dynamic constraints
+                    dt - s_i_1 / ((vel(dx[:-1], dy[:-1]) + vel(dx[1:], dy[1:])) / 2 ),
+                    # ca.arctan2(dy, dx) - th_i,
+                    dx/dy - ca.tan(th_i),
+                    dx[1:] - (dx[:-1] + (ca.sin(th_i_1) * f_long + ca.cos(th_i_1) * f_lat) * dt  / m),
+                    dy[1:] - (dy[:-1] + (ca.cos(th_i_1) * f_long - ca.sin(th_i_1) * f_lat) * dt  / m),
+
+                    # path constraints
+                    ca.sqrt(ca.power(f_long, 2) + ca.power(f_lat, 2)),
+
+                    # boundary constraints
+                    # dx[0], dy[0]
+                ) \
+    }
+
+    S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':0}})
+    # S = ca.nlpsol('S', 'ipopt', nlp, {'ipopt':{'print_level':5}})
+
+    # make init sol
+    v0 = np.ones(N) * max_v/2
+    dx0 = v0 * np.sin(th_i)
+    dy0 = v0 * np.cos(th_i)
+    dt0 = s_i_1 / ca.sqrt(ca.power(dx0[:-1], 2) + ca.power(dy0[:-1], 2)) 
+    f_long0 = np.zeros(N-1)
+    ddx0 = dx0[1:] - dx0[:-1]
+    ddy0 = dy0[1:] - dy0[:-1]
+    a0 = (ddx0**2 + ddy0**2)**0.5 
+    f_lat0 = a0 * m
+
+    x0 = ca.vertcat(dx0, dy0, dt0, f_long0, f_lat0)
+
+    # make lbx, ubx
+    # lbx = [-max_v] * N + [-max_v] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
+    lbx = [-max_v] * N + [0] * N + [0] * N1 + [-f_long_max] * N1 + [-f_max] * N1
+    ubx = [max_v] * N + [max_v] * N + [10] * N1 + [f_long_max] * N1 + [f_max] * N1
+
+    #make lbg, ubg
+    lbg = [0] * N1 + [0] * N + [0] * 2 * N1 + [0] * N1 #+ [0] * 2 
+    ubg = [0] * N1 + [0] * N + [0] * 2 * N1 + [f_max] * N1 #+ [0] * 2 
+
+    r = S(x0=x0, lbg=lbg, ubg=ubg, lbx=lbx, ubx=ubx)
+
+    x_opt = r['x']
+
+    dx = np.array(x_opt[:N])
+    dy = np.array(x_opt[N:N*2])
+    dt = np.array(x_opt[2*N:N*2 + N1])
+    f_long = np.array(x_opt[2*N+N1:2*N + N1*2])
+    f_lat = np.array(x_opt[-N1:])
+
+    f_t = (f_long**2 + f_lat**2)**0.5
+
+    # print(f"Dt: {dt.T}")
+    # print(f"DT0: {dt[0]}")
+    t = np.cumsum(dt)
+    t = np.insert(t, 0, 0)
+    # print(f"Dt: {dt.T}")
+    # print(f"Dx: {dx.T}")
+    # print(f"Dy: {dy.T}")
+
+    vs = (dx**2 + dy**2)**0.5
+
+    if show:
+        plt.figure(1)
+        plt.title("Velocity vs dt")
+        plt.plot(t, vs)
+        plt.plot(t, th_i)
+        plt.legend(['vs', 'ths'])
+        # plt.plot(t, dx)
+        # plt.plot(t, dy)
+        # plt.legend(['v', 'dx', 'dy'])
+        plt.plot(t, np.ones_like(t) * max_v, '--')
+
+        plt.figure(2)
+        plt.title("F_long, F_lat vs t")
+        plt.plot(t[:-1], f_long)
+        plt.plot(t[:-1], f_lat)
+        plt.plot(t[:-1], f_t, linewidth=3)
+        plt.plot(t, np.ones_like(t) * f_max, '--')
+        plt.plot(t, np.ones_like(t) * -f_max, '--')
+        plt.plot(t, np.ones_like(t) * f_long_max, '--')
+        plt.plot(t, np.ones_like(t) * -f_long_max, '--')
+
+        plt.legend(['Flong', "f_lat", "f_t"])
+
+    return vs
+
+
 def convert_pts_s_th(pts):
     N = len(pts)
     s_i = np.zeros(N-1)

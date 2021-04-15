@@ -69,7 +69,7 @@ def test_oracle():
     env = TrackSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
-    test_oracle_vehicle(env, vehicle, True, 100, True, wait=False)
+    test_oracle_track(env, vehicle, True, 100, True, wait=False)
 
 
 def test_mod():

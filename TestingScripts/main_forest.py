@@ -35,7 +35,7 @@ def train_mod():
     # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
     # reward = r.RefModReward(0.002)
 
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=True)
     # vehicle.set_reward_fcn(reward)
 
     # train_vehicle(env, vehicle, 1000)
@@ -69,7 +69,7 @@ def test_oracle():
     vehicle = Oracle(env.sim_conf)
 
     # test_oracle_vehicle(env, vehicle, True, 100, True, wait=False)
-    test_oracle_vehicle(env, vehicle, True, 1, False, wait=False)
+    test_oracle_forest(env, vehicle, True, 1, False, wait=False)
 
 
 def test_mod():
@@ -112,16 +112,16 @@ def big_test():
 
 if __name__ == "__main__":
 
-    train_mod()
-    train_nav()
+    # train_mod()
+    # train_nav()
 
     # test_nav()
     # test_follow_the_gap()
-    # test_oracle()
+    test_oracle()
     # test_mod()
 
     # run_all_tests()
-    big_test()
+    # big_test()
 
 
 
