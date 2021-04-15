@@ -769,6 +769,31 @@ def run_forest_gen():
     pre_map = ForestPreMap(map_name, sim_conf)
     pre_map.run_generation()
 
+
+def make_forest_img():
+    length = 25
+    width = 2
+    resolution = 0.05
+    name = "forest2.pgm"
+
+    border = 20
+
+    w = int(width / resolution) + 2 * border
+    l = int(length / resolution) + 2 * border
+
+    img = np.ones((l, w), dtype=np.uint8) * 255
+    img[0:border, :] = 0
+    img[-border:, :] = 0
+    img[:, 0:border] = 0
+    img[:, -border:] = 0
+
+    img = Image.fromarray(img)
+    img.save(name)
+
+
+
 if __name__ == "__main__":
     # run_pre_map()
-    run_forest_gen()
+    # run_forest_gen()
+
+    make_forest_img()

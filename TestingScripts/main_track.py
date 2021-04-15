@@ -13,7 +13,8 @@ from TestingScripts.TrainTest import *
 from toy_f110 import TrackSim
 
 map_name = "torino"
-map_name = "porto"
+# map_name = "porto"
+map_name = "berlin"
 nav_name = "Nav_" + map_name
 mod_name = "Mod_" + map_name
 eval_name = "BigTest_track"
@@ -61,8 +62,8 @@ def test_follow_the_gap():
     vehicle = GapFollower()
 
     # test_single_vehicle(env, vehicle, True, 10, False)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
 def test_oracle():
@@ -117,8 +118,8 @@ if __name__ == "__main__":
     # train_nav()
 
     # test_nav()
-    # test_follow_the_gap()
-    test_oracle()
+    test_follow_the_gap()
+    # test_oracle()
     # test_mod()
 
     # run_all_tests()
