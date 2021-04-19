@@ -31,7 +31,6 @@ def train_nav():
 
 
 def train_mod():
-    # agent_name = "ModForest_dev"
     env = TrackSim(map_name)
 
     # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
@@ -41,7 +40,7 @@ def train_mod():
     # vehicle.set_reward_fcn(reward)
 
     # train_vehicle(env, vehicle, 1000)
-    train_vehicle(env, vehicle, 30000)
+    train_vehicle(env, vehicle, 100000)
 
 
 """Test Functions"""
@@ -63,7 +62,7 @@ def test_follow_the_gap():
 
     # test_single_vehicle(env, vehicle, True, 10, False)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True)
 
 
 def test_oracle():
@@ -114,13 +113,13 @@ def big_test():
 
 if __name__ == "__main__":
 
-    # train_mod()
+    train_mod()
     # train_nav()
 
     # test_nav()
-    test_follow_the_gap()
+    # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
     # run_all_tests()
     # big_test()

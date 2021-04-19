@@ -59,7 +59,7 @@ class LidarViz:
 
         plt.text(0, -0.3, f"{number}")
 
-        plt.pause(0.01)
+        plt.pause(0.0001)
         
 
 

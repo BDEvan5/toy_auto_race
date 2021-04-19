@@ -155,7 +155,8 @@ class ModVehicleTrain(BaseMod):
     def add_memory_entry(self, s_prime, nn_s_prime):
         if self.state is not None:
             # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
-            reward = self.deviation_reward()
+            # reward = self.deviation_reward()
+            reward = self.slope_reward()
 
             self.t_his.add_step_data(reward)
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
@@ -165,6 +166,12 @@ class ModVehicleTrain(BaseMod):
     def deviation_reward(self):
         beta = 0.002
         reward = - abs(self.nn_act[0]) * beta
+
+        return reward
+
+    def slope_reward(self):
+        beta_slope = 0.02
+        reward = beta_slope * (1- abs(self.nn_act[0])) 
 
         return reward
 

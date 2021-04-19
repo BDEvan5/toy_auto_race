@@ -13,8 +13,8 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-nav_name = "Navforest_nr2"
-mod_name = "ModForest_nr2"
+nav_name = "Navforest_nr3"
+mod_name = "ModForest_slope"
 eval_name = "BigTest_nr2"
 
 """
@@ -26,7 +26,7 @@ def train_nav():
 
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 100000)
+    train_vehicle(env, vehicle, 500000)
 
 
 def train_mod():
@@ -35,7 +35,7 @@ def train_mod():
     # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
     # reward = r.RefModReward(0.002)
 
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=True)
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False)
     # vehicle.set_reward_fcn(reward)
 
     # train_vehicle(env, vehicle, 1000)
@@ -112,13 +112,13 @@ def big_test():
 
 if __name__ == "__main__":
 
-    # train_mod()
+    train_mod()
     # train_nav()
 
     # test_nav()
     # test_follow_the_gap()
-    test_oracle()
-    # test_mod()
+    # test_oracle()
+    test_mod()
 
     # run_all_tests()
     # big_test()
