@@ -15,7 +15,7 @@ from toy_f110 import ForestSim
 map_name = "forest2"
 nav_name = "Navforest_nr3"
 mod_name = "ModForest_slope_rnd"
-eval_name = "BigTest_nr2"
+eval_name = "RepeatTest_1"
 
 """
 Training Functions
