@@ -215,6 +215,7 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
             s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
+            # env.env_map.render_wpts(vehicle.aim_pts)
         if show:
             # vehicle.show_vehicle_history()
             # env.history.show_history()

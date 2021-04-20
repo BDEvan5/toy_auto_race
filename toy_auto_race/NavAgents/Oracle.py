@@ -20,7 +20,7 @@ class OraclePP:
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
         # self.f_max = mu * self.m * g #* safety_f
 
-        self.v_gain = 1
+        self.v_gain = 0.5
         self.lookahead = 0.8
         self.max_reacquire = 20
 
@@ -56,6 +56,7 @@ class OraclePP:
         lookahead_point = self._get_current_waypoint(pos)
 
         self.aim_pts.append(lookahead_point[0:2])
+        # print(f"LHD pt: {lookahead_point[0:2]}")
 
         if lookahead_point is None:
             return [0, 4.0]
@@ -114,8 +115,35 @@ class Oracle(OraclePP):
         vs = track[:, 5]
 
         self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
+        self.expand_wpts()
 
         return self.waypoints[:, 0:2]
+
+    def expand_wpts(self):
+        n = 5 # number of pts per orig pt
+        dz = 1 / n
+        o_line = self.waypoints[:, 0:2]
+        # o_ss = self.ss
+        o_vs = self.waypoints[:, 2]
+        new_line = []
+        # new_ss = []
+        new_vs = []
+        for i in range(len(self.waypoints)-1):
+            dd = lib.sub_locations(o_line[i+1], o_line[i])
+            for j in range(n):
+                pt = lib.add_locations(o_line[i], dd, dz*j)
+                new_line.append(pt)
+
+                # ds = o_ss[i+1] - o_ss[i]
+                # new_ss.append(o_ss[i] + dz*j*ds)
+
+                dv = o_vs[i+1] - o_vs[i]
+                new_vs.append(o_vs[i] + dv * j * dz)
+
+        wpts = np.array(new_line)
+        # self.ss = np.array(new_ss)
+        vs = np.array(new_vs)
+        self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
 
     def plan_forest(self, env_map):
         # load center pts
