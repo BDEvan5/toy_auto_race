@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 from matplotlib import pyplot as plt
+import csv
 
 from toy_auto_race.TrajectoryPlanner import Max_velocity, Max_velocity_conf, MinCurvatureTrajectoryForest, MinCurvatureTrajectory, ObsAvoidTraj
 import toy_auto_race.Utils.LibFunctions as lib
@@ -97,6 +98,24 @@ class Oracle(OraclePP):
 
         return self.waypoints[:, 0:2]
 
+    def plan_no_obs(self, env_map):
+        track = []
+        filename = 'maps/' + env_map.map_name + "_opti.csv"
+        with open(filename, 'r') as csvfile:
+            csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+        
+            for lines in csvFile:  
+                track.append(lines)
+
+        track = np.array(track)
+        print(f"Track Loaded: {filename}")
+
+        wpts = track[:, 1:3]
+        vs = track[:, 5]
+
+        self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
+
+        return self.waypoints[:, 0:2]
 
     def plan_forest(self, env_map):
         # load center pts

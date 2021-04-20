@@ -12,11 +12,13 @@ from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim
 
-map_name = "torino"
-map_name = "porto"
+# map_name = "torino"
+# map_name = "porto"
+map_name = "race_track"
 # map_name = "berlin"
-nav_name = "Nav_" + map_name
-mod_name = "Mod_" + map_name
+run_num = 1
+nav_name = "Nav_" + map_name + f"_{run_num}"
+mod_name = "Mod_" + map_name + f"_{run_num}"
 eval_name = "BigTest_track"
 
 """
@@ -33,11 +35,7 @@ def train_nav():
 def train_mod():
     env = TrackSim(map_name)
 
-    # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
-    # reward = r.RefModReward(0.002)
-
     vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    # vehicle.set_reward_fcn(reward)
 
     # train_vehicle(env, vehicle, 1000)
     train_vehicle(env, vehicle, 100000)
@@ -78,7 +76,7 @@ def test_mod():
     env = TrackSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=True)
+    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
 
 
 
@@ -113,13 +111,13 @@ def big_test():
 
 if __name__ == "__main__":
 
-    train_mod()
+    # train_mod()
     # train_nav()
 
     # test_nav()
     # test_follow_the_gap()
-    # test_oracle()
-    test_mod()
+    test_oracle()
+    # test_mod()
 
     # run_all_tests()
     # big_test()

@@ -173,6 +173,12 @@ class ModVehicleTrain(BaseMod):
         beta_slope = 0.02
         reward = beta_slope * (1- abs(self.nn_act[0])) 
 
+        return reward    
+        
+    def slope_reward(self):
+        beta_slope = 0.02
+        reward = beta_slope * (1- abs(self.nn_act[0])) 
+
         return reward
 
     def done_entry(self, s_prime):

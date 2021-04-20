@@ -14,7 +14,7 @@ from toy_f110 import ForestSim
 
 map_name = "forest2"
 nav_name = "Navforest_nr3"
-mod_name = "ModForest_slope"
+mod_name = "ModForest_slope_rnd"
 eval_name = "BigTest_nr2"
 
 """
@@ -32,15 +32,22 @@ def train_nav():
 def train_mod():
     env = ForestSim(map_name)
 
-    # reward = r.RefCTHReward(env.sim_conf, map_name, 0.004, 0.0004)
-    # reward = r.RefModReward(0.002)
 
     vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False)
-    # vehicle.set_reward_fcn(reward)
 
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
     train_vehicle(env, vehicle, 100000)
+
+def train_mod_num(mod_num):
+    env = ForestSim(map_name)
+    train_name = f"ModRepeat_forest_{mod_num}"
+
+    vehicle = ModVehicleTrain(train_name, map_name, env.sim_conf, load=False)
+
+    # train_vehicle(env, vehicle, 1000)
+    # train_vehicle(env, vehicle, 30000)
+    train_vehicle(env, vehicle, 200000)
 
 
 """Test Functions"""
@@ -76,7 +83,8 @@ def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    # test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
 
@@ -107,22 +115,39 @@ def big_test():
 
     # test.run_eval(env, 1, True)
     test.run_eval(env, 1000, True)
-    
+
+def repeatability():
+    for i in range(10):
+        train_mod_num(i)
+
+
+def test_repeat():
+    env = ForestSim(map_name)
+    test = TestVehicles(env.sim_conf, eval_name)
+
+    for i in range(10):
+        train_name = f"ModRepeat_forest_{i}"
+        vehicle = ModVehicleTest(train_name, map_name, env.sim_conf)
+        test.add_vehicle(vehicle)
+
+    test.run_eval(env, 100, False)
+
     
 
 if __name__ == "__main__":
 
-    train_mod()
+    # train_mod()
     # train_nav()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
 
     # run_all_tests()
     # big_test()
-
+    # repeatability()
+    test_repeat()
 
 
 

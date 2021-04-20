@@ -44,8 +44,8 @@ class PreMap:
 
         self.save_map_std()
         self.save_map_centerline()
-        # self.run_optimisation_no_obs()
-        # self.save_map_opti()
+        self.run_optimisation_no_obs()
+        self.save_map_opti()
 
         self.render_map(True)
 
@@ -754,7 +754,8 @@ class ForestPreMap:
 def run_pre_map():
     fname = "config_test"
     conf = lib.load_conf(fname)
-    map_name = "example_map"
+    # map_name = "example_map"
+    map_name = "race_track"
     
 
     pre_map = PreMap(conf, map_name)
@@ -793,7 +794,7 @@ def make_forest_img():
 
 
 if __name__ == "__main__":
-    # run_pre_map()
+    run_pre_map()
     # run_forest_gen()
 
-    make_forest_img()
+    # make_forest_img()
