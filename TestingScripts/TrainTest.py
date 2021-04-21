@@ -25,7 +25,6 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
         a = vehicle.plan_act(state)
         s_prime, r, done, _ = env.step_plan(a)
 
-
         state = s_prime
         vehicle.agent.train(2)
         
@@ -35,7 +34,7 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            # env.render(wait=False)
+            env.render(wait=False)
             # env.render(wait=True)
 
             vehicle.reset_lap()
@@ -128,7 +127,7 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             state = s_p
             # env.render(False)
         if show:
-            # vehicle.show_vehicle_history()
+            vehicle.show_vehicle_history()
             # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
@@ -363,10 +362,11 @@ class TestVehicles(TestData):
             print(f"#NoObs: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
 
         for i in range(laps):
+            env.env_map.add_obstacles()
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show, True, wait)
+                r, steps = self.run_lap(vehicle, env, show, False, wait)
 
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
@@ -382,6 +382,7 @@ class TestVehicles(TestData):
 
     def run_lap(self, vehicle, env, show, add_obs, wait):
         state = env.reset(add_obs)
+
         try:
             vehicle.plan(env.env_map)
         except AttributeError as e:
@@ -398,9 +399,10 @@ class TestVehicles(TestData):
             # vehicle.show_vehicle_history()
             # env.show_history()
             # env.history.show_history()
-            env.render(wait=False)
             if wait:
-                env.render(wait=True)
+                env.render(wait=True, name=vehicle.name)
+            else:
+                env.render(wait=False, name=vehicle.name)
 
         return r, env.steps
 

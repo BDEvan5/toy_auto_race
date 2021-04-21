@@ -9,7 +9,7 @@ from toy_auto_race.Utils import LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
 from toy_auto_race.lidar_viz import LidarViz, LidarVizMod
-
+from toy_auto_race.Utils.csv_data_helpers import save_csv_data
 
 
 class BaseMod(PurePursuit):
@@ -76,21 +76,29 @@ class BaseMod(PurePursuit):
         plt.figure(3)
         plt.clf()
 
+        plt.ylim([-1, 1])
+
         plt.title("Mod Planner Steering actions")
         mod_history = np.array(self.mod_history)
         pp_history = np.array(self.pp_history)
 
         plt.plot(mod_history)
-        plt.plot(pp_history)
-        plt.plot(mod_history + pp_history, linewidth=3)
-        plt.legend(["NN", "PP", "Action"])
+        # plt.plot(pp_history)
+        # plt.plot(mod_history + pp_history, linewidth=3)
+        # plt.legend(["NN", "PP", "Action"])
+
+
+        path = f'Vehicles/{self.agent.name}/nn_output.csv'
+        save_csv_data(self.mod_history, path)
 
         plt.pause(0.0001)
 
-        plt.figure(5)
-        plt.clf()
-        plt.title("Critic history Mod planner")
-        plt.plot(self.critic_history)
+        # plt.figure(5)
+        # plt.clf()
+        # plt.ylim([-1, 1])
+        # plt.title("Critic history Mod planner")
+        # plt.plot(self.critic_history)
+
 
         self.mod_history.clear()
         self.pp_history.clear()

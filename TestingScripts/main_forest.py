@@ -13,9 +13,11 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-nav_name = "Navforest_nr3"
-mod_name = "ModForest_slope_rnd"
+nav_name = "Navforest_nr4"
+mod_name = "ModForest_nr4"
+# mod_name = "ModForest_slope_rnd"
 eval_name = "RepeatTest_2"
+eval_name = "BigTest4"
 
 """
 Training Functions
@@ -47,7 +49,7 @@ def train_mod_hp(hp_val):
     vehicle.beta_slope = hp_val
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 200000)
+    train_vehicle(env, vehicle, 400000)
 
 
 def train_mod_num(mod_num):
@@ -94,7 +96,7 @@ def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=True, vis=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
@@ -114,8 +116,8 @@ def big_test():
     vehicle = NavTestVehicle(nav_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
-    # vehicle = FollowTheGap(env.sim_conf)
-    # test.add_vehicle(vehicle)
+    vehicle = FollowTheGap(env.sim_conf)
+    test.add_vehicle(vehicle)
 
     vehicle = Oracle(env.sim_conf)
     test.add_vehicle(vehicle)
@@ -125,7 +127,7 @@ def big_test():
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
-    test.run_eval(env, 1000, True)
+    test.run_eval(env, 1000, True, wait=True)
 
 def repeatability():
     for i in range(10):
@@ -169,16 +171,16 @@ def test_hp():
 
 if __name__ == "__main__":
     
-    # train_mod()
-    # train_nav()
+    train_mod()
+    train_nav()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
 
     # run_all_tests()
-    # big_test()
+    big_test()
 
     # repeatability()
     # test_repeat()
