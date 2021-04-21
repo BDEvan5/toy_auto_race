@@ -63,7 +63,8 @@ class OraclePP:
 
         speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
 
-        speed = self.v_gain * speed
+        # speed = self.v_gain * speed
+        speed = 4
 
         return [steering_angle, speed]
 

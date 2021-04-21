@@ -1,4 +1,5 @@
 from os import name
+from numba.core.decorators import njit
 import numpy as np 
 import csv
 from matplotlib import pyplot as plt
@@ -62,6 +63,8 @@ class BaseMod(PurePursuit):
         d_max = self.max_steer
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
+
+        d_new = np.clip(d_new, -self.max_steer, self.max_steer)
 
         return d_new
 
@@ -148,7 +151,8 @@ class ModVehicleTrain(BaseMod):
         self.nn_state = nn_obs
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        speed = 4
+        # speed = 4
+        speed = calculate_speed(steering_angle)
         # self.action = np.array([steering_angle, pp_action[1]])
         self.action = np.array([steering_angle, speed])
 
@@ -171,7 +175,6 @@ class ModVehicleTrain(BaseMod):
 
         return reward
  
-        
     def slope_reward(self):
         reward = self.beta_slope * (1- abs(self.nn_act[0])) 
 
@@ -189,8 +192,8 @@ class ModVehicleTrain(BaseMod):
         self.t_his.add_step_data(reward)
         self.t_his.lap_done(False)
         # self.t_his.lap_done(True)
-        if len(self.t_his.ep_rewards) % 10 == 0:
-            self.t_his.print_update()
+        if len(self.t_his.rewards) % 10 == 0:
+            self.t_his.print_update(True)
             self.agent.save(self.path)
         self.state = None
         mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
@@ -232,7 +235,8 @@ class ModVehicleTest(BaseMod):
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
         self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        speed = 4
+        # speed = 4
+        speed = calculate_speed(steering_angle)
         # action = np.array([steering_angle, pp_action[1]])
         action = np.array([steering_angle, speed])
         # self.vis.add_step(nn_obs[4:], steering_angle/self.max_steer)
@@ -240,3 +244,18 @@ class ModVehicleTest(BaseMod):
         self.vis.add_step(nn_obs[4:], pp, nn_action)
 
         return action
+
+# @njit
+def calculate_speed(delta):
+    b = 0.523
+    g = 9.81
+    l_d = 0.329
+    f_s = 0.8
+    max_v = 7
+
+    if abs(delta) < 0.06:
+        return max_v
+
+    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
+
+    return V

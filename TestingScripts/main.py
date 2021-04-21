@@ -119,31 +119,20 @@ def test_imitation():
 
 def test_nn_size():
     env = ForestSim("forest2")
-    n_train = 200
+    n_train = 10000
 
     t_loss = []
 
-    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
-    imitation_vehicle.create(h_size=200)
-    imitation_vehicle.buffer.load_data("ImitationData2")
-    losses = imitation_vehicle.train(n_train)
-    t_loss.append(np.mean(losses))
+    # h_sizes = [100, 200, 400, 600, 800, 1000]
+    h_sizes = [2000]
+    for h in h_sizes:
+        imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+        imitation_vehicle.create(h_size=h)
+        imitation_vehicle.buffer.load_data("ImitationData2")
+        losses = imitation_vehicle.train(n_train)
+        t_loss.append(np.mean(losses[-500:]))
 
-    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
-    imitation_vehicle.create(h_size=500)
-    imitation_vehicle.buffer.load_data("ImitationData2")
-    losses = imitation_vehicle.train(n_train)
-    t_loss.append(np.mean(losses))
-
-    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
-    imitation_vehicle.create(h_size=1000)
-    imitation_vehicle.buffer.load_data("ImitationData2")
-    losses = imitation_vehicle.train(n_train)
-    t_loss.append(np.mean(losses))
-
-
-
-    print(f"Training Losses [200, 500, 1000]: {t_loss}")
+    print(f"Training Losses {h_sizes}: {t_loss}")
 
 
 if __name__ == "__main__":

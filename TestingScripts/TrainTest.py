@@ -35,12 +35,13 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            env.render(wait=False)
+            # env.render(wait=False)
             # env.render(wait=True)
 
             vehicle.reset_lap()
             state = env.reset()
 
+    vehicle.t_his.print_update(True)
     vehicle.t_his.save_csv_data()
 
     print(f"Finished Training: {vehicle.name}")
@@ -49,7 +50,7 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
 def generat_oracle_data(env, oracle_vehicle, imitation_vehicle, steps):
     done = False
     state = env.reset()
-    oracle_vehicle.plan(env.env_map)
+    oracle_vehicle.plan_forest(env.env_map)
     # while not oracle_vehicle.plan(env.env_map):
     #     state = env.reset() 
 
@@ -64,7 +65,7 @@ def generat_oracle_data(env, oracle_vehicle, imitation_vehicle, steps):
             env.render(wait=False)
 
             state = env.reset()
-            oracle_vehicle.plan(env.env_map)
+            oracle_vehicle.plan_forest(env.env_map)
             # while not oracle_vehicle.plan(env.env_map):
             #     state = env.reset()
 

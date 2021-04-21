@@ -94,8 +94,8 @@ def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
-    # test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
-    test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
 
@@ -150,11 +150,16 @@ def hp_opti():
     train_mod_hp(0.02)
     # train_mod_hp(0.016)
 
+# def single_hp():
+
+
 def test_hp():
     env = ForestSim(map_name)
-    test = TestVehicles(env.sim_conf, "HP_opt_test")
+    test = TestVehicles(env.sim_conf, "HP_opt_test_single")
 
-    for hp_val in [0.016, 0.02, 0.024]:
+    # hp_vals = [0.016, 0.02, 0.024]
+    hp_vals = [0.01]
+    for hp_val in hp_vals:
         agent_name = f"HP_tune_{hp_val}"
         vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
         test.add_vehicle(vehicle)
@@ -164,20 +169,23 @@ def test_hp():
 
 if __name__ == "__main__":
     
-    # hp_opti()
     # train_mod()
     # train_nav()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
     # run_all_tests()
     # big_test()
+
     # repeatability()
     # test_repeat()
-    test_hp()
+
+    # hp_opti()
+    # test_hp()
+    # train_mod_hp(0.01)
 
 
 

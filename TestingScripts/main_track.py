@@ -16,7 +16,7 @@ from toy_f110 import TrackSim
 # map_name = "porto"
 map_name = "race_track"
 # map_name = "berlin"
-run_num = 1
+run_num = 3
 nav_name = "Nav_" + map_name + f"_{run_num}"
 mod_name = "Mod_" + map_name + f"_{run_num}"
 eval_name = "BigTest_track"
@@ -28,10 +28,12 @@ Training Functions
 def train_mod():
     env = TrackSim(map_name)
 
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
+    # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=True)
+    vehicle.beta_slope = 0.005
 
     # train_vehicle(env, vehicle, 1000)
-    train_vehicle(env, vehicle, 200000)
+    train_vehicle(env, vehicle, 50000)
 
 
 """Test Functions"""
@@ -56,29 +58,19 @@ def test_oracle():
 
 
 def test_mod():
-    # agent_name = "ModForest"
 
     env = TrackSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
     test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
-
-
-
-def run_all_tests():
-    test_nav()
-    test_follow_the_gap()
-    test_oracle()
-    test_mod()
+    # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
 
 def big_test():
     env = TrackSim(map_name)
     test = TestVehicles(env.sim_conf, eval_name)
 
-
     vehicle = FollowTheGap(env.sim_conf)
     test.add_vehicle(vehicle)
-
 
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
     test.add_vehicle(vehicle)
@@ -90,13 +82,12 @@ def big_test():
 
 if __name__ == "__main__":
 
-    # train_mod()
+    train_mod()
 
-    test_follow_the_gap()
+    # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
-    # run_all_tests()
     # big_test()
 
 
