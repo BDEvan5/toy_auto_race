@@ -15,7 +15,7 @@ from toy_f110 import ForestSim
 map_name = "forest2"
 nav_name = "Navforest_nr3"
 mod_name = "ModForest_slope_rnd"
-eval_name = "RepeatTest_1"
+eval_name = "RepeatTest_2"
 
 """
 Training Functions
@@ -26,18 +26,29 @@ def train_nav():
 
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 500000)
+    train_vehicle(env, vehicle, 400000)
 
 
 def train_mod():
     env = ForestSim(map_name)
 
-
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False)
-
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=500)
+    vehicle.beta_slope = 0.02
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 100000)
+    train_vehicle(env, vehicle, 400000)
+
+def train_mod_hp(hp_val):
+    env = ForestSim(map_name)
+
+    agent_name = f"HP_tune_{hp_val}"
+
+    vehicle = ModVehicleTrain(agent_name, map_name, env.sim_conf, load=False, h_size=200)
+    vehicle.beta_slope = hp_val
+    # train_vehicle(env, vehicle, 1000)
+    # train_vehicle(env, vehicle, 30000)
+    train_vehicle(env, vehicle, 200000)
+
 
 def train_mod_num(mod_num):
     env = ForestSim(map_name)
@@ -130,12 +141,30 @@ def test_repeat():
         vehicle = ModVehicleTest(train_name, map_name, env.sim_conf)
         test.add_vehicle(vehicle)
 
+    # test.run_eval(env, 1000, False)
+    test.run_eval(env, 1000, False)
+
+def hp_opti():
+    train_mod_hp(0.016)
+    train_mod_hp(0.024)
+    train_mod_hp(0.02)
+    # train_mod_hp(0.016)
+
+def test_hp():
+    env = ForestSim(map_name)
+    test = TestVehicles(env.sim_conf, "HP_opt_test")
+
+    for hp_val in [0.016, 0.02, 0.024]:
+        agent_name = f"HP_tune_{hp_val}"
+        vehicle = ModVehicleTest(agent_name, map_name, env.sim_conf)
+        test.add_vehicle(vehicle)
+
+    # test.run_eval(env, 1000, False)
     test.run_eval(env, 100, False)
 
-    
-
 if __name__ == "__main__":
-
+    
+    # hp_opti()
     # train_mod()
     # train_nav()
 
@@ -147,8 +176,8 @@ if __name__ == "__main__":
     # run_all_tests()
     # big_test()
     # repeatability()
-    test_repeat()
-
+    # test_repeat()
+    test_hp()
 
 
 

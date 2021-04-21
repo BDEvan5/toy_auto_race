@@ -24,13 +24,6 @@ eval_name = "BigTest_track"
 """
 Training Functions
 """
-def train_nav():
-    env = TrackSim(map_name)
-    vehicle = NavTrainVehicle(nav_name, env.sim_conf)
-
-    # train_vehicle(env, vehicle, 1000)
-    train_vehicle(env, vehicle, 100000)
-
 
 def train_mod():
     env = TrackSim(map_name)
@@ -38,18 +31,10 @@ def train_mod():
     vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
 
     # train_vehicle(env, vehicle, 1000)
-    train_vehicle(env, vehicle, 100000)
+    train_vehicle(env, vehicle, 200000)
 
 
 """Test Functions"""
-def test_nav():
-    # agent_name = "NavForest"
-
-    env = TrackSim(map_name)
-    vehicle = NavTestVehicle(nav_name, env.sim_conf)
-
-    test_single_vehicle(env, vehicle, True, 10, wait=True)
-
 
 
 def test_follow_the_gap():
@@ -58,9 +43,9 @@ def test_follow_the_gap():
     # vehicle = FollowTheGap(env.sim_conf)
     vehicle = GapFollower()
 
-    # test_single_vehicle(env, vehicle, True, 10, False)
+    test_single_vehicle(env, vehicle, True, 10, False)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True)
+    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
 def test_oracle():
@@ -90,33 +75,25 @@ def big_test():
     env = TrackSim(map_name)
     test = TestVehicles(env.sim_conf, eval_name)
 
-    # agent_name = "NavForest"
-    vehicle = NavTestVehicle(nav_name, env.sim_conf)
+
+    vehicle = FollowTheGap(env.sim_conf)
     test.add_vehicle(vehicle)
 
-    # vehicle = FollowTheGap(env.sim_conf)
-    # test.add_vehicle(vehicle)
 
-    vehicle = Oracle(env.sim_conf)
-    test.add_vehicle(vehicle)
-
-    # agent_name = "ModForest"
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
-    # test.run_eval(env, 1, True)
-    test.run_eval(env, 1000, True)
+    # test.run_eval(env, 1, True, add_obs=False)
+    # test.run_eval(env, 100, True)
     
     
 
 if __name__ == "__main__":
 
     # train_mod()
-    # train_nav()
 
-    # test_nav()
-    # test_follow_the_gap()
-    test_oracle()
+    test_follow_the_gap()
+    # test_oracle()
     # test_mod()
 
     # run_all_tests()

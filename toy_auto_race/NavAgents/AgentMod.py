@@ -98,7 +98,7 @@ class BaseMod(PurePursuit):
 
 
 class ModVehicleTrain(BaseMod):
-    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False, h_size=200):
         """
         Training vehicle using the reference modification navigation stack
 
@@ -116,7 +116,8 @@ class ModVehicleTrain(BaseMod):
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
-        h_size = mod_conf.h
+        # h_size = mod_conf.h
+        h_size = h_size
         self.agent.try_load(load, h_size, self.path)
 
         self.reward_fcn = None
@@ -124,6 +125,7 @@ class ModVehicleTrain(BaseMod):
         self.nn_state = None
         self.nn_act = None
         self.action = None
+        self.beta_slope = None
 
         self.t_his = TrainHistory(agent_name, load)
 
@@ -168,16 +170,10 @@ class ModVehicleTrain(BaseMod):
         reward = - abs(self.nn_act[0]) * beta
 
         return reward
-
-    def slope_reward(self):
-        beta_slope = 0.02
-        reward = beta_slope * (1- abs(self.nn_act[0])) 
-
-        return reward    
+ 
         
     def slope_reward(self):
-        beta_slope = 0.02
-        reward = beta_slope * (1- abs(self.nn_act[0])) 
+        reward = self.beta_slope * (1- abs(self.nn_act[0])) 
 
         return reward
 

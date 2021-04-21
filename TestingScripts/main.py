@@ -89,6 +89,9 @@ def generate_initial_data():
     generat_oracle_data(env, oracle_vehicle, imitation_vehicle, 20000)
     imitation_vehicle.buffer.save_buffer("ImitationData2")
 
+
+
+
 def run_initial_train():
     env = ForestSim("forest2")
     imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
@@ -114,6 +117,34 @@ def test_imitation():
     test_single_vehicle(env, imitation_vehicle, True, 100)
 
 
+def test_nn_size():
+    env = ForestSim("forest2")
+    n_train = 200
+
+    t_loss = []
+
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+    imitation_vehicle.create(h_size=200)
+    imitation_vehicle.buffer.load_data("ImitationData2")
+    losses = imitation_vehicle.train(n_train)
+    t_loss.append(np.mean(losses))
+
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+    imitation_vehicle.create(h_size=500)
+    imitation_vehicle.buffer.load_data("ImitationData2")
+    losses = imitation_vehicle.train(n_train)
+    t_loss.append(np.mean(losses))
+
+    imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
+    imitation_vehicle.create(h_size=1000)
+    imitation_vehicle.buffer.load_data("ImitationData2")
+    losses = imitation_vehicle.train(n_train)
+    t_loss.append(np.mean(losses))
+
+
+
+    print(f"Training Losses [200, 500, 1000]: {t_loss}")
+
 
 if __name__ == "__main__":
 
@@ -123,7 +154,7 @@ if __name__ == "__main__":
 
 
     # test_pp()
-    test_gap_follow()
+    # test_gap_follow()
 
     # time_sim()
 
@@ -131,3 +162,6 @@ if __name__ == "__main__":
     # run_initial_train()
     # run_imitation_training()
     # test_imitation()
+
+    test_nn_size()
+

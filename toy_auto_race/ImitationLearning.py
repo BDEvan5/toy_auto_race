@@ -89,7 +89,7 @@ class ImitationNet:
         self.name = name
         self.buffer = BufferIL()
 
-        self.create()
+        # self.create()
 
     def save(self, directory="Vehicles"):
         filename = '%s/%s_actor.pth' % (directory, self.name)

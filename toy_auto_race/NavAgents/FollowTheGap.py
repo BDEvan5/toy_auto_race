@@ -163,7 +163,7 @@ class GapFollower:
     
     def __init__(self):
         # used when calculating the angles of the LiDAR data
-        self.vis = LidarViz(600)
+        self.vis = LidarViz(1000)
         self.degrees_per_elem = None
     
     def preprocess_lidar(self, ranges):
@@ -175,9 +175,11 @@ class GapFollower:
         self.degrees_per_elem = (180) / len(ranges)
 	# we won't use the LiDAR data from directly behind us
         # proc_ranges = np.array(ranges[135:-135])
-        reduction = 200
-        proc_ranges = np.array(ranges[reduction:-reduction])
-        max_range_val = 3
+        # reduction = 200
+        # reduction = 1
+        # proc_ranges = np.array(ranges[reduction:-reduction])
+        proc_ranges = ranges
+        max_range_val = 10
         proc_ranges = np.clip(proc_ranges, 0, max_range_val)
         # proc_ranges = ranges
         # sets each value to the mean over a given window
@@ -219,7 +221,7 @@ class GapFollower:
     def get_angle(self, range_index, range_len):
         """ Get the angle of a particular element in the LiDAR data
         """
-        return (range_index - (range_len/2)) * self.degrees_per_elem
+        return (range_index - (range_len/2)) * self.degrees_per_elem 
 
     def process_lidar(self, ranges):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
