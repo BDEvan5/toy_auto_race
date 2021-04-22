@@ -127,7 +127,7 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             state = s_p
             # env.render(False)
         if show:
-            vehicle.show_vehicle_history()
+            # vehicle.show_vehicle_history()
             # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)

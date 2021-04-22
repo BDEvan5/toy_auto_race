@@ -253,7 +253,7 @@ class ModVehicleTest(BaseMod):
 
         return action
 
-# @njit
+@njit(cache=True)
 def calculate_speed(delta):
     b = 0.523
     g = 9.81

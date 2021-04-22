@@ -41,11 +41,12 @@ def train_mod():
 def test_follow_the_gap():
     sim_conf = lib.load_conf("fgm_config")
     env = TrackSim(map_name, sim_conf)
-    # vehicle = FollowTheGap(env.sim_conf)
-    vehicle = GapFollower()
+    vehicle = FollowTheGap(env.sim_conf)
+    # vehicle = GapFollower()
 
-    test_single_vehicle(env, vehicle, True, 10, False)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=True)
+    # test_single_vehicle(env, vehicle, True, 10, False)
+    # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False, wait=False)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
@@ -68,26 +69,26 @@ def big_test():
     env = TrackSim(map_name)
     test = TestVehicles(env.sim_conf, eval_name)
 
-    vehicle = FollowTheGap(env.sim_conf)
-    test.add_vehicle(vehicle)
+    # vehicle = FollowTheGap(env.sim_conf)
+    # test.add_vehicle(vehicle)
 
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True, add_obs=False)
-    # test.run_eval(env, 100, True)
+    test.run_eval(env, 100, True)
     
     
 
 if __name__ == "__main__":
 
-    train_mod()
+    # train_mod()
 
     # test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
 
-    # big_test()
+    big_test()
 
 
 

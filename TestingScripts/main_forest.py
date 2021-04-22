@@ -171,8 +171,8 @@ def test_hp():
 
 if __name__ == "__main__":
     
-    train_mod()
-    train_nav()
+    # train_mod()
+    # train_nav()
 
     # test_nav()
     # test_follow_the_gap()

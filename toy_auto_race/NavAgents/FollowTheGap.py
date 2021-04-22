@@ -155,7 +155,7 @@ class GapFollower:
     # BUBBLE_RADIUS = 160
     BUBBLE_RADIUS = 250
     PREPROCESS_CONV_SIZE = 3
-    BEST_POINT_CONV_SIZE = 80
+    BEST_POINT_CONV_SIZE = 100
     MAX_LIDAR_DIST = 3000000
     STRAIGHTS_SPEED = 5.0
     CORNERS_SPEED = 5.0
@@ -165,6 +165,13 @@ class GapFollower:
         # used when calculating the angles of the LiDAR data
         self.vis = LidarViz(1000)
         self.degrees_per_elem = None
+
+        self.n_beams = 1000
+        fov = np.pi 
+        # fov = np.pi * 6/10
+        angles = [-fov/2 + fov/(self.n_beams-1) * i  for i in range(self.n_beams)]
+        self.sines = np.sin(angles)
+        self.cosines = np.cos(angles)
     
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
@@ -211,12 +218,66 @@ class GapFollower:
     def find_best_point(self, start_i, end_i, ranges):
         """Start_i & end_i are start and end indices of max-gap range, respectively
         Return index of best point in ranges
-	Naive: Choose the furthest point within ranges and go there
+	    Naive: Choose the furthest point within ranges and go there
         """
         # do a sliding window average over the data in the max gap, this will
         # help the car to avoid hitting corners
-        averaged_max_gap = np.convolve(ranges[start_i:end_i], np.ones(self.BEST_POINT_CONV_SIZE), 'same') / self.BEST_POINT_CONV_SIZE
-        return averaged_max_gap.argmax() + start_i
+        averaged_max_gap = np.convolve(ranges[start_i:end_i], np.ones(self.BEST_POINT_CONV_SIZE), 'same') 
+        averaged_max_gap = averaged_max_gap / self.BEST_POINT_CONV_SIZE
+        best = averaged_max_gap.argmax()
+        idx = best + start_i
+
+        # mid_idx = int((start_i + end_i) / 2)
+
+        # r = 0.1
+        # steer_idx = int(mid_idx * r + idx * (1-r))  
+
+        # max_range = max(ranges)
+        # ranges = ranges / max_range
+
+        # plt.figure(2)
+        # plt.clf()
+        # plt.title("Ranges")
+
+        # # plt.xlim([-1.2, 1.2])
+        # # plt.ylim([-0.5, 1.2])
+
+        # for i in range(self.n_beams):
+        #     xs = [0, self.sines[i] * ranges[i]]
+        #     ys = [0, self.cosines[i] * ranges[i]]
+        #     plt.plot(xs, ys, 'b')
+
+        # xs = [0, self.sines[idx] * averaged_max_gap[best] * 1.2]
+        # ys = [0, self.cosines[idx] * averaged_max_gap[best] * 1.2]
+        # plt.plot(xs, ys, 'r')
+
+        # plt.pause(0.0001)
+        
+        # plt.figure(3)
+        # plt.clf()
+        # plt.title("Averaged max gap")
+        
+        # for i in range(len(averaged_max_gap)):
+        #     xs = [0, self.sines[i+start_i] * averaged_max_gap[i]]
+        #     ys = [0, self.cosines[i+start_i] * averaged_max_gap[i]]
+        #     plt.plot(xs, ys, 'b')
+        
+        # xs = [0, self.sines[idx] * averaged_max_gap[best] * 1.2]
+        # ys = [0, self.cosines[idx] * averaged_max_gap[best] * 1.2]
+        # plt.plot(xs, ys, 'r')    
+
+        # xs = [0, self.sines[mid_idx] * ranges[mid_idx] * 1.2]
+        # ys = [0, self.cosines[mid_idx] * ranges[mid_idx] * 1.2]
+        # plt.plot(xs, ys, 'g')
+
+        # xs = [0, self.sines[steer_idx] * ranges[steer_idx] * 1.2]
+        # ys = [0, self.cosines[steer_idx] * ranges[steer_idx] * 1.2]
+        # plt.plot(xs, ys, 'p')
+
+        # plt.pause(0.0001)
+
+        return idx
+        # return  steer_idx
 
     def get_angle(self, range_index, range_len):
         """ Get the angle of a particular element in the LiDAR data
@@ -259,7 +320,9 @@ class GapFollower:
         speed, steering_angle, proc_ranges = self.process_lidar(ranges)
         steering_angle = steering_angle * np.pi / 180
 
-        speed = 4
+        # speed = 4
+        speed = calculate_speed(steering_angle)
+
 
         action = np.array([steering_angle, speed])
         self.vis.add_step(proc_ranges, steering_angle)
@@ -268,3 +331,21 @@ class GapFollower:
 
     def reset_lap(self):
         pass
+
+
+
+
+@njit(cache=True)
+def calculate_speed(delta):
+    b = 0.523
+    g = 9.81
+    l_d = 0.329
+    f_s = 0.8
+    max_v = 7
+
+    if abs(delta) < 0.06:
+        return max_v
+
+    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
+
+    return V
