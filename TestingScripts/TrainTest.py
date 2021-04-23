@@ -86,7 +86,6 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
-    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
     print(f"Avg curvatures: {np.mean(curves)}")
 
 
@@ -231,7 +230,7 @@ class TestData:
                 percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
                 file_obj.write(f"% Finished = {percent:.2f}\n")
                 file_obj.write(f"Avg lap times: {np.mean(self.lap_times[i])}\n")
-                file_obj.write(f"No Obs Time: {self.lap_times_no_obs[i]}")
+                file_obj.write(f"No Obs Time: {self.lap_times_no_obs[i]}\n")
 
                 file_obj.write(f"-----------------------------------------------------\n")
 
@@ -253,13 +252,14 @@ class TestData:
     def save_csv_results(self):
         test_name = 'Evals/'  + self.eval_name + '.csv'
 
-        data = [["#", "Name", "%Complete", "AvgTime", "Std"]]
+        data = [["#", "Name", "%Complete", "AvgTime", "Std", "NoObs"]]
         for i in range(self.N):
             v_data = [i]
             v_data.append(self.vehicle_list[i].name)
             v_data.append((self.completes[i] / (self.completes[i] + self.crashes[i]) * 100))
             v_data.append(np.mean(self.lap_times[i]))
             v_data.append(np.std(self.lap_times[i]))
+            v_data.append(self.lap_times_no_obs[i])
             data.append(v_data)
 
         with open(test_name, 'w') as csvfile:
@@ -327,10 +327,11 @@ class TestVehicles(TestData):
         self.save_csv_results()
 
     def run_lap(self, vehicle, env, show, add_obs, wait):
+        env.scan_sim.reset_n_beams(vehicle.n_beams)
         state = env.reset(add_obs)
 
         try:
-            vehicle.plan(env.env_map)
+            vehicle.plan_forest(env.env_map)
         except AttributeError as e:
             pass
 

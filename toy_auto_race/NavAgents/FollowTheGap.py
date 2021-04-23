@@ -193,27 +193,20 @@ class TrackFGM:
         pass
 
 
+#TODO: most of this can be njitted
 class ForestFGM:    
-
-    # BUBBLE_RADIUS = 160
     BUBBLE_RADIUS = 250
     PREPROCESS_CONV_SIZE = 3
     BEST_POINT_CONV_SIZE = 100
     MAX_LIDAR_DIST = 10
     REDUCTION = 200
-
     
     def __init__(self):
         # used when calculating the angles of the LiDAR data
-        self.vis = LidarViz(1000)
+        # self.vis = LidarViz(1000)
         self.degrees_per_elem = None
-
+        self.name = "Follow the Forest Gap"
         self.n_beams = 1000
-        fov = np.pi 
-        # fov = np.pi * 6/10
-        angles = [-fov/2 + fov/(self.n_beams-1) * i  for i in range(self.n_beams)]
-        self.sines = np.sin(angles)
-        self.cosines = np.cos(angles)
     
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:

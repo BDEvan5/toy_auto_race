@@ -7,6 +7,7 @@ from numba import njit
 from toy_auto_race.TD3 import TD3
 import toy_auto_race.Utils.LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
+from toy_auto_race.speed_utils import calculate_speed
 
 
 
@@ -30,7 +31,6 @@ class BaseNav:
         scan = obs[7:-1]
 
         nn_obs = np.concatenate([cur_v, cur_d, target_angle, target_distance, scan])
-        # nn_obs = np.concatenate([cur_d, target_angle, scan])
 
         return nn_obs
 
@@ -70,7 +70,6 @@ class NavTrainVehicle(BaseNav):
 
     def calcualte_reward(self, s_prime):
         reward = (self.state[6] - s_prime[6]) / self.distance_scale
-        # reward = (s_prime[6] - self.state[6]) / self.distance_scale
         reward += s_prime[-1]
 
         return reward
@@ -112,8 +111,7 @@ class NavTestVehicle(BaseNav):
         self.agent = TD3(state_space, 1, 1, agent_name)
         h_size = 200
         self.agent.try_load(True, h_size, self.path)
-
-        self.velocity = 4
+        self.n_beams = 10
 
     def plan_act(self, obs):
         nn_obs = self.transform_obs(obs)
@@ -123,25 +121,9 @@ class NavTestVehicle(BaseNav):
         speed = calculate_speed(steering_angle)
         # speed = 4
         action = np.array([steering_angle, speed])
-        # action = np.array([steering_angle, self.velocity])
 
         return action
 
     def reset_lap(self):
         pass
 
-
-@njit(cache=True)
-def calculate_speed(delta):
-    b = 0.523
-    g = 9.81
-    l_d = 0.329
-    f_s = 0.8
-    max_v = 7
-
-    if abs(delta) < 0.06:
-        return max_v
-
-    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
-
-    return V

@@ -76,6 +76,7 @@ class Oracle(OraclePP):
     def __init__(self, sim_conf):
         OraclePP.__init__(self, sim_conf)
         self.sim_conf = sim_conf # kept for optimisation
+        self.n_beams = 10
 
     def plan_track(self, env_map):
         track = []

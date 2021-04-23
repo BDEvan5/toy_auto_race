@@ -44,7 +44,7 @@ class ModPP:
             current_waypoint[2] = self.vs[i]
             return current_waypoint
         elif nearest_dist < self.max_reacquire:
-            return np.append(wpts[i, :], self.waypoints[i, 2])
+            return np.append(wpts[i, :], self.vs[i])
         else:
             return None
 
@@ -317,10 +317,11 @@ class ModVehicleTest(BaseMod):
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
         self.agent.load(directory=self.path)
+        self.n_beams = 10
 
         print(f"Agent loaded: {agent_name}")
 
-        self.vis = LidarVizMod(10)
+        # self.vis = LidarVizMod(10)
 
     def plan_act(self, obs):
         pp_action = super().act_pp(obs)

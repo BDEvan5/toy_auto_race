@@ -6,7 +6,7 @@ import numpy as np
 from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
-from toy_auto_race.NavAgents.FollowTheGap import ForestFGM, TrackFGM
+from toy_auto_race.NavAgents.FollowTheGap import ForestFGM
 from TestingScripts.TrainTest import *
 
 from toy_f110 import ForestSim
@@ -129,12 +129,12 @@ if __name__ == "__main__":
     # train_repeatability()
 
     # test_nav()
-    test_follow_the_gap()
+    # test_follow_the_gap()
     # test_oracle()
     # test_mod()
     # test_repeat()
 
-    # big_test()
+    big_test()
 
 
 
