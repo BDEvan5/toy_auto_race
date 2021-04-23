@@ -64,7 +64,8 @@ class OraclePP:
         speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
 
         # speed = self.v_gain * speed
-        speed = 4
+        # speed = 4
+        speed = calculate_speed(steering_angle)
 
         return [steering_angle, speed]
 
@@ -100,7 +101,7 @@ class Oracle(OraclePP):
 
         return self.waypoints[:, 0:2]
 
-    def plan_no_obs(self, env_map):
+    def plan(self, env_map):
         track = []
         filename = 'maps/' + env_map.map_name + "_opti.csv"
         with open(filename, 'r') as csvfile:
@@ -308,3 +309,18 @@ def find_true_widths2(t_pts, max_width, check_scan_location):
     ws = np.concatenate([nws, pws], axis=-1)
 
     return ws
+
+@njit(cache=True)
+def calculate_speed(delta):
+    b = 0.523
+    g = 9.81
+    l_d = 0.329
+    f_s = 0.8
+    max_v = 7
+
+    if abs(delta) < 0.06:
+        return max_v
+
+    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
+
+    return V

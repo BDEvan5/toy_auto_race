@@ -13,11 +13,11 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-nav_name = "Navforest_nr4"
-mod_name = "ModForest_nr4"
+nav_name = "Navforest_nr5"
+mod_name = "ModForest_nr6"
 # mod_name = "ModForest_slope_rnd"
 eval_name = "RepeatTest_2"
-eval_name = "BigTest4"
+eval_name = "BigTest5_speed"
 
 """
 Training Functions
@@ -34,11 +34,11 @@ def train_nav():
 def train_mod():
     env = ForestSim(map_name)
 
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=500)
-    vehicle.beta_slope = 0.02
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=200)
+    # vehicle.beta_slope = 0.02
     # train_vehicle(env, vehicle, 1000)
     # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 400000)
+    train_vehicle(env, vehicle, 200000)
 
 def train_mod_hp(hp_val):
     env = ForestSim(map_name)
@@ -54,7 +54,7 @@ def train_mod_hp(hp_val):
 
 def train_mod_num(mod_num):
     env = ForestSim(map_name)
-    train_name = f"ModRepeat_forest_{mod_num}"
+    train_name = f"ModRepeat_forest_1{mod_num}"
 
     vehicle = ModVehicleTrain(train_name, map_name, env.sim_conf, load=False)
 
@@ -68,8 +68,8 @@ def test_nav():
     env = ForestSim(map_name)
     vehicle = NavTestVehicle(nav_name, env.sim_conf)
 
-    # test_single_vehicle(env, vehicle, True, 100, wait=False)
-    test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=False)
+    # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False)
 
 
 
@@ -96,9 +96,9 @@ def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=True, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
-    test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
+    # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
 
 
@@ -127,7 +127,7 @@ def big_test():
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
-    test.run_eval(env, 1000, True, wait=True)
+    test.run_eval(env, 100, True, wait=False)
 
 def repeatability():
     for i in range(10):
@@ -139,7 +139,7 @@ def test_repeat():
     test = TestVehicles(env.sim_conf, eval_name)
 
     for i in range(10):
-        train_name = f"ModRepeat_forest_{i}"
+        train_name = f"ModRepeat_forest_1{i}"
         vehicle = ModVehicleTest(train_name, map_name, env.sim_conf)
         test.add_vehicle(vehicle)
 
@@ -177,10 +177,10 @@ if __name__ == "__main__":
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
 
     # run_all_tests()
-    big_test()
+    # big_test()
 
     # repeatability()
     # test_repeat()

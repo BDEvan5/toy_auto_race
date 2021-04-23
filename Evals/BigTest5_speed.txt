@@ -1,0 +1,25 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: Navforest_nr5
+Crashes: 7.0 --> Completes 93.0
+% Finished = 93.00
+Avg lap times: 511.35483870967744
+No Obs Time: 360.0-----------------------------------------------------
+Vehicle: Follow The Gap
+Crashes: 100.0 --> Completes 0.0
+% Finished = 0.00
+Avg lap times: 0.0
+No Obs Time: 67.0-----------------------------------------------------
+Vehicle: Oracle Path Follower
+Crashes: 81.0 --> Completes 19.0
+% Finished = 19.00
+Avg lap times: 331.0
+No Obs Time: 331.0-----------------------------------------------------
+Vehicle: ModForest_nr5
+Crashes: 10.0 --> Completes 90.0
+% Finished = 90.00
+Avg lap times: 511.77777777777777
+No Obs Time: 355.0-----------------------------------------------------

@@ -26,6 +26,8 @@ class BaseMod(PurePursuit):
         self.reward_history = []
         self.critic_history = []
 
+        self.distance_scale = 20 # max meters for scaling
+
     def transform_obs(self, obs, pp_action):
         """
         Transforms the observation received from the environment into a vector which can be used with a neural network.
@@ -159,8 +161,8 @@ class ModVehicleTrain(BaseMod):
         self.nn_state = nn_obs
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        # speed = 4
-        speed = calculate_speed(steering_angle)
+        speed = 4
+        # speed = calculate_speed(steering_angle)
         # self.action = np.array([steering_angle, pp_action[1]])
         self.action = np.array([steering_angle, speed])
 
@@ -170,7 +172,8 @@ class ModVehicleTrain(BaseMod):
         if self.state is not None:
             # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
             # reward = self.deviation_reward()
-            reward = self.slope_reward()
+            # reward = self.slope_reward()
+            reward = self.nav_reward(s_prime)
 
             self.t_his.add_step_data(reward)
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
@@ -185,6 +188,12 @@ class ModVehicleTrain(BaseMod):
  
     def slope_reward(self):
         reward = self.beta_slope * (1- abs(self.nn_act[0])) 
+
+        return reward
+
+    def nav_reward(self, s_prime):
+        reward = (self.state[6] - s_prime[6]) / self.distance_scale
+        reward += s_prime[-1]
 
         return reward
 
@@ -243,8 +252,8 @@ class ModVehicleTest(BaseMod):
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
         self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        # speed = 4
-        speed = calculate_speed(steering_angle)
+        speed = 4
+        # speed = calculate_speed(steering_angle)
         # action = np.array([steering_angle, pp_action[1]])
         action = np.array([steering_angle, speed])
         # self.vis.add_step(nn_obs[4:], steering_angle/self.max_steer)

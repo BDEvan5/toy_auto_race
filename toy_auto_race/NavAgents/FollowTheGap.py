@@ -180,11 +180,11 @@ class GapFollower:
         """
         # self.degrees_per_elem = (np.pi) / len(ranges)
         self.degrees_per_elem = (180) / len(ranges)
-	# we won't use the LiDAR data from directly behind us
+	    # we won't use the LiDAR data from directly behind us
         # proc_ranges = np.array(ranges[135:-135])
-        # reduction = 200
+        reduction = 200
         # reduction = 1
-        # proc_ranges = np.array(ranges[reduction:-reduction])
+        proc_ranges = np.array(ranges[reduction:-reduction])
         proc_ranges = ranges
         max_range_val = 10
         proc_ranges = np.clip(proc_ranges, 0, max_range_val)

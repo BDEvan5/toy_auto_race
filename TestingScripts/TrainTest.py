@@ -1,4 +1,6 @@
 from shutil import Error
+
+from numba.core.decorators import njit
 from toy_auto_race.ImitationLearning import BufferIL
 import numpy as np
 import csv
@@ -115,7 +117,8 @@ def train_imitation_vehicle(env, oracle_vehicle, imitation_vehicle, batches=50, 
 def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True, wait=False, vis=False):
     crashes = 0
     completes = 0
-    lap_times = [] 
+    lap_times = [] #TODO: make np arrays that are inserted into instead of lists.
+    curves = []
 
     state = env.reset(add_obs)
     done, score = False, 0.0
@@ -140,7 +143,8 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
         else:
             completes += 1
             print(f"({i}) Complete -> time: {env.steps}")
-            lap_times.append(env.steps)
+            curve = get_curvature(env.history.positions)
+            curves.append(curve)
             lap_times.append(env.steps)
         if vis:
             vehicle.vis.play_visulisation()
@@ -153,7 +157,27 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
     # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+    print(f"Avg curvatures: {np.mean(curves)}")
 
+
+def get_curvature(pos_history):
+    n = len(pos_history)
+    ths = [lib.get_bearing(pos_history[i], pos_history[i+1]) for i in range(n-1)]
+    dth = [abs(lib.sub_angles_complex(ths[i], ths[i+1])) for i in range(n-2)]
+
+    total_curve = np.sum(dth)
+    avg_curve = np.mean(dth)
+    print(f"Total Curvatue: {total_curve}, Avg: {avg_curve}")
+
+    return total_curve
+
+# @njit
+# def get_curvature(pos_history):
+#     n = len(pos_history)
+#     ths = np.zeros(n-1)
+#     dth = np.zeros(n-2)
+#     for i in range(n-1):
+#         ths = np.arctan2()
 
 def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
     crashes = 0
