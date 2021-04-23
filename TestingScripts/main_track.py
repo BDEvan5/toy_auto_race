@@ -7,14 +7,14 @@ from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
+from toy_auto_race.NavAgents.FollowTheGap import TrackFGM
 from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim
 
-# map_name = "torino"
+map_name = "torino"
 # map_name = "porto"
-map_name = "race_track"
+# map_name = "race_track"
 # map_name = "berlin"
 run_num = 4
 nav_name = "Nav_" + map_name + f"_{run_num}"
@@ -41,12 +41,11 @@ def train_mod():
 def test_follow_the_gap():
     sim_conf = lib.load_conf("fgm_config")
     env = TrackSim(map_name, sim_conf)
-    vehicle = FollowTheGap(env.sim_conf)
-    # vehicle = GapFollower()
+    vehicle = TrackFGM()
 
     # test_single_vehicle(env, vehicle, True, 10, False)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=False, vis=False)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False, wait=False)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True, wait=False)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
@@ -84,11 +83,11 @@ if __name__ == "__main__":
 
     # train_mod()
 
-    # test_follow_the_gap()
+    test_follow_the_gap()
     # test_oracle()
     # test_mod()
 
-    big_test()
+    # big_test()
 
 
 
