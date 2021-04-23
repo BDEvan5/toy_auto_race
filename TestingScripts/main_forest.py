@@ -13,8 +13,10 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-nav_name = "Navforest_1"
-mod_name = "ModForest_1"
+# nav_name = "Navforest_1"
+# mod_name = "ModForest_1"
+mod_name = "ModForest_nr6"
+nav_name = "Navforest_nr5"
 repeat_name = "RepeatTest_1"
 eval_name = "BigTest1"
 
@@ -130,8 +132,8 @@ if __name__ == "__main__":
 
     # test_nav()
     # test_follow_the_gap()
-    test_oracle()
-    # test_mod()
+    # test_oracle()
+    test_mod()
     # test_repeat()
 
     # big_test()

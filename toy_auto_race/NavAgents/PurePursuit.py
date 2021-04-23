@@ -172,7 +172,7 @@ class PurePursuit:
         plt.pause(0.001)
 
 
-# @njit(fastmath=False, cache=True)
+@njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):
     ''' starts at beginning of trajectory, and find the first point one radius away from the given point along the trajectory.
     Assumes that the first segment passes within a single radius of the point

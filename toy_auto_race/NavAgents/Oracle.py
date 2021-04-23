@@ -174,12 +174,12 @@ class Oracle(OraclePP):
         plt.show()
 
     def plan_act(self, obs):
-        action = self.act_pp(obs)
+        return self.act_pp(obs)
         
-        return action
 
 
 # @njit
+#TODO: pass dt to it so that I can njit it.
 def find_true_widths2(t_pts, max_width, check_scan_location):
     tx = t_pts[:, 0]
     ty = t_pts[:, 1]
@@ -206,8 +206,6 @@ def find_true_widths2(t_pts, max_width, check_scan_location):
                 s_pt = pt - np.array([j, 0])
             ws[i, 0] = j
         else:
-            # print(f"Obs in way of pt: {i}")
-
             for j in np.linspace(0, max_width, 10):
                 p_pt = pt + [j, 0]
                 n_pt = pt - [j, 0]
