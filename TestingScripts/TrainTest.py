@@ -63,7 +63,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             # vehicle.show_vehicle_history()
             # env.history.show_history()
             # env.history.show_forces()
-            env.render(wait=False)
+            env.render(wait=False, name=vehicle.name)
             if wait:
                 env.render(wait=True)
 

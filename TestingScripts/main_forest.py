@@ -6,8 +6,7 @@ import numpy as np
 from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
-from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
+from toy_auto_race.NavAgents.FollowTheGap import ForestFGM, TrackFGM
 from TestingScripts.TrainTest import *
 
 from toy_f110 import ForestSim
@@ -63,11 +62,10 @@ def test_nav():
 def test_follow_the_gap():
     sim_conf = lib.load_conf("fgm_config")
     env = ForestSim(map_name, sim_conf)
-    # vehicle = FollowTheGap(env.sim_conf)
-    vehicle = GapFollower()
+    vehicle = ForestFGM()
 
-    test_single_vehicle(env, vehicle, True, 10, False, vis=True)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    # test_single_vehicle(env, vehicle, True, 10, False, vis=True)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
 def test_oracle():
@@ -96,7 +94,7 @@ def big_test():
     vehicle = NavTestVehicle(nav_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
-    vehicle = FollowTheGap(env.sim_conf)
+    vehicle = ForestFGM()
     test.add_vehicle(vehicle)
 
     vehicle = Oracle(env.sim_conf)
@@ -131,9 +129,9 @@ if __name__ == "__main__":
     # train_repeatability()
 
     # test_nav()
-    # test_follow_the_gap()
+    test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
     # test_repeat()
 
     # big_test()

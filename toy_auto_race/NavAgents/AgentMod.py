@@ -226,16 +226,13 @@ class ModVehicleTrain(BaseMod):
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
-        # h_size = mod_conf.h
         h_size = h_size
         self.agent.try_load(load, h_size, self.path)
 
-        self.reward_fcn = None
         self.state = None
         self.nn_state = None
         self.nn_act = None
         self.action = None
-        self.beta_slope = None
 
         self.t_his = TrainHistory(agent_name, load)
 
@@ -273,17 +270,6 @@ class ModVehicleTrain(BaseMod):
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
             self.agent.replay_buffer.add(mem_entry)
-
-    def deviation_reward(self):
-        beta = 0.002
-        reward = - abs(self.nn_act[0]) * beta
-
-        return reward
- 
-    def slope_reward(self):
-        reward = self.beta_slope * (1- abs(self.nn_act[0])) 
-
-        return reward
 
     def nav_reward(self, s_prime):
         reward = (self.state[6] - s_prime[6]) / self.distance_scale
