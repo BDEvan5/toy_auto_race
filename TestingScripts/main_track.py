@@ -16,7 +16,7 @@ from toy_f110 import TrackSim
 # map_name = "porto"
 map_name = "race_track"
 # map_name = "berlin"
-run_num = 4
+run_num = 1
 nav_name = "Nav_" + map_name + f"_{run_num}"
 mod_name = "Mod_" + map_name + f"_{run_num}"
 eval_name = "TrackEval_1"
@@ -29,10 +29,17 @@ def train_mod():
     env = TrackSim(map_name)
 
     # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=400)
-    vehicle.beta_slope = 0.008
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=500)
 
-    train_vehicle(env, vehicle, 400000)
+    train_vehicle(env, vehicle, 500000)
+
+def train_nav():
+    env = TrackSim(map_name)
+
+    # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
+    vehicle = NavTrainVehicle(mod_name, map_name, env.sim_conf, load=False, h_size=500)
+
+    train_vehicle(env, vehicle, 500000)
 
 
 """Test Functions"""
@@ -82,13 +89,14 @@ def big_test():
 
 if __name__ == "__main__":
 
-    # train_mod()
+    train_mod()
+    train_nav()
 
     # test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
 
-    # big_test()
+    big_test()
 
 
 

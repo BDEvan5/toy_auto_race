@@ -208,7 +208,7 @@ class BaseMod(ModPP):
 
 
 class ModVehicleTrain(BaseMod):
-    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False, h_size=200):
+    def __init__(self, agent_name, map_name, sim_conf, load=False, h_size=200):
         """
         Training vehicle using the reference modification navigation stack
 
@@ -218,10 +218,8 @@ class ModVehicleTrain(BaseMod):
             mod_conf: namespace with modification planner parameters
             load: if the network should be loaded or recreated.
         """
-        if mod_conf is None:
-            mod_conf = lib.load_conf("mod_conf")
 
-        BaseMod.__init__(self, agent_name, map_name, sim_conf, mod_conf)
+        BaseMod.__init__(self, agent_name, map_name, sim_conf)
 
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
@@ -261,9 +259,6 @@ class ModVehicleTrain(BaseMod):
 
     def add_memory_entry(self, s_prime, nn_s_prime):
         if self.state is not None:
-            # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
-            # reward = self.deviation_reward()
-            # reward = self.slope_reward()
             reward = self.nav_reward(s_prime)
 
             self.t_his.add_step_data(reward)
@@ -272,19 +267,18 @@ class ModVehicleTrain(BaseMod):
             self.agent.replay_buffer.add(mem_entry)
 
     def nav_reward(self, s_prime):
-        reward = (self.state[6] - s_prime[6]) / self.distance_scale
-        reward += s_prime[-1]
-
+        # reward = (self.state[6] - s_prime[6]) 
+        reward = (s_prime[6] - self.state[6]) 
+        
         return reward
 
     def done_entry(self, s_prime):
         """
         To be called when ep is done.
         """
-        pp_action = super().act(s_prime)
+        pp_action = super().act_pp(s_prime)
         nn_s_prime = self.transform_obs(s_prime, pp_action)
-        # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
-        reward = s_prime[-1] + self.deviation_reward()
+        reward = s_prime[-1] + self.nav_reward(s_prime)
 
         self.t_his.add_step_data(reward)
         self.t_his.lap_done(False)
@@ -326,6 +320,7 @@ class ModVehicleTest(BaseMod):
         nn_obs = self.transform_obs(obs, pp_action)
 
         nn_action = self.agent.act(nn_obs, noise=0)
+        # nn_action = [0]
         self.nn_act = nn_action
 
         # critic_val = self.agent.get_critic_value(nn_obs, nn_action)

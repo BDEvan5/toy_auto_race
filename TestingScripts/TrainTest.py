@@ -31,7 +31,7 @@ def train_vehicle(env, vehicle, steps):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            env.render(wait=False)
+            env.render(wait=False, name=vehicle.name)
 
             vehicle.reset_lap()
             state = env.reset()
@@ -60,7 +60,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             state = s_p
             # env.render(False)
         if show:
-            env.history.show_history()
+            # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False, name=vehicle.name)
             if wait:
@@ -72,8 +72,8 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
         else:
             completes += 1
             print(f"({i}) Complete -> time: {env.steps}")
-            curve = get_curvature(env.history.positions)
-            curves.append(curve)
+            # curve = get_curvature(env.history.positions)
+            # curves.append(curve)
             lap_times.append(env.steps)
         if vis:
             vehicle.vis.play_visulisation()

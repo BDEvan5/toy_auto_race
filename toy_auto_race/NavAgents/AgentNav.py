@@ -37,12 +37,11 @@ class BaseNav:
     
 
 class NavTrainVehicle(BaseNav):
-    def __init__(self, agent_name, sim_conf, load=False) -> None:
+    def __init__(self, agent_name, sim_conf, load=False, h_size=200) -> None:
         BaseNav.__init__(self, agent_name, sim_conf)
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
-        h_size = 200
         self.agent.try_load(load, h_size, self.path)
 
         self.t_his = TrainHistory(agent_name, load)
@@ -69,9 +68,10 @@ class NavTrainVehicle(BaseNav):
         return self.action
 
     def calcualte_reward(self, s_prime):
-        reward = (self.state[6] - s_prime[6]) / self.distance_scale
+        # reward = (self.state[6] - s_prime[6]) 
+        reward = (s_prime[6] - self.state[6]) 
         reward += s_prime[-1]
-
+        
         return reward
 
     def add_memory_entry(self, s_prime, nn_s_prime):
@@ -86,7 +86,7 @@ class NavTrainVehicle(BaseNav):
     def done_entry(self, s_prime):
         reward = self.calcualte_reward(s_prime)
         nn_s_prime = self.transform_obs(s_prime)
-        if len(self.t_his.ep_rewards) % 10 == 0 or True:
+        if len(self.t_his.rewards) % 10 == 0 or True:
             self.t_his.print_update()
             self.agent.save(self.path)
         self.state = None

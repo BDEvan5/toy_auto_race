@@ -12,10 +12,10 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-# nav_name = "Navforest_1"
-# mod_name = "ModForest_1"
-mod_name = "ModForest_nr6"
-nav_name = "Navforest_nr5"
+nav_name = "Navforest_1"
+mod_name = "ModForest_1"
+# mod_name = "ModForest_nr6"
+# nav_name = "Navforest_nr5"
 repeat_name = "RepeatTest_1"
 eval_name = "BigTest1"
 
@@ -24,7 +24,7 @@ Training Functions
 """
 def train_nav():
     env = ForestSim(map_name)
-    vehicle = NavTrainVehicle(nav_name, env.sim_conf)
+    vehicle = NavTrainVehicle(nav_name, env.sim_conf, h_size=500)
 
     # train_vehicle(env, vehicle, 1000)
     train_vehicle(env, vehicle, 200000)
@@ -33,12 +33,12 @@ def train_nav():
 def train_mod():
     env = ForestSim(map_name)
 
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=200)
+    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=500)
     # train_vehicle(env, vehicle, 1000)
     train_vehicle(env, vehicle, 200000)
 
 
-def train_repeatability(mod_num):
+def train_repeatability():
     env = ForestSim(map_name)
 
     for i in range(10):
@@ -104,13 +104,13 @@ def big_test():
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
-    test.run_eval(env, 100, True, wait=False)
+    test.run_eval(env, 1000, True, wait=False)
 
 
 
 def test_repeat():
     env = ForestSim(map_name)
-    test = TestVehicles(env.sim_conf, eval_name)
+    test = TestVehicles(env.sim_conf, repeat_name)
 
     for i in range(10):
         train_name = f"ModRepeat_forest_1{i}"
@@ -126,13 +126,13 @@ if __name__ == "__main__":
     
     # train_mod()
     # train_nav()
-    # train_repeatability()
+    train_repeatability()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
     # test_mod()
-    # test_repeat()
+    test_repeat()
 
     big_test()
 

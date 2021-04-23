@@ -407,7 +407,6 @@ class TrackPtsBase:
         self.diffs = self.wpts[1:,:] - self.wpts[:-1,:]
         self.l2s   = self.diffs[:,0]**2 + self.diffs[:,1]**2 
 
-
     def find_s(self, point):
         dots = np.empty((self.wpts.shape[0]-1, ))
         for i in range(dots.shape[0]):
