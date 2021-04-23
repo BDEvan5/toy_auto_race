@@ -252,8 +252,8 @@ class ModVehicleTest(BaseMod):
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
         self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        speed = 4
-        # speed = calculate_speed(steering_angle)
+        # speed = 4
+        speed = calculate_speed(steering_angle)
         # action = np.array([steering_angle, pp_action[1]])
         action = np.array([steering_angle, speed])
         # self.vis.add_step(nn_obs[4:], steering_angle/self.max_steer)

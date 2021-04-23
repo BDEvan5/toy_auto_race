@@ -120,8 +120,8 @@ class NavTestVehicle(BaseNav):
         nn_action = self.agent.act(nn_obs)
         steering_angle = self.max_steer * nn_action[0]
 
-        # speed = calculate_speed(steering_angle)
-        speed = 4
+        speed = calculate_speed(steering_angle)
+        # speed = 4
         action = np.array([steering_angle, speed])
         # action = np.array([steering_angle, self.velocity])
 
@@ -131,17 +131,17 @@ class NavTestVehicle(BaseNav):
         pass
 
 
-# @njit(cache=True)
-# def calculate_speed(delta):
-#     b = 0.523
-#     g = 9.81
-#     l_d = 0.329
-#     f_s = 0.8
-#     max_v = 7
+@njit(cache=True)
+def calculate_speed(delta):
+    b = 0.523
+    g = 9.81
+    l_d = 0.329
+    f_s = 0.8
+    max_v = 7
 
-#     if abs(delta) < 0.06:
-#         return max_v
+    if abs(delta) < 0.06:
+        return max_v
 
-#     V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
+    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
 
-#     return V
+    return V
