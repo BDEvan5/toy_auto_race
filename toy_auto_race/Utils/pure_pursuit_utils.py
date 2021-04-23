@@ -134,7 +134,7 @@ def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0
 
     # print min_dist_segment, dists[min_dist_segment], projections[min_dist_segment]
 
-@njit(fastmath=False, cache=True)
+# @njit(fastmath=False, cache=True)
 def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
     waypoint_y = np.dot(np.array([np.cos(pose_theta), np.sin(-pose_theta)]), lookahead_point[0:2]-position)
     # waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)

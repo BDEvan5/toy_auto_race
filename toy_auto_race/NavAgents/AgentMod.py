@@ -1,4 +1,5 @@
 from os import name
+from numba.core.decorators import njit
 import numpy as np 
 import csv
 from matplotlib import pyplot as plt
@@ -7,7 +8,9 @@ from toy_auto_race.TD3 import TD3
 from toy_auto_race.Utils import LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.lidar_viz import LidarViz
+from toy_auto_race.lidar_viz import LidarViz, LidarVizMod
+from toy_auto_race.Utils.csv_data_helpers import save_csv_data
+
 
 class BaseMod(PurePursuit):
     def __init__(self, agent_name, map_name, sim_conf, pp_conf) -> None:
@@ -19,9 +22,11 @@ class BaseMod(PurePursuit):
 
         # TODO: move to agent history class
         self.mod_history = []
-        self.d_ref_history = []
+        self.pp_history = []
         self.reward_history = []
         self.critic_history = []
+
+        self.distance_scale = 20 # max meters for scaling
 
     def transform_obs(self, obs, pp_action):
         """
@@ -39,7 +44,7 @@ class BaseMod(PurePursuit):
         vr_scale = [(pp_action[1])/self.max_v]
         dr_scale = [pp_action[0]/self.max_steer]
 
-        scan = obs[5:-1]
+        scan = obs[7:-1]
 
         nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
 
@@ -61,11 +66,52 @@ class BaseMod(PurePursuit):
         d_phi = d_max * nn_action[0] # rad
         d_new = d_ref + d_phi
 
+        d_new = np.clip(d_new, -self.max_steer, self.max_steer)
+
         return d_new
+
+    def add_history_step(self, nn, pp):
+        self.mod_history.append(nn)
+        self.pp_history.append(pp)
+
+    def show_vehicle_history(self, wait=False):
+        plt.figure(3)
+        plt.clf()
+
+        plt.ylim([-1, 1])
+
+        plt.title("Mod Planner Steering actions")
+        mod_history = np.array(self.mod_history)
+        pp_history = np.array(self.pp_history)
+
+        plt.plot(mod_history)
+        # plt.plot(pp_history)
+        # plt.plot(mod_history + pp_history, linewidth=3)
+        # plt.legend(["NN", "PP", "Action"])
+
+
+        path = f'Vehicles/{self.agent.name}/nn_output.csv'
+        save_csv_data(self.mod_history, path)
+
+        plt.pause(0.0001)
+
+        # plt.figure(5)
+        # plt.clf()
+        # plt.ylim([-1, 1])
+        # plt.title("Critic history Mod planner")
+        # plt.plot(self.critic_history)
+
+
+        self.mod_history.clear()
+        self.pp_history.clear()
+        self.critic_history.clear()
+
+        if wait:
+            plt.show()
 
 
 class ModVehicleTrain(BaseMod):
-    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False):
+    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None, load=False, h_size=200):
         """
         Training vehicle using the reference modification navigation stack
 
@@ -83,7 +129,8 @@ class ModVehicleTrain(BaseMod):
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
-        h_size = mod_conf.h
+        # h_size = mod_conf.h
+        h_size = h_size
         self.agent.try_load(load, h_size, self.path)
 
         self.reward_fcn = None
@@ -91,6 +138,7 @@ class ModVehicleTrain(BaseMod):
         self.nn_state = None
         self.nn_act = None
         self.action = None
+        self.beta_slope = None
 
         self.t_his = TrainHistory(agent_name, load)
 
@@ -108,20 +156,24 @@ class ModVehicleTrain(BaseMod):
         self.nn_act = nn_action
 
         #TODO: move to history method
-        self.d_ref_history.append(pp_action[0])
-        self.mod_history.append(self.nn_act[0])
+        self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
         self.nn_state = nn_obs
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        self.action = np.array([steering_angle, pp_action[1]])
+        speed = 4
+        # speed = calculate_speed(steering_angle)
+        # self.action = np.array([steering_angle, pp_action[1]])
+        self.action = np.array([steering_angle, speed])
 
         return self.action
 
     def add_memory_entry(self, s_prime, nn_s_prime):
         if self.state is not None:
             # reward = self.reward_fcn(self.state, self.action, s_prime, self.nn_act)
-            reward = self.deviation_reward()
+            # reward = self.deviation_reward()
+            # reward = self.slope_reward()
+            reward = self.nav_reward(s_prime)
 
             self.t_his.add_step_data(reward)
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
@@ -131,6 +183,17 @@ class ModVehicleTrain(BaseMod):
     def deviation_reward(self):
         beta = 0.002
         reward = - abs(self.nn_act[0]) * beta
+
+        return reward
+ 
+    def slope_reward(self):
+        reward = self.beta_slope * (1- abs(self.nn_act[0])) 
+
+        return reward
+
+    def nav_reward(self, s_prime):
+        reward = (self.state[6] - s_prime[6]) / self.distance_scale
+        reward += s_prime[-1]
 
         return reward
 
@@ -146,8 +209,8 @@ class ModVehicleTrain(BaseMod):
         self.t_his.add_step_data(reward)
         self.t_his.lap_done(False)
         # self.t_his.lap_done(True)
-        if len(self.t_his.ep_rewards) % 10 == 0:
-            self.t_his.print_update()
+        if len(self.t_his.rewards) % 10 == 0:
+            self.t_his.print_update(True)
             self.agent.save(self.path)
         self.state = None
         mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
@@ -177,7 +240,7 @@ class ModVehicleTest(BaseMod):
 
         print(f"Agent loaded: {agent_name}")
 
-        self.vis = LidarViz(10)
+        self.vis = LidarVizMod(10)
 
     def plan_act(self, obs):
         pp_action = super().act(obs)
@@ -186,9 +249,30 @@ class ModVehicleTest(BaseMod):
         nn_action = self.agent.act(nn_obs, noise=0)
         self.nn_act = nn_action
 
+        self.critic_history.append(self.agent.get_critic_value(nn_obs, nn_action))
+        self.add_history_step(pp_action[0], nn_action[0]*self.max_steer)
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        action = np.array([steering_angle, pp_action[1]])
-
-        self.vis.add_step(nn_obs, steering_angle/self.max_steer)
+        # speed = 4
+        speed = calculate_speed(steering_angle)
+        # action = np.array([steering_angle, pp_action[1]])
+        action = np.array([steering_angle, speed])
+        # self.vis.add_step(nn_obs[4:], steering_angle/self.max_steer)
+        pp = pp_action[0]/self.max_steer
+        self.vis.add_step(nn_obs[4:], pp, nn_action)
 
         return action
+
+@njit(cache=True)
+def calculate_speed(delta):
+    b = 0.523
+    g = 9.81
+    l_d = 0.329
+    f_s = 0.8
+    max_v = 7
+
+    if abs(delta) < 0.06:
+        return max_v
+
+    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
+
+    return V

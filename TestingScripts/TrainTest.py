@@ -1,4 +1,7 @@
 from shutil import Error
+
+from numba.core.decorators import njit
+from toy_auto_race.ImitationLearning import BufferIL
 import numpy as np
 import csv
 from matplotlib import pyplot as plt
@@ -24,7 +27,6 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
         a = vehicle.plan_act(state)
         s_prime, r, done, _ = env.step_plan(a)
 
-
         state = s_prime
         vehicle.agent.train(2)
         
@@ -40,19 +42,83 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
             vehicle.reset_lap()
             state = env.reset()
 
+    vehicle.t_his.print_update(True)
     vehicle.t_his.save_csv_data()
 
     print(f"Finished Training: {vehicle.name}")
 
 
+def generat_oracle_data(env, oracle_vehicle, imitation_vehicle, steps):
+    done = False
+    state = env.reset()
+    oracle_vehicle.plan_forest(env.env_map)
+    # while not oracle_vehicle.plan(env.env_map):
+    #     state = env.reset() 
 
+    for n in range(steps):
+        a = oracle_vehicle.plan_act(state)
+        imitation_vehicle.save_step(state, a)
+
+        s_prime, r, done, _ = env.step_plan(a)
+        state = s_prime
+        
+        if done:
+            env.render(wait=False)
+
+            state = env.reset()
+            oracle_vehicle.plan_forest(env.env_map)
+            # while not oracle_vehicle.plan(env.env_map):
+            #     state = env.reset()
+
+        if n % 200 == 1:
+            print(f"Filling buffer: {n}")
+            
+def generate_imitation_data(env, oracle_vehicle, imitation_vehicle, steps):
+    done = False
+    state = env.reset()
+    oracle_vehicle.plan(env.env_map)
+    # while not oracle_vehicle.plan(env.env_map):
+    #     state = env.reset() 
+
+    for n in range(steps):
+        a = oracle_vehicle.plan_act(state)
+        imitation_vehicle.save_step(state, a) # save oracle
+
+        action = imitation_vehicle.plan_act(state) # act on imitation
+        s_prime, r, done, _ = env.step_plan(action)
+        state = s_prime
+        
+        if done:
+            env.render(wait=False)
+
+            state = env.reset()
+            oracle_vehicle.plan(env.env_map)
+            # while not oracle_vehicle.plan(env.env_map):
+            #     state = env.reset()
+
+        if n % 200 == 1:
+            print(f"Filling buffer: {n}")
+
+
+
+# train imitation vehicle
+def train_imitation_vehicle(env, oracle_vehicle, imitation_vehicle, batches=50, steps=500):
+
+    
+
+    for i in range(batches):
+        generate_imitation_data(env, oracle_vehicle, imitation_vehicle, steps)
+        imitation_vehicle.train()
+        imitation_vehicle.save()
+        test_single_vehicle(env, imitation_vehicle, False, 20)
 
 
 """General test function"""
 def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True, wait=False, vis=False):
     crashes = 0
     completes = 0
-    lap_times = [] 
+    lap_times = [] #TODO: make np arrays that are inserted into instead of lists.
+    curves = []
 
     state = env.reset(add_obs)
     done, score = False, 0.0
@@ -77,7 +143,8 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
         else:
             completes += 1
             print(f"({i}) Complete -> time: {env.steps}")
-            lap_times.append(env.steps)
+            curve = get_curvature(env.history.positions)
+            curves.append(curve)
             lap_times.append(env.steps)
         if vis:
             vehicle.vis.play_visulisation()
@@ -90,16 +157,36 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
     # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+    print(f"Avg curvatures: {np.mean(curves)}")
 
 
-def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
+def get_curvature(pos_history):
+    n = len(pos_history)
+    ths = [lib.get_bearing(pos_history[i], pos_history[i+1]) for i in range(n-1)]
+    dth = [abs(lib.sub_angles_complex(ths[i], ths[i+1])) for i in range(n-2)]
+
+    total_curve = np.sum(dth)
+    avg_curve = np.mean(dth)
+    print(f"Total Curvatue: {total_curve}, Avg: {avg_curve}")
+
+    return total_curve
+
+# @njit
+# def get_curvature(pos_history):
+#     n = len(pos_history)
+#     ths = np.zeros(n-1)
+#     dth = np.zeros(n-2)
+#     for i in range(n-1):
+#         ths = np.arctan2()
+
+def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
     crashes = 0
     completes = 0
     lap_times = [] 
     done, score = False, 0.0
 
     state = env.reset(add_obs)
-    wpts = vehicle.plan(env.env_map)
+    wpts = vehicle.plan_forest(env.env_map)
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
@@ -127,8 +214,56 @@ def test_oracle_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             lap_times.append(env.steps)
             lap_times.append(env.steps)
         state = env.reset(add_obs)
-        wpts = vehicle.plan(env.env_map)
+        wpts = vehicle.plan_forest(env.env_map)
         
+        done = False
+
+    print(f"Crashes: {crashes}")
+    print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
+    print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
+    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
+
+
+def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
+    crashes = 0
+    completes = 0
+    lap_times = [] 
+    done, score = False, 0.0
+
+    state = env.reset(add_obs)
+    # wpts = vehicle.plan_track(env.env_map)
+    wpts = vehicle.plan_no_obs(env.env_map)
+    for i in range(laps):
+        while not done:
+            a = vehicle.plan_act(state)
+            s_p, r, done, _ = env.step_plan(a)
+            state = s_p
+            # env.render(False)
+            # env.env_map.render_wpts(vehicle.aim_pts)
+        if show:
+            # vehicle.show_vehicle_history()
+            # env.history.show_history()
+            # env.history.show_forces()
+            env.render(wait=False)
+            env.env_map.render_wpts(wpts)
+            # env.env_map.render_aim_pts(vehicle.aim_pts)
+            if wait:
+                plt.show()
+
+        if r == -1:
+            crashes += 1
+            print(f"({i}) Crashed -> time: {env.steps} ")
+            # print(f"AimPts: {vehicle.aim_pts}")
+            plt.show()
+        else:
+            completes += 1
+            print(f"({i}) Complete -> time: {env.steps}")
+            lap_times.append(env.steps)
+            lap_times.append(env.steps)
+        state = env.reset(add_obs)
+        # wpts = vehicle.plan_track(env.env_map)
+        wpts = vehicle.plan_no_obs(env.env_map)
+        plt.show()
         done = False
 
     print(f"Crashes: {crashes}")
@@ -251,10 +386,11 @@ class TestVehicles(TestData):
             print(f"#NoObs: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
 
         for i in range(laps):
+            env.env_map.add_obstacles()
             for j in range(N):
                 vehicle = self.vehicle_list[j]
 
-                r, steps = self.run_lap(vehicle, env, show, True, wait)
+                r, steps = self.run_lap(vehicle, env, show, False, wait)
 
                 print(f"#{i}: Lap time for ({vehicle.name}): {env.steps} --> Reward: {r}")
                 self.endings[i, j] = r
@@ -270,6 +406,7 @@ class TestVehicles(TestData):
 
     def run_lap(self, vehicle, env, show, add_obs, wait):
         state = env.reset(add_obs)
+
         try:
             vehicle.plan(env.env_map)
         except AttributeError as e:
@@ -286,9 +423,10 @@ class TestVehicles(TestData):
             # vehicle.show_vehicle_history()
             # env.show_history()
             # env.history.show_history()
-            env.render(wait=False)
             if wait:
-                env.render(wait=True)
+                env.render(wait=True, name=vehicle.name)
+            else:
+                env.render(wait=False, name=vehicle.name)
 
         return r, env.steps
 

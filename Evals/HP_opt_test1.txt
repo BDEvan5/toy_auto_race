@@ -1,0 +1,20 @@
+
+Testing Complete 
+Map name:  
+-----------------------------------------------------
+-----------------------------------------------------
+Vehicle: HP_tune_0.016
+Crashes: 3.0 --> Completes 97.0
+% Finished = 97.00
+Avg lap times: 534.3298969072165
+No Obs Time: 528.0-----------------------------------------------------
+Vehicle: HP_tune_0.02
+Crashes: 9.0 --> Completes 91.0
+% Finished = 91.00
+Avg lap times: 537.6703296703297
+No Obs Time: 528.0-----------------------------------------------------
+Vehicle: HP_tune_0.024
+Crashes: 15.0 --> Completes 85.0
+% Finished = 85.00
+Avg lap times: 535.0823529411765
+No Obs Time: 527.0-----------------------------------------------------
