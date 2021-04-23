@@ -13,11 +13,10 @@ from TestingScripts.TrainTest import *
 from toy_f110 import ForestSim
 
 map_name = "forest2"
-nav_name = "Navforest_nr5"
-mod_name = "ModForest_nr6"
-# mod_name = "ModForest_slope_rnd"
-eval_name = "RepeatTest_2"
-eval_name = "BigTest5_speed"
+nav_name = "Navforest_1"
+mod_name = "ModForest_1"
+repeat_name = "RepeatTest_1"
+eval_name = "BigTest1"
 
 """
 Training Functions
@@ -27,30 +26,27 @@ def train_nav():
     vehicle = NavTrainVehicle(nav_name, env.sim_conf)
 
     # train_vehicle(env, vehicle, 1000)
-    # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 400000)
+    train_vehicle(env, vehicle, 200000)
 
 
 def train_mod():
     env = ForestSim(map_name)
 
     vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=200)
-    # vehicle.beta_slope = 0.02
     # train_vehicle(env, vehicle, 1000)
-    # train_vehicle(env, vehicle, 30000)
     train_vehicle(env, vehicle, 200000)
 
 
-def train_mod_num(mod_num):
+def train_repeatability(mod_num):
     env = ForestSim(map_name)
-    train_name = f"ModRepeat_forest_1{mod_num}"
 
-    vehicle = ModVehicleTrain(train_name, map_name, env.sim_conf, load=False)
+    for i in range(10):
+        train_name = f"ModRepeat_forest_{i}"
 
-    # train_vehicle(env, vehicle, 1000)
-    # train_vehicle(env, vehicle, 30000)
-    train_vehicle(env, vehicle, 200000)
+        vehicle = ModVehicleTrain(train_name, map_name, env.sim_conf, load=False)
 
+        # train_vehicle(env, vehicle, 1000)
+        train_vehicle(env, vehicle, 200000)
 
 """Test Functions"""
 def test_nav():
@@ -69,7 +65,6 @@ def test_follow_the_gap():
     vehicle = GapFollower()
 
     test_single_vehicle(env, vehicle, True, 10, False, vis=True)
-    # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
@@ -77,8 +72,8 @@ def test_oracle():
     env = ForestSim(map_name)
     vehicle = Oracle(env.sim_conf)
 
-    # test_oracle_vehicle(env, vehicle, True, 100, True, wait=False)
-    test_oracle_forest(env, vehicle, True, 1, False, wait=False)
+    test_oracle_forest(env, vehicle, True, 100, True, wait=False)
+    # test_oracle_forest(env, vehicle, True, 1, False, wait=False)
 
 
 def test_mod():
@@ -96,7 +91,6 @@ def big_test():
     env = ForestSim(map_name)
     test = TestVehicles(env.sim_conf, eval_name)
 
-    # agent_name = "NavForest"
     vehicle = NavTestVehicle(nav_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
@@ -106,16 +100,13 @@ def big_test():
     vehicle = Oracle(env.sim_conf)
     test.add_vehicle(vehicle)
 
-    # agent_name = "ModForest"
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
     test.run_eval(env, 100, True, wait=False)
 
-def repeatability():
-    for i in range(10):
-        train_mod_num(i)
+
 
 def test_repeat():
     env = ForestSim(map_name)
@@ -135,21 +126,17 @@ if __name__ == "__main__":
     
     # train_mod()
     # train_nav()
+    # train_repeatability()
 
-    test_nav()
+    # test_nav()
     # test_follow_the_gap()
-    # test_oracle()
+    test_oracle()
     # test_mod()
-
-    # run_all_tests()
-    # big_test()
-
-    # repeatability()
     # test_repeat()
 
-    # hp_opti()
-    # test_hp()
-    # train_mod_hp(0.01)
+    # big_test()
+
+
 
 
 
