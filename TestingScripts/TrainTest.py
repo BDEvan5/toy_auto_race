@@ -6,23 +6,18 @@ import numpy as np
 import csv
 from matplotlib import pyplot as plt
 
-from toy_f110 import ForestSim, TrackSim
 
-from toy_auto_race.Utils.HistoryStructs import TrainHistory
 import toy_auto_race.Utils.LibFunctions as lib
 
-from toy_auto_race.NavAgents.AgentMod import ModVehicleTrain, ModVehicleTest
-#TODO: consider if the vehicles should be created in the train function or passed to the train function? What do you do with the sim_conf transfer then?
 
 
 
 
-# train mod agent
-def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
+def train_vehicle(env, vehicle, steps):
     done = False
     state = env.reset()
-    # vehicle.show_wpts()
 
+    print(f"Starting Training: {vehicle.name}")
     for n in range(steps):
         a = vehicle.plan_act(state)
         s_prime, r, done, _ = env.step_plan(a)
@@ -36,8 +31,7 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            env.render(wait=False)
-            # env.render(wait=True)
+            env.render(wait=False, name=vehicle.name)
 
             vehicle.reset_lap()
             state = env.reset()
@@ -48,73 +42,9 @@ def train_vehicle(env: TrackSim, vehicle: ModVehicleTrain, steps: int):
     print(f"Finished Training: {vehicle.name}")
 
 
-def generat_oracle_data(env, oracle_vehicle, imitation_vehicle, steps):
-    done = False
-    state = env.reset()
-    oracle_vehicle.plan_forest(env.env_map)
-    # while not oracle_vehicle.plan(env.env_map):
-    #     state = env.reset() 
-
-    for n in range(steps):
-        a = oracle_vehicle.plan_act(state)
-        imitation_vehicle.save_step(state, a)
-
-        s_prime, r, done, _ = env.step_plan(a)
-        state = s_prime
-        
-        if done:
-            env.render(wait=False)
-
-            state = env.reset()
-            oracle_vehicle.plan_forest(env.env_map)
-            # while not oracle_vehicle.plan(env.env_map):
-            #     state = env.reset()
-
-        if n % 200 == 1:
-            print(f"Filling buffer: {n}")
-            
-def generate_imitation_data(env, oracle_vehicle, imitation_vehicle, steps):
-    done = False
-    state = env.reset()
-    oracle_vehicle.plan(env.env_map)
-    # while not oracle_vehicle.plan(env.env_map):
-    #     state = env.reset() 
-
-    for n in range(steps):
-        a = oracle_vehicle.plan_act(state)
-        imitation_vehicle.save_step(state, a) # save oracle
-
-        action = imitation_vehicle.plan_act(state) # act on imitation
-        s_prime, r, done, _ = env.step_plan(action)
-        state = s_prime
-        
-        if done:
-            env.render(wait=False)
-
-            state = env.reset()
-            oracle_vehicle.plan(env.env_map)
-            # while not oracle_vehicle.plan(env.env_map):
-            #     state = env.reset()
-
-        if n % 200 == 1:
-            print(f"Filling buffer: {n}")
-
-
-
-# train imitation vehicle
-def train_imitation_vehicle(env, oracle_vehicle, imitation_vehicle, batches=50, steps=500):
-
-    
-
-    for i in range(batches):
-        generate_imitation_data(env, oracle_vehicle, imitation_vehicle, steps)
-        imitation_vehicle.train()
-        imitation_vehicle.save()
-        test_single_vehicle(env, imitation_vehicle, False, 20)
-
 
 """General test function"""
-def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps=100, add_obs=True, wait=False, vis=False):
+def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=False, vis=False):
     crashes = 0
     completes = 0
     lap_times = [] #TODO: make np arrays that are inserted into instead of lists.
@@ -130,10 +60,9 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
             state = s_p
             # env.render(False)
         if show:
-            # vehicle.show_vehicle_history()
             # env.history.show_history()
             # env.history.show_forces()
-            env.render(wait=False)
+            env.render(wait=False, name=vehicle.name)
             if wait:
                 env.render(wait=True)
 
@@ -143,8 +72,8 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
         else:
             completes += 1
             print(f"({i}) Complete -> time: {env.steps}")
-            curve = get_curvature(env.history.positions)
-            curves.append(curve)
+            # curve = get_curvature(env.history.positions)
+            # curves.append(curve)
             lap_times.append(env.steps)
         if vis:
             vehicle.vis.play_visulisation()
@@ -156,7 +85,6 @@ def test_single_vehicle(env: TrackSim, vehicle: ModVehicleTest, show=False, laps
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
-    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
     print(f"Avg curvatures: {np.mean(curves)}")
 
 
@@ -171,13 +99,6 @@ def get_curvature(pos_history):
 
     return total_curve
 
-# @njit
-# def get_curvature(pos_history):
-#     n = len(pos_history)
-#     ths = np.zeros(n-1)
-#     dth = np.zeros(n-2)
-#     for i in range(n-1):
-#         ths = np.arctan2()
 
 def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
     crashes = 0
@@ -197,7 +118,7 @@ def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=Fa
             # vehicle.show_vehicle_history()
             # env.history.show_history()
             # env.history.show_forces()
-            env.render(wait=False)
+            env.render(wait=False, name=vehicle.name)
             env.env_map.render_wpts(wpts)
             # env.env_map.render_aim_pts(vehicle.aim_pts)
             if wait:
@@ -221,7 +142,6 @@ def test_oracle_forest(env, vehicle, show=False, laps=100, add_obs=True, wait=Fa
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
-    # print(f"Lap times: {lap_times} --> Avg: {np.mean(lap_times)}")
 
 
 def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=False):
@@ -309,7 +229,7 @@ class TestData:
                 percent = (self.completes[i] / (self.completes[i] + self.crashes[i]) * 100)
                 file_obj.write(f"% Finished = {percent:.2f}\n")
                 file_obj.write(f"Avg lap times: {np.mean(self.lap_times[i])}\n")
-                file_obj.write(f"No Obs Time: {self.lap_times_no_obs[i]}")
+                file_obj.write(f"No Obs Time: {self.lap_times_no_obs[i]}\n")
 
                 file_obj.write(f"-----------------------------------------------------\n")
 
@@ -331,13 +251,14 @@ class TestData:
     def save_csv_results(self):
         test_name = 'Evals/'  + self.eval_name + '.csv'
 
-        data = [["#", "Name", "%Complete", "AvgTime", "Std"]]
+        data = [["#", "Name", "%Complete", "AvgTime", "Std", "NoObs"]]
         for i in range(self.N):
             v_data = [i]
             v_data.append(self.vehicle_list[i].name)
             v_data.append((self.completes[i] / (self.completes[i] + self.crashes[i]) * 100))
             v_data.append(np.mean(self.lap_times[i]))
             v_data.append(np.std(self.lap_times[i]))
+            v_data.append(self.lap_times_no_obs[i])
             data.append(v_data)
 
         with open(test_name, 'w') as csvfile:
@@ -405,10 +326,11 @@ class TestVehicles(TestData):
         self.save_csv_results()
 
     def run_lap(self, vehicle, env, show, add_obs, wait):
+        env.scan_sim.reset_n_beams(vehicle.n_beams)
         state = env.reset(add_obs)
 
         try:
-            vehicle.plan(env.env_map)
+            vehicle.plan_forest(env.env_map)
         except AttributeError as e:
             pass
 

@@ -7,6 +7,7 @@ from numba import njit
 from toy_auto_race.TD3 import TD3
 import toy_auto_race.Utils.LibFunctions as lib
 from toy_auto_race.Utils.HistoryStructs import TrainHistory
+from toy_auto_race.speed_utils import calculate_speed
 
 
 
@@ -30,19 +31,17 @@ class BaseNav:
         scan = obs[7:-1]
 
         nn_obs = np.concatenate([cur_v, cur_d, target_angle, target_distance, scan])
-        # nn_obs = np.concatenate([cur_d, target_angle, scan])
 
         return nn_obs
 
     
 
 class NavTrainVehicle(BaseNav):
-    def __init__(self, agent_name, sim_conf, load=False) -> None:
+    def __init__(self, agent_name, sim_conf, load=False, h_size=200) -> None:
         BaseNav.__init__(self, agent_name, sim_conf)
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
-        h_size = 200
         self.agent.try_load(load, h_size, self.path)
 
         self.t_his = TrainHistory(agent_name, load)
@@ -69,10 +68,10 @@ class NavTrainVehicle(BaseNav):
         return self.action
 
     def calcualte_reward(self, s_prime):
-        reward = (self.state[6] - s_prime[6]) / self.distance_scale
-        # reward = (s_prime[6] - self.state[6]) / self.distance_scale
+        # reward = (self.state[6] - s_prime[6]) 
+        reward = (s_prime[6] - self.state[6]) 
         reward += s_prime[-1]
-
+        
         return reward
 
     def add_memory_entry(self, s_prime, nn_s_prime):
@@ -87,7 +86,7 @@ class NavTrainVehicle(BaseNav):
     def done_entry(self, s_prime):
         reward = self.calcualte_reward(s_prime)
         nn_s_prime = self.transform_obs(s_prime)
-        if len(self.t_his.ep_rewards) % 10 == 0 or True:
+        if len(self.t_his.rewards) % 10 == 0 or True:
             self.t_his.print_update()
             self.agent.save(self.path)
         self.state = None
@@ -112,8 +111,7 @@ class NavTestVehicle(BaseNav):
         self.agent = TD3(state_space, 1, 1, agent_name)
         h_size = 200
         self.agent.try_load(True, h_size, self.path)
-
-        self.velocity = 4
+        self.n_beams = 10
 
     def plan_act(self, obs):
         nn_obs = self.transform_obs(obs)
@@ -123,25 +121,9 @@ class NavTestVehicle(BaseNav):
         speed = calculate_speed(steering_angle)
         # speed = 4
         action = np.array([steering_angle, speed])
-        # action = np.array([steering_angle, self.velocity])
 
         return action
 
     def reset_lap(self):
         pass
 
-
-@njit(cache=True)
-def calculate_speed(delta):
-    b = 0.523
-    g = 9.81
-    l_d = 0.329
-    f_s = 0.8
-    max_v = 7
-
-    if abs(delta) < 0.06:
-        return max_v
-
-    V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
-
-    return V
