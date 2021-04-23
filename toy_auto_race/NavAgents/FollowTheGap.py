@@ -14,7 +14,7 @@ class TrackFGM:
     BUBBLE_RADIUS = 250
     PREPROCESS_CONV_SIZE = 3
     BEST_POINT_CONV_SIZE = 100
-    MAX_LIDAR_DIST = 3
+    MAX_LIDAR_DIST = 2
     REDUCTION = 100
     
     def __init__(self):

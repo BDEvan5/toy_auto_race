@@ -83,7 +83,7 @@ class ModHistory:
 
 
 class BaseMod(ModPP):
-    def __init__(self, agent_name, map_name, sim_conf, pp_conf) -> None:
+    def __init__(self, agent_name, map_name, sim_conf) -> None:
         super().__init__(sim_conf)
         self.name = agent_name
         self.n_beams = sim_conf.n_beams
@@ -299,7 +299,7 @@ class ModVehicleTrain(BaseMod):
 
 
 class ModVehicleTest(BaseMod):
-    def __init__(self, agent_name, map_name, sim_conf, mod_conf=None):
+    def __init__(self, agent_name, map_name, sim_conf):
         """
         Testing vehicle using the reference modification navigation stack
 
@@ -308,10 +308,8 @@ class ModVehicleTest(BaseMod):
             sim_conf: namespace with simulation parameters
             mod_conf: namespace with modification planner parameters
         """
-        if mod_conf is None:
-            mod_conf = lib.load_conf("mod_conf")
 
-        BaseMod.__init__(self, agent_name, map_name, sim_conf, mod_conf)
+        BaseMod.__init__(self, agent_name, map_name, sim_conf)
 
         self.path = 'Vehicles/' + agent_name
         state_space = 4 + self.n_beams
