@@ -52,6 +52,49 @@ class ReplayBufferTD3(object):
     def size(self):
         return len(self.storage)
 
+
+class SmartBufferTD3(object):
+    def __init__(self, max_size=1000000):     
+        self.storage = np.zeros(())
+        self.storage = []
+        self.max_size = max_size
+        self.ptr = 0
+
+        self.states = np.empty((max_size, 14))
+        self.actions = np.empty((max_size, 1))
+        self.next_states = np.empty((max_size, 14))
+        self.rewards = np.empty((max_size, 1))
+        self.dones = np.empty((max_size, 1))
+
+    def add(self, s, a, s_p, r, d):
+        self.states[self.ptr] = s
+        self.actions[self.ptr] = a
+        self.next_states[self.ptr] = s_p
+        self.rewards[self.ptr] = r
+        self.dones[self.ptr] = d
+        
+        if self.ptr == 99999: self.ptr = 0
+
+    def sample(self, batch_size):
+        ind = np.random.randint(0, len(self.storage), size=batch_size)
+        states = np.empty((batch_size, 14))
+        actions = np.empty((batch_size, 1))
+        next_states = np.empty((batch_size, 14))
+        rewards = np.empty((batch_size, 1))
+        dones = np.empty((batch_size, 1))
+
+        for i, j in enumerate(ind): 
+            states[i] = self.states[j]
+            actions[i] = self.actions[j]
+            next_states[i] = self.next_states[j]
+            rewards[i] = self.rewards[j]
+            dones[i] = self.dones[j]
+
+        return states, actions, next_states, rewards, dones
+
+    def size(self):
+        return len(self.storage)
+
 nn_l1 = 400
 nn_l2 = 300
 
@@ -122,6 +165,7 @@ class TD3(object):
         self.critic_optimizer = None
 
         self.replay_buffer = ReplayBufferTD3()
+        # self.replay_buffer = SmartBufferTD3()
 
     def create_agent(self, h_size):
         state_dim = self.state_dim

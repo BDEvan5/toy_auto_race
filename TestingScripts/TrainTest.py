@@ -31,7 +31,7 @@ def train_vehicle(env, vehicle, steps):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            env.render(wait=False, name=vehicle.name)
+            # env.render(wait=False, name=vehicle.name)
 
             vehicle.reset_lap()
             state = env.reset()
@@ -40,7 +40,6 @@ def train_vehicle(env, vehicle, steps):
     vehicle.t_his.save_csv_data()
 
     print(f"Finished Training: {vehicle.name}")
-
 
 
 """General test function"""
@@ -343,7 +342,6 @@ class TestVehicles(TestData):
 
         if show:
             # vehicle.show_vehicle_history()
-            # env.show_history()
             # env.history.show_history()
             if wait:
                 env.render(wait=True, name=vehicle.name)

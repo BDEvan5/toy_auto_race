@@ -69,6 +69,7 @@ class ModPP:
     def reset_lap(self):
         self.aim_pts.clear()
 
+
 class ModHistory:
     def __init__(self) -> None:
         self.mod_history = []
@@ -90,7 +91,7 @@ class BaseMod(ModPP):
         self.max_v = sim_conf.max_v
         self.max_steer = sim_conf.max_steer
 
-        self.history = ModHistory()
+        # self.history = ModHistory()
 
         self.distance_scale = 20 # max meters for scaling
 
@@ -109,12 +110,13 @@ class BaseMod(ModPP):
         """
         cur_v = [obs[3]/self.max_v]
         cur_d = [obs[4]/self.max_steer]
-        vr_scale = [(pp_action[1])/self.max_v]
+        # vr_scale = [(pp_action[1])/self.max_v] # this is probably irrelevant?
+        target_angle = [obs[5]/self.max_steer]
         dr_scale = [pp_action[0]/self.max_steer]
 
         scan = obs[7:-1]
 
-        nn_obs = np.concatenate([cur_v, cur_d, vr_scale, dr_scale, scan])
+        nn_obs = np.concatenate([cur_v, cur_d, target_angle, dr_scale, scan])
 
         return nn_obs
 
@@ -134,41 +136,6 @@ class BaseMod(ModPP):
         d_new = np.clip(d_new, -self.max_steer, self.max_steer)
 
         return d_new
-
-    def show_vehicle_history(self, wait=False):
-        plt.figure(3)
-        plt.clf()
-
-        plt.ylim([-1, 1])
-
-        plt.title("Mod Planner Steering actions")
-        mod_history = np.array(self.mod_history)
-        pp_history = np.array(self.pp_history)
-
-        plt.plot(mod_history)
-        # plt.plot(pp_history)
-        # plt.plot(mod_history + pp_history, linewidth=3)
-        # plt.legend(["NN", "PP", "Action"])
-
-
-        path = f'Vehicles/{self.agent.name}/nn_output.csv'
-        save_csv_data(self.mod_history, path)
-
-        plt.pause(0.0001)
-
-        # plt.figure(5)
-        # plt.clf()
-        # plt.ylim([-1, 1])
-        # plt.title("Critic history Mod planner")
-        # plt.plot(self.critic_history)
-
-
-        self.mod_history.clear()
-        self.pp_history.clear()
-        self.critic_history.clear()
-
-        if wait:
-            plt.show()
 
     def _load_csv_track(self, map_name):
         track = []
@@ -266,9 +233,12 @@ class ModVehicleTrain(BaseMod):
 
             self.agent.replay_buffer.add(mem_entry)
 
+            # self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, False)
+
     def nav_reward(self, s_prime):
         # reward = (self.state[6] - s_prime[6]) 
         reward = (s_prime[6] - self.state[6]) 
+        # reward += 0.02 * (1-abs(self.nn_act[0]))
         
         return reward
 
@@ -291,6 +261,7 @@ class ModVehicleTrain(BaseMod):
 
         self.agent.replay_buffer.add(mem_entry)
 
+        # self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, True)
 
 class ModVehicleTest(BaseMod):
     def __init__(self, agent_name, map_name, sim_conf):
