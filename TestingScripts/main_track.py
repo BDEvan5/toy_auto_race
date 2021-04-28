@@ -89,14 +89,14 @@ def big_test():
 
 if __name__ == "__main__":
 
-    train_mod()
-    train_nav()
+    # train_mod()
+    # train_nav()
 
     # test_follow_the_gap()
     # test_oracle()
     # test_mod()
 
-    big_test()
+    # big_test()
 
 
 

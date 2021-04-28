@@ -18,6 +18,7 @@ class ModPP:
         self.path_name = None
 
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
+        self.max_steer = sim_conf.max_steer
 
         self.v_gain = 0.5
         self.lookahead = 0.8
@@ -60,6 +61,7 @@ class ModPP:
             return [0, 4.0]
 
         speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
+        steering_angle = np.clip(steering_angle, -self.max_steer, self.max_steer)
 
         # speed = 4
         speed = calculate_speed(steering_angle)
@@ -77,10 +79,23 @@ class ModHistory:
         self.reward_history = []
         self.critic_history = []
 
-    def add_step(self, pp, nn, c_val):
+    def add_step(self, pp, nn, c_val=None):
         self.pp_history.append(pp)
         self.mod_history.append(nn)
         self.critic_history.append(c_val)
+
+    def save_nn_output(self):
+        save_csv_data(self.critic_history, 'Vehicles/nn_output.csv')
+        plt.figure(5)
+        plt.plot(self.mod_history)
+        plt.pause(0.0001)
+        plt.figure(6)
+        plt.plot(self.pp_history)
+        plt.pause(0.0001)
+
+        self.mod_history.clear()
+        self.pp_history.clear()
+        self.critic_history.clear()
 
 
 class BaseMod(ModPP):
@@ -90,9 +105,9 @@ class BaseMod(ModPP):
         self.n_beams = sim_conf.n_beams
         self.max_v = sim_conf.max_v
         self.max_steer = sim_conf.max_steer
-        self.range_finder_scale = 10 #TODO: move to config files
+        self.range_finder_scale = 5 #TODO: move to config files
 
-        # self.history = ModHistory()
+        self.history = ModHistory()
 
         self.distance_scale = 20 # max meters for scaling
 
@@ -115,7 +130,7 @@ class BaseMod(ModPP):
         target_angle = [obs[5]/self.max_steer]
         dr_scale = [pp_action[0]/self.max_steer]
 
-        scan = obs[7:-1] #/ self.range_finder_scale
+        scan = obs[7:-1] / self.range_finder_scale
 
         nn_obs = np.concatenate([cur_v, cur_d, target_angle, dr_scale, scan])
 
@@ -133,7 +148,7 @@ class BaseMod(ModPP):
         Returns:
             d_new: modified steering reference
         """
-        d_new = d_ref + self.max_steer * nn_action[0]
+        d_new = d_ref + self.max_steer * nn_action[0] 
         d_new = np.clip(d_new, -self.max_steer, self.max_steer)
 
         return d_new
@@ -268,6 +283,7 @@ class ModVehicleTrain(BaseMod):
             self.t_his.print_update(True)
             self.agent.save(self.path)
         self.state = None
+        # self.history.save_nn_output()
 
         # mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
         # self.agent.replay_buffer.add(mem_entry)
@@ -305,8 +321,8 @@ class ModVehicleTest(BaseMod):
         # nn_action = [0]
         self.nn_act = nn_action
 
-        # critic_val = self.agent.get_critic_value(nn_obs, nn_action)
-        # self.history.add_step(pp_action[0], nn_action[0]*self.max_steer, critic_val)
+        critic_val = self.agent.get_critic_value(nn_obs, nn_action)
+        self.history.add_step(pp_action[0], nn_action[0]*self.max_steer, critic_val)
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
         # speed = 4

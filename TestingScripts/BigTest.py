@@ -17,7 +17,7 @@ import numpy as np
 
 
 map_name_forest = "forest2"
-train_test_n = 2
+train_test_n = 3
 nav_name_forest = f"Navforest_{train_test_n}"
 mod_name_forest = f"ModForest_{train_test_n}"
 
@@ -25,7 +25,7 @@ repeat_name = f"RepeatTest_{train_test_n}"
 eval_name_f= f"BigTest{train_test_n}"
 
 map_name_track = "race_track"
-run_num = 2
+run_num = 3
 nav_name_track = "Nav_" + map_name_track + f"_{run_num}"
 mod_name_track = "Mod_" + map_name_track + f"_{run_num}"
 eval_name_track = "TrackEval_1"
@@ -40,7 +40,7 @@ def train_nav_forest():
     vehicle = NavTrainVehicle(nav_name_forest, env.sim_conf, h_size=200)
 
     # train_vehicle(env, vehicle, 100)
-    train_vehicle(env, vehicle, 300000)
+    train_vehicle(env, vehicle, 200000)
 
 
 def train_mod_forest():
@@ -48,7 +48,7 @@ def train_mod_forest():
 
     vehicle = ModVehicleTrain(mod_name_forest, map_name_forest, env.sim_conf, load=False, h_size=200)
     # train_vehicle(env, vehicle, 100)
-    train_vehicle(env, vehicle, 300000)
+    train_vehicle(env, vehicle, 200000)
 
 def train_repeatability():
     env = ForestSim(map_name_forest)
@@ -108,19 +108,19 @@ def train_mod_track():
     env = TrackSim(map_name_track)
 
     # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = ModVehicleTrain(mod_name_track, map_name_track, env.sim_conf, load=False, h_size=500)
+    vehicle = ModVehicleTrain(mod_name_track, map_name_track, env.sim_conf, load=False, h_size=200)
 
-    train_vehicle(env, vehicle, 500000)
+    train_vehicle(env, vehicle, 200000)
     # train_vehicle(env, vehicle, 100)
 
 def train_nav_track():
     env = TrackSim(map_name_track)
 
     # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = NavTrainVehicle(nav_name_track, env.sim_conf, h_size=500)
+    vehicle = NavTrainVehicle(nav_name_track, env.sim_conf, h_size=200)
 
     # train_vehicle(env, vehicle, 100)
-    train_vehicle(env, vehicle, 500000)
+    train_vehicle(env, vehicle, 200000)
 
 
 def big_test_track():
@@ -144,18 +144,18 @@ def big_test_track():
 
 if __name__ == "__main__":
     
-    # train_mod_forest()
-    # train_nav_forest()
+    train_mod_forest()
+    train_nav_forest()
 
     
-    # train_mod_track()
-    # train_nav_track()
+    train_mod_track()
+    train_nav_track()
 
     run_comparison_forest()
-    # big_test_track()
+    big_test_track()
 
-    # test_repeat()
-    # train_repeatability()
+    test_repeat()
+    train_repeatability()
 
 
 

@@ -79,10 +79,10 @@ def test_oracle():
 
 def test_mod():
     env = ForestSim(map_name)
-    vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
-    # vehicle = ModVehicleTest("ModForest_nr6", map_name, env.sim_conf)
+    # vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
+    vehicle = ModVehicleTest("ModForest_nr6", map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
@@ -126,7 +126,7 @@ def test_repeat():
 
 if __name__ == "__main__":
     
-    train_mod()
+    # train_mod()
     # train_nav()
     # train_repeatability()
 

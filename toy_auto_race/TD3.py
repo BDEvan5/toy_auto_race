@@ -1,3 +1,4 @@
+from os import stat
 import numpy as np 
 from matplotlib import pyplot as plt
 import random
@@ -53,16 +54,16 @@ class ReplayBufferTD3(object):
         return len(self.storage)
 
 
+
 class SmartBufferTD3(object):
-    def __init__(self, max_size=1000000):     
-        self.storage = np.zeros(())
-        self.storage = []
+    def __init__(self, max_size=1000000, state_dim=14):     
         self.max_size = max_size
+        self.state_dim = state_dim
         self.ptr = 0
 
-        self.states = np.empty((max_size, 14))
+        self.states = np.empty((max_size, state_dim))
         self.actions = np.empty((max_size, 1))
-        self.next_states = np.empty((max_size, 14))
+        self.next_states = np.empty((max_size, state_dim))
         self.rewards = np.empty((max_size, 1))
         self.dones = np.empty((max_size, 1))
 
@@ -79,9 +80,9 @@ class SmartBufferTD3(object):
 
     def sample(self, batch_size):
         ind = np.random.randint(0, self.ptr-1, size=batch_size)
-        states = np.empty((batch_size, 14))
+        states = np.empty((batch_size, self.state_dim))
         actions = np.empty((batch_size, 1))
-        next_states = np.empty((batch_size, 14))
+        next_states = np.empty((batch_size, self.state_dim))
         rewards = np.empty((batch_size, 1))
         dones = np.empty((batch_size, 1))
 
@@ -96,6 +97,7 @@ class SmartBufferTD3(object):
 
     def size(self):
         return self.ptr
+
 
 nn_l1 = 400
 nn_l2 = 300
@@ -167,7 +169,7 @@ class TD3(object):
         self.critic_optimizer = None
 
         # self.replay_buffer = ReplayBufferTD3()
-        self.replay_buffer = SmartBufferTD3()
+        self.replay_buffer = SmartBufferTD3(state_dim=state_dim)
 
     def create_agent(self, h_size):
         state_dim = self.state_dim

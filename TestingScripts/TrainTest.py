@@ -54,13 +54,13 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
-            # a = vehicle.act_ten(state)
             s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
         if show:
             # env.history.show_history()
             # env.history.show_forces()
+            # vehicle.history.save_nn_output()
             env.render(wait=False, name=vehicle.name)
             if wait:
                 env.render(wait=True)
