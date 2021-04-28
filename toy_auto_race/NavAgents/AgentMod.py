@@ -90,6 +90,7 @@ class BaseMod(ModPP):
         self.n_beams = sim_conf.n_beams
         self.max_v = sim_conf.max_v
         self.max_steer = sim_conf.max_steer
+        self.range_finder_scale = 10 #TODO: move to config files
 
         # self.history = ModHistory()
 
@@ -114,7 +115,7 @@ class BaseMod(ModPP):
         target_angle = [obs[5]/self.max_steer]
         dr_scale = [pp_action[0]/self.max_steer]
 
-        scan = obs[7:-1]
+        scan = obs[7:-1] #/ self.range_finder_scale
 
         nn_obs = np.concatenate([cur_v, cur_d, target_angle, dr_scale, scan])
 
@@ -226,7 +227,7 @@ class ModVehicleTrain(BaseMod):
 
     def add_memory_entry(self, s_prime, nn_s_prime):
         if self.state is not None:
-            reward = self.nav_reward(s_prime)
+            reward = self.calculate_reward(s_prime)
 
             self.t_his.add_step_data(reward)
             mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
@@ -235,12 +236,22 @@ class ModVehicleTrain(BaseMod):
 
             # self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
-    def nav_reward(self, s_prime):
-        # reward = (self.state[6] - s_prime[6]) 
-        reward = (s_prime[6] - self.state[6]) 
-        # reward += 0.02 * (1-abs(self.nn_act[0]))
+    # def calculate_reward(self, s_prime):
+    #     # reward = (self.state[6] - s_prime[6]) 
+    #     reward = (s_prime[6] - self.state[6]) 
+    #     # reward += 0.02 * (1-abs(self.nn_act[0]))
         
-        return reward
+    #     return reward
+
+    # def calculate_reward(self, s_prime):
+    #     # reward = (self.state[6] - s_prime[6]) 
+    #     # reward = (s_prime[6] - self.state[6]) 
+    #     reward = 0.02 * (1-abs(s_prime[4])) # minimise steering
+        
+    #     return reward
+
+    def calculate_reward(self, s_prime):
+        return 0
 
     def done_entry(self, s_prime):
         """
@@ -248,12 +259,12 @@ class ModVehicleTrain(BaseMod):
         """
         pp_action = super().act_pp(s_prime)
         nn_s_prime = self.transform_obs(s_prime, pp_action)
-        reward = s_prime[-1] + self.nav_reward(s_prime)
+        reward = s_prime[-1] + self.calculate_reward(s_prime)
 
         self.t_his.add_step_data(reward)
         self.t_his.lap_done(False)
         # self.t_his.lap_done(True)
-        if len(self.t_his.rewards) % 10 == 0:
+        if self.t_his.ptr % 10 == 0:
             self.t_his.print_update(True)
             self.agent.save(self.path)
         self.state = None

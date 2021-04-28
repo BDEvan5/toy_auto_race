@@ -13,7 +13,7 @@ from toy_f110 import ForestSim
 
 map_name = "forest2"
 nav_name = "Navforest_1"
-mod_name = "ModForest_t2"
+mod_name = "ModForest_t4"
 # mod_name = "ModForest_nr6"
 # nav_name = "Navforest_nr5"
 repeat_name = "RepeatTest_1"
@@ -79,8 +79,9 @@ def test_oracle():
 def test_mod():
     env = ForestSim(map_name)
     vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
+    # vehicle = ModVehicleTest("ModForest_nr6", map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
     # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
 
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
+    test_mod()
     # test_repeat()
 
     # big_test()
