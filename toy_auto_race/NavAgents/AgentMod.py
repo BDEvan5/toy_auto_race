@@ -219,8 +219,8 @@ class ModVehicleTrain(BaseMod):
         self.nn_state = nn_obs
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        speed = 4
-        # speed = calculate_speed(steering_angle)
+        # speed = 4
+        speed = calculate_speed(steering_angle)
         self.action = np.array([steering_angle, speed])
 
         return self.action
@@ -230,11 +230,11 @@ class ModVehicleTrain(BaseMod):
             reward = self.calculate_reward(s_prime)
 
             self.t_his.add_step_data(reward)
-            mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
-            self.agent.replay_buffer.add(mem_entry)
+            # mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
+            # self.agent.replay_buffer.add(mem_entry)
 
-            # self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, False)
+            self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
     # def calculate_reward(self, s_prime):
     #     # reward = (self.state[6] - s_prime[6]) 
@@ -243,15 +243,15 @@ class ModVehicleTrain(BaseMod):
         
     #     return reward
 
-    # def calculate_reward(self, s_prime):
-    #     # reward = (self.state[6] - s_prime[6]) 
-    #     # reward = (s_prime[6] - self.state[6]) 
-    #     reward = 0.02 * (1-abs(s_prime[4])) # minimise steering
-        
-    #     return reward
-
     def calculate_reward(self, s_prime):
-        return 0
+        # reward = (self.state[6] - s_prime[6]) 
+        reward = (s_prime[6] - self.state[6]) 
+        # reward = 0.02 * (1-abs(s_prime[4])) # minimise steering
+        
+        return reward
+
+    # def calculate_reward(self, s_prime):
+    #     return 0
 
     def done_entry(self, s_prime):
         """
@@ -268,11 +268,11 @@ class ModVehicleTrain(BaseMod):
             self.t_his.print_update(True)
             self.agent.save(self.path)
         self.state = None
-        mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
 
-        self.agent.replay_buffer.add(mem_entry)
+        # mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
+        # self.agent.replay_buffer.add(mem_entry)
 
-        # self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, True)
+        self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, True)
 
 class ModVehicleTest(BaseMod):
     def __init__(self, agent_name, map_name, sim_conf):

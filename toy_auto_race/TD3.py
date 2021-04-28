@@ -72,11 +72,13 @@ class SmartBufferTD3(object):
         self.next_states[self.ptr] = s_p
         self.rewards[self.ptr] = r
         self.dones[self.ptr] = d
+
+        self.ptr += 1
         
         if self.ptr == 99999: self.ptr = 0
 
     def sample(self, batch_size):
-        ind = np.random.randint(0, len(self.storage), size=batch_size)
+        ind = np.random.randint(0, self.ptr-1, size=batch_size)
         states = np.empty((batch_size, 14))
         actions = np.empty((batch_size, 1))
         next_states = np.empty((batch_size, 14))
@@ -93,7 +95,7 @@ class SmartBufferTD3(object):
         return states, actions, next_states, rewards, dones
 
     def size(self):
-        return len(self.storage)
+        return self.ptr
 
 nn_l1 = 400
 nn_l2 = 300
@@ -164,8 +166,8 @@ class TD3(object):
         self.critic_target = None
         self.critic_optimizer = None
 
-        self.replay_buffer = ReplayBufferTD3()
-        # self.replay_buffer = SmartBufferTD3()
+        # self.replay_buffer = ReplayBufferTD3()
+        self.replay_buffer = SmartBufferTD3()
 
     def create_agent(self, h_size):
         state_dim = self.state_dim
