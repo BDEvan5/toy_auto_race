@@ -75,8 +75,8 @@ def run_comparison_forest():
     vehicle = Oracle(env.sim_conf)
     test.add_vehicle(vehicle)
 
-    # vehicle = ModVehicleTest(mod_name_forest, map_name_forest, env.sim_conf)
-    vehicle = ModVehicleTest("ModForest_nr6", map_name_forest, env.sim_conf)
+    vehicle = ModVehicleTest(mod_name_forest, map_name_forest, env.sim_conf)
+    # vehicle = ModVehicleTest("ModForest_nr6", map_name_forest, env.sim_conf)
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
@@ -94,7 +94,7 @@ def test_repeat():
         test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1000, False)
-    test.run_eval(env, 1000, False)
+    test.run_eval(env, 100, False)
 
 
 
@@ -144,18 +144,18 @@ def big_test_track():
 
 if __name__ == "__main__":
     
-    train_mod_forest()
-    train_nav_forest()
+    # train_mod_forest()
+    # train_nav_forest()
 
     
-    train_mod_track()
-    train_nav_track()
+    # train_mod_track()
+    # train_nav_track()
 
-    run_comparison_forest()
-    big_test_track()
+    # run_comparison_forest()
+    # big_test_track()
 
+    # train_repeatability()
     test_repeat()
-    train_repeatability()
 
 
 

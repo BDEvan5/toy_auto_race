@@ -4,14 +4,14 @@ Map name:
 -----------------------------------------------------
 -----------------------------------------------------
 Vehicle: Follow the Race Gap
-Crashes: 13.0 --> Completes 87.0
-% Finished = 87.00
-Avg lap times: 2944.183908045977
+Crashes: 8.0 --> Completes 92.0
+% Finished = 92.00
+Avg lap times: 2733.4891304347825
 No Obs Time: 3009.0
 -----------------------------------------------------
-Vehicle: Mod_race_track_2
-Crashes: 26.0 --> Completes 74.0
-% Finished = 74.00
-Avg lap times: 3566.7297297297296
-No Obs Time: 3157.0
+Vehicle: Mod_race_track_3
+Crashes: 33.0 --> Completes 67.0
+% Finished = 67.00
+Avg lap times: 3288.5671641791046
+No Obs Time: 3002.0
 -----------------------------------------------------
