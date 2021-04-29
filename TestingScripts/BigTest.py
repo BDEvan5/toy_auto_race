@@ -24,8 +24,9 @@ mod_name_forest = f"ModForest_{train_test_n}"
 repeat_name = f"RepeatTest_{train_test_n}"
 eval_name_f= f"BigTest{train_test_n}"
 
-map_name_track = "race_track"
-run_num = 3
+# map_name_track = "race_track"
+map_name_track = "porto"
+run_num = 5
 nav_name_track = "Nav_" + map_name_track + f"_{run_num}"
 mod_name_track = "Mod_" + map_name_track + f"_{run_num}"
 eval_name_track = "TrackEval_1"
@@ -108,7 +109,7 @@ def train_mod_track():
     env = TrackSim(map_name_track)
 
     # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = ModVehicleTrain(mod_name_track, map_name_track, env.sim_conf, load=False, h_size=200)
+    vehicle = ModVehicleTrain(mod_name_track, map_name_track, env.sim_conf, load=True, h_size=200)
 
     train_vehicle(env, vehicle, 200000)
     # train_vehicle(env, vehicle, 100)
@@ -129,7 +130,7 @@ def big_test_track():
     test = TestVehicles(sim_conf, eval_name_track)
 
     vehicle = TrackFGM()
-    test.add_vehicle(vehicle)
+    # test.add_vehicle(vehicle)
 
     vehicle = ModVehicleTest(mod_name_track, map_name_track, sim_conf)
     test.add_vehicle(vehicle)
@@ -148,14 +149,14 @@ if __name__ == "__main__":
     # train_nav_forest()
 
     
-    # train_mod_track()
+    train_mod_track()
     # train_nav_track()
 
     # run_comparison_forest()
     # big_test_track()
 
     # train_repeatability()
-    test_repeat()
+    # test_repeat()
 
 
 

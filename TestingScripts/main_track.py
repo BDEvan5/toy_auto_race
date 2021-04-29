@@ -7,7 +7,7 @@ from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import TrackFGM
+from toy_auto_race.NavAgents.FollowTheGap import TrackFGM, MyTrackFGM
 from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim
@@ -64,11 +64,12 @@ def test_oracle():
 
 
 def test_mod():
+    sim_conf = lib.load_conf("race_config")
+    env = TrackSim(map_name, sim_conf)
+    # vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
+    vehicle = ModVehicleTest("Mod_race_track_3", map_name, env.sim_conf)
 
-    env = TrackSim(map_name)
-    vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
-
-    test_single_vehicle(env, vehicle, True, 100, wait=True, vis=False)
+    test_single_vehicle(env, vehicle, False, 100, wait=True, vis=False, add_obs=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
 
 def big_test():
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     # train_mod()
     # train_nav()
 
-    # test_follow_the_gap()
+    test_follow_the_gap()
     # test_oracle()
     # test_mod()
 

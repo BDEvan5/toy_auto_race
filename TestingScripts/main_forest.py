@@ -80,11 +80,11 @@ def test_oracle():
 def test_mod():
     env = ForestSim(map_name)
     # vehicle = ModVehicleTest(mod_name, map_name, env.sim_conf)
-    vehicle = ModVehicleTest("ModForest_nr6", map_name, env.sim_conf)
+    vehicle = ModVehicleTest("ModForest_3", map_name, env.sim_conf)
 
-    test_single_vehicle(env, vehicle, True, 100, wait=False, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=True, vis=False)
     # test_single_vehicle(env, vehicle, False, 100, wait=False, vis=False)
-    # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False, vis=False)
+    # test_single_vehicle(env, vehicle, True, 10, add_obs=False, wait=False, vis=False)
 
 
 
