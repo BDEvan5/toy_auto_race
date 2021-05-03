@@ -140,7 +140,14 @@ def big_test_track():
 
     # test.run_eval(env, 1, True, add_obs=False)
     test.run_eval(env, 100, False)
-    
+
+def test_nav():
+    env = ForestSim(map_name_forest)
+    vehicle = NavTestVehicle(nav_name_forest, env.sim_conf)
+
+    test_single_vehicle(env, vehicle, True, 100, wait=False)
+    # test_single_vehicle(env, vehicle, True, 1, add_obs=False, wait=False)
+
 
 
 if __name__ == "__main__":
@@ -149,7 +156,7 @@ if __name__ == "__main__":
     # train_nav_forest()
 
     
-    train_mod_track()
+    # train_mod_track()
     # train_nav_track()
 
     # run_comparison_forest()
@@ -157,6 +164,8 @@ if __name__ == "__main__":
 
     # train_repeatability()
     # test_repeat()
+
+    # test_nav()
 
 
 

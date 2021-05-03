@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    test_mod()
+    # test_mod()
     # test_repeat()
 
     # big_test()
