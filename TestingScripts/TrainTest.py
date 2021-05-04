@@ -150,8 +150,8 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
     done, score = False, 0.0
 
     state = env.reset(add_obs)
-    # wpts = vehicle.plan_track(env.env_map)
-    wpts = vehicle.plan_no_obs(env.env_map)
+    wpts = vehicle.plan_track(env.env_map)
+    # wpts = vehicle.plan_no_obs(env.env_map)
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
@@ -164,7 +164,8 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
             # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
-            env.env_map.render_wpts(wpts)
+            # vehicle.vis.play_visulisation()
+            # env.env_map.render_wpts(wpts)
             # env.env_map.render_aim_pts(vehicle.aim_pts)
             if wait:
                 plt.show()
@@ -180,9 +181,9 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
             lap_times.append(env.steps)
             lap_times.append(env.steps)
         state = env.reset(add_obs)
-        # wpts = vehicle.plan_track(env.env_map)
-        wpts = vehicle.plan_no_obs(env.env_map)
-        plt.show()
+        wpts = vehicle.plan_track(env.env_map)
+        # wpts = vehicle.plan_no_obs(env.env_map)
+        # plt.show()
         done = False
 
     print(f"Crashes: {crashes}")

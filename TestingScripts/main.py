@@ -1,3 +1,4 @@
+from toy_auto_race.NavAgents.SafetyCar import SafetyCar
 from toy_auto_race.NavAgents.Imitation import ImitationTrain
 from toy_auto_race.NavAgents.Oracle import Oracle
 import numpy as np
@@ -8,7 +9,7 @@ from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
+from toy_auto_race.NavAgents.FollowTheGap import TrackFGM
 from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim, ForestSim
@@ -73,13 +74,6 @@ def test_ref_mod():
     test_single_vehicle(env, vehicle, True, 10)
 
 
-def time_sim():
-    t = timeit.timeit(stmt=test_gap_follow, number=1)
-    print(f"Time (1): {t}")
-
-    t = timeit.timeit(stmt=test_gap_follow, number=2)
-    print(f"Time (2): {t}")
-
 
 def generate_initial_data():
     env = ForestSim("forest2")
@@ -88,8 +82,6 @@ def generate_initial_data():
 
     generat_oracle_data(env, oracle_vehicle, imitation_vehicle, 20000)
     imitation_vehicle.buffer.save_buffer("ImitationData2")
-
-
 
 
 def run_initial_train():
@@ -117,22 +109,15 @@ def test_imitation():
     test_single_vehicle(env, imitation_vehicle, True, 100)
 
 
-def test_nn_size():
-    env = ForestSim("forest2")
-    n_train = 10000
+def test_safety_system():
+    sim_conf = lib.load_conf("fgm_config")
+    # sim_conf = lib.load_conf("fgm_config")
+    env = ForestSim("forest2", sim_conf)
+    vehicle = SafetyCar(env.sim_conf)
 
-    t_loss = []
+    # test_oracle_forest(env, vehicle, True, 100, add_obs=True, wait=False)
+    test_oracle_track(env, vehicle, True, 100, add_obs=True, wait=False)
 
-    # h_sizes = [100, 200, 400, 600, 800, 1000]
-    h_sizes = [2000]
-    for h in h_sizes:
-        imitation_vehicle = ImitationTrain("Pfeiffer", env.sim_conf)
-        imitation_vehicle.create(h_size=h)
-        imitation_vehicle.buffer.load_data("ImitationData2")
-        losses = imitation_vehicle.train(n_train)
-        t_loss.append(np.mean(losses[-500:]))
-
-    print(f"Training Losses {h_sizes}: {t_loss}")
 
 
 if __name__ == "__main__":
@@ -145,12 +130,10 @@ if __name__ == "__main__":
     # test_pp()
     # test_gap_follow()
 
-    # time_sim()
 
     # generate_initial_data()
     # run_initial_train()
     # run_imitation_training()
     # test_imitation()
 
-    test_nn_size()
-
+    test_safety_system()
