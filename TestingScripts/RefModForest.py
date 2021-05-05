@@ -22,24 +22,24 @@ mod_name_f = "ModForest_1"
 # mod_name = "ModForest_nr6"
 # nav_name = "Navforest_nr5"
 repeat_name = "RepeatTest_1"
-eval_name_f= "BigTest1"
+eval_name_f= "ComparisonForestTest1"
 
 """
 Training Functions
 """
 def train_nav_f():
     env = ForestSim(map_name_f)
-    vehicle = NavTrainVehicle(nav_name_f, env.sim_conf, h_size=500)
+    vehicle = NavTrainVehicle(nav_name_f, env.sim_conf, h_size=200)
 
-    # train_vehicle(env, vehicle, 100)
-    train_vehicle(env, vehicle, 200000)
+    train_vehicle(env, vehicle, 1000)
+    # train_vehicle(env, vehicle, 200000)
 
 
 def train_mod_f():
     env = ForestSim(map_name_f)
 
-    vehicle = ModVehicleTrain(mod_name_f, map_name_f, env.sim_conf, load=False, h_size=500)
-    # train_vehicle(env, vehicle, 100)
+    vehicle = ModVehicleTrain(mod_name_f, map_name_f, env.sim_conf, load=False, h_size=200)
+    # train_vehicle(env, vehicle, 1000)
     train_vehicle(env, vehicle, 200000)
 
 
@@ -51,11 +51,15 @@ def train_repeatability():
 
         vehicle = ModVehicleTrain(train_name, map_name_f, env.sim_conf, load=False)
 
-        # train_vehicle(env, vehicle, 100)
-        train_vehicle(env, vehicle, 200000)
+        train_vehicle(env, vehicle, 100)
+        # train_vehicle(env, vehicle, 200000)
 
 
+def test_mod_forest():
+    env = ForestSim(map_name_f)
+    vehicle = ModVehicleTest(mod_name_f, map_name_f, env.sim_conf)
 
+    test_single_vehicle(env, vehicle, True, 100, wait=False)
 
 def big_test_f():
     env = ForestSim(map_name_f)
@@ -74,7 +78,7 @@ def big_test_f():
     test.add_vehicle(vehicle)
 
     # test.run_eval(env, 1, True)
-    test.run_eval(env, 1000, True, wait=False)
+    test.run_eval(env, 100, True, wait=False)
 
 
 
@@ -93,68 +97,18 @@ def test_repeat():
 
 
 
-# map_name = "torino"
-# map_name = "porto"
-map_name = "race_track"
-# map_name = "berlin"
-run_num = 1
-nav_name = "Nav_" + map_name + f"_{run_num}"
-mod_name = "Mod_" + map_name + f"_{run_num}"
-eval_name = "TrackEval_1"
-
-"""
-Training Functions
-"""
-
-def train_mod():
-    env = TrackSim(map_name)
-
-    # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf, load=False, h_size=500)
-
-    train_vehicle(env, vehicle, 500000)
-    # train_vehicle(env, vehicle, 100)
-
-def train_nav():
-    env = TrackSim(map_name)
-
-    # vehicle = ModVehicleTrain(mod_name, map_name, env.sim_conf)
-    vehicle = NavTrainVehicle(mod_name, env.sim_conf, h_size=500)
-
-    # train_vehicle(env, vehicle, 100)
-    train_vehicle(env, vehicle, 500000)
-
-
-def big_test():
-    sim_conf = lib.load_conf("race_config")
-    env = TrackSim(map_name, sim_conf)
-    test = TestVehicles(sim_conf, eval_name)
-
-    vehicle = TrackFGM()
-    test.add_vehicle(vehicle)
-
-    vehicle = ModVehicleTest(mod_name, map_name, sim_conf)
-    test.add_vehicle(vehicle)
-
-    # test.run_eval(env, 1, True, add_obs=False)
-    test.run_eval(env, 100, True)
-    
-
-
 if __name__ == "__main__":
     
     # train_mod_f()
     # train_nav_f()
 
     # train_repeatability()
-    
-    # train_mod()
-    # train_nav()
 
     # big_test_f()
     # test_repeat()
-    big_test()
+    # big_test()
 
+    test_mod_forest()
 
 
 

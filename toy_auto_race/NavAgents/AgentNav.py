@@ -26,11 +26,11 @@ class BaseNav:
         cur_v = [obs[3]/self.max_v]
         cur_d = [obs[4]/self.max_steer]
         target_angle = [obs[5]/max_angle]
-        target_distance = [obs[6]/self.distance_scale]
+        # target_distance = [obs[6]/self.distance_scale]
 
         scan = obs[7:-1]
 
-        nn_obs = np.concatenate([cur_v, cur_d, target_angle, target_distance, scan])
+        nn_obs = np.concatenate([cur_v, cur_d, target_angle, scan])
 
         return nn_obs
 
@@ -40,7 +40,7 @@ class NavTrainVehicle(BaseNav):
     def __init__(self, agent_name, sim_conf, load=False, h_size=200) -> None:
         BaseNav.__init__(self, agent_name, sim_conf)
         self.path = 'Vehicles/' + agent_name
-        state_space = 4 + self.n_beams
+        state_space = 3 + self.n_beams
         self.agent = TD3(state_space, 1, 1, agent_name)
         self.agent.try_load(load, h_size, self.path)
 
@@ -94,7 +94,7 @@ class NavTrainVehicle(BaseNav):
         self.agent.replay_buffer.add(mem_entry)
 
         self.t_his.add_step_data(reward)
-        self.t_his.lap_done(False)
+        self.t_his.lap_done(True)
 
     def reset_lap(self):
         self.state = None

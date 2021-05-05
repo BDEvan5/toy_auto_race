@@ -31,7 +31,7 @@ def train_vehicle(env, vehicle, steps):
             vehicle.done_entry(s_prime)
             # vehicle.show_vehicle_history()
             # env.history.show_history()
-            env.render(wait=False, name=vehicle.name)
+            # env.render(wait=False, name=vehicle.name)
 
             vehicle.reset_lap()
             state = env.reset()
@@ -85,7 +85,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
-    print(f"Avg curvatures: {np.mean(curves)}")
+    # print(f"Avg curvatures: {np.mean(curves)}")
 
 
 def get_curvature(pos_history):
