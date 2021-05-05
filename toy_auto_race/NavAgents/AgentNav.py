@@ -24,7 +24,7 @@ class BaseNav:
     def transform_obs(self, obs):
         cur_v = [obs[3]/self.max_v]
         cur_d = [obs[4]/self.max_steer]
-        target_angle = [obs[5]/self.max_steer]
+        target_angle = [obs[5]/max_angle]
         # target_distance = [obs[6]/self.distance_scale]
 
         scan = obs[7:-1] / self.range_finder_scale
@@ -93,7 +93,7 @@ class NavTrainVehicle(BaseNav):
         self.agent.replay_buffer.add(self.nn_state, self.nn_action, nn_s_prime, reward, False)
 
         self.t_his.add_step_data(reward)
-        self.t_his.lap_done(False)
+        self.t_his.lap_done(True)
 
     def reset_lap(self):
         self.state = None

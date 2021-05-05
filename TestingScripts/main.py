@@ -9,7 +9,7 @@ from toy_auto_race.Utils import LibFunctions as lib
 import toy_auto_race.Rewards as r
 from toy_auto_race.NavAgents.AgentMod import ModVehicleTest, ModVehicleTrain
 from toy_auto_race.NavAgents.PurePursuit import PurePursuit
-from toy_auto_race.NavAgents.FollowTheGap import TrackFGM
+# from toy_auto_race.NavAgents.FollowTheGap import FollowTheGap, GapFollower
 from TestingScripts.TrainTest import *
 
 from toy_f110 import TrackSim, ForestSim
@@ -26,6 +26,7 @@ def train_ref_mod():
     vehicle.set_reward_fcn(reward)
 
     train_vehicle(env, vehicle, 1000000)
+
 
 
 def train_ref_mod_forest():

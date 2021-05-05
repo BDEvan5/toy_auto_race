@@ -84,7 +84,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     print(f"Crashes: {crashes}")
     print(f"Completes: {completes} --> {(completes / (completes + crashes) * 100):.2f} %")
     print(f"Lap times Avg: {np.mean(lap_times)} --> Std: {np.std(lap_times)}")
-    print(f"Avg curvatures: {np.mean(curves)}")
+    # print(f"Avg curvatures: {np.mean(curves)}")
 
 
 def get_curvature(pos_history):
