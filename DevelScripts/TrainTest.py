@@ -47,7 +47,8 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     done, score = False, 0.0
     for i in range(laps):
         try:
-            vehicle.plan_forest(env.env_map)
+            # vehicle.plan_forest(env.env_map)
+            vehicle.plan(env.env_map)
         except AttributeError as e:
             pass
         while not done:

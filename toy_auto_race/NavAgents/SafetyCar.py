@@ -73,7 +73,7 @@ class SafetyPP:
     def reset_lap(self):
         self.aim_pts.clear()
 
-    def plan_track(self, env_map):
+    def plan(self, env_map):
         track = []
         filename = 'maps/' + env_map.map_name + "_opti.csv"
         with open(filename, 'r') as csvfile:
@@ -119,38 +119,7 @@ class SafetyPP:
         vs = np.array(new_vs)
         self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
 
-    # def load_forest_pts(self, env_map):
 
-
-    def plan_forest(self, env_map):
-        # load center pts
-        start_x = env_map.start_pose[0]
-        start_y = env_map.start_pose[1]
-        max_width = env_map.start_pose[0] * 0.75
-        length = env_map.end_y - start_y
-        num_pts = 50
-
-        y_pts = np.linspace(start_y, length+start_y, num_pts)[:, None]
-        t_pts = np.concatenate([np.ones_like(y_pts)*start_x, y_pts], axis=-1)
-        
-        ws = find_true_widths2(t_pts, max_width, env_map.check_plan_location)
-
-        # Optimise n_set
-        N = len(t_pts)
-        nvecs = np.concatenate([np.ones((N, 1)), np.zeros((N, 1))], axis=-1)
-        n_set = MinCurvatureTrajectory(t_pts, nvecs, ws)
-
-        waypoints = np.concatenate([np.ones((N, 1))*start_x + n_set, y_pts], axis=-1)
-        velocity = 1
-        vs = np.ones((N, 1)) * velocity
-
-        self.waypoints = np.concatenate([waypoints, vs], axis=-1)
-
-        # self.plot_plan(env_map, t_pts, ws, waypoints)
-
-        self.reset_lap()
-
-        return waypoints
 
 
 class SafetyCar(SafetyPP):
@@ -166,7 +135,8 @@ class SafetyCar(SafetyPP):
         self.vis = LidarViz(1000)
 
     def plan_act(self, obs):
-        pp_action = self.act_pp(obs)
+        state = obs['state']
+        pp_action = self.act_pp(state)
 
         action = self.run_safety_check(obs, pp_action)
 
@@ -192,8 +162,8 @@ class SafetyCar(SafetyPP):
 
     def run_safety_check(self, obs, pp_action):
         proposed_steer = pp_action[0]
-        scan = obs[7:-1]
-        current_speed = obs[3]
+        scan = obs['scan']
+        current_speed = obs['state'][3]
 
         n_steps = 8
         d_step = self.max_steer/n_steps
