@@ -58,8 +58,10 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             # env.render(False)
         if show:
             env.render(wait=wait, name=vehicle.name)
+            vehicle.show_history(True)
 
         if r == -1:
+            # vehicle.vis.play_visulisation()
             crashes += 1
             print(f"({i}) Crashed -> time: {env.steps} ")
         else:

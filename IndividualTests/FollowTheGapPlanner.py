@@ -16,7 +16,7 @@ def run_follow_the_gap_forest():
     vehicle = ForestFGM()
 
     # test_single_vehicle(env, vehicle, True, 10, False, vis=True)
-    test_single_vehicle(env, vehicle, False, 100, add_obs=True)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True)
 
 
 def run_follow_the_gap_track():

@@ -120,8 +120,6 @@ class SafetyPP:
         self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
 
 
-
-
 class SafetyCar(SafetyPP):
     def __init__(self, sim_conf):
         SafetyPP.__init__(self, sim_conf)
@@ -133,6 +131,8 @@ class SafetyCar(SafetyPP):
         self.max_steer = sim_conf.max_steer
 
         self.vis = LidarViz(1000)
+        self.old_steers = []
+        self.new_steers = []
 
     def plan_act(self, obs):
         state = obs['state']
@@ -154,7 +154,7 @@ class SafetyCar(SafetyPP):
         # min_range = np.argmin(scan[idxs])
         min_range = np.min(scan[idxs])
 
-        print(f"MinR: {min_range} --> d_stop: {d_stop}")
+        # print(f"MinR: {min_range} --> d_stop: {d_stop}")
 
         if min_range < d_stop: # collision
             return True
@@ -181,18 +181,61 @@ class SafetyCar(SafetyPP):
                 if not self.check_collision(scan, current_speed, p_steer):
                     new_steer = p_steer
                     break 
+
+            # no safe option
+            # the best we can do is follow the gap
             if new_steer == -1:
-                action = np.array([proposed_steer, 0])
-            else:
-                action = np.array([new_steer, current_speed])
-            print(f"Old steer: {proposed_steer} --> New Steer: {new_steer} (V: {current_speed})")
+                print(f"No safe option")
 
-            self.vis.add_step(scan, new_steer)
-            return action
+                d_th = np.pi/len(scan)
+    
+                bubble = 125 # beams around center that are driveable
+                zero_pt = int(len(scan)/2)
+
+                idxs = np.arange(zero_pt-bubble, zero_pt+bubble, 1)
+                d_scan = scan[idxs]
+                fgm_bubble = 20
+                min_range_idx = np.argmin(d_scan)
+                min_range_idx = np.clip(min_range_idx, 0, bubble*2-1)
+                zero_idxs = np.arange(max(min_range_idx-fgm_bubble, 0), min(min_range_idx+fgm_bubble, bubble*2), 1)
+                d_scan[zero_idxs] = np.zeros_like(d_scan[zero_idxs])
+                d_scan = np.convolve(d_scan, np.ones(20), 'same') / 20
+                max_range_idx = np.argmax(d_scan)
+
+                new_steer = (max_range_idx - bubble) * d_th
+                # new_steer = (max_range_idx + zero_pt - bubble) * d_th
+
+            
+            action = np.array([new_steer, current_speed])
+            print(f"Old steer: {proposed_steer:.4f} --> New Steer: {new_steer:.4f} (V: {current_speed:.4f})")
+
         else:
-            self.vis.add_step(scan, proposed_steer)
-            return pp_action
+            action = pp_action
+            new_steer = proposed_steer
 
-        
+        self.vis.add_step(scan, new_steer)
+        self.old_steers.append(proposed_steer)
+        self.new_steers.append(new_steer)
+
+        return action
+
+
+    def plan(self, env_map):
+        super().plan(env_map)
+        self.old_steers.clear()
+        self.new_steers.clear()
+
+    def show_history(self, wait=False):
+        plt.figure(1)
+        plt.clf()
+        plt.plot(self.old_steers)
+        plt.plot(self.new_steers)
+        plt.legend(['Old', 'New'])
+        plt.title('Old and New Steering')
+        plt.ylim([-0.5, 0.5])
+
+        plt.pause(0.0001)
+        if wait:
+            plt.show()
 
 
