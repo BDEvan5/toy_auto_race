@@ -19,8 +19,6 @@ def run_follow_the_gap_forest():
     test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
-
-
 def run_follow_the_gap_track():
     sim_conf = lib.load_conf("fgm_config")
     env = TrackSim(map_name_track, sim_conf)
