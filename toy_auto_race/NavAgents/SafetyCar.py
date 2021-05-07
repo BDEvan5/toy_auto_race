@@ -3,19 +3,25 @@ from numba import njit
 from matplotlib import pyplot as plt
 import csv
 
-from ReferenceModification.PlannerUtils.TrajectoryPlanner import MinCurvatureTrajectory
+from toy_auto_race.TrajectoryPlanner import Max_velocity, Max_velocity_conf, MinCurvatureTrajectoryForest, MinCurvatureTrajectory, ObsAvoidTraj
+import toy_auto_race.Utils.LibFunctions as lib
 
-import ReferenceModification.LibFunctions as lib
+from toy_auto_race.speed_utils import calculate_speed
+from toy_auto_race.Utils import pure_pursuit_utils
 
-from ReferenceModification.PlannerUtils.speed_utils import calculate_speed
-from ReferenceModification.PlannerUtils import pure_pursuit_utils
+from toy_auto_race.lidar_viz import LidarViz
 
 
-class OraclePP:
+class SafetyPP:
     def __init__(self, sim_conf) -> None:
         self.name = "Oracle Path Follower"
+        self.path_name = None
 
+        # mu = sim_conf.mu
+        # g = sim_conf.g
+        # self.m = sim_conf.m
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
+        # self.f_max = mu * self.m * g #* safety_f
 
         self.v_gain = 0.5
         self.lookahead = 0.8
@@ -46,13 +52,18 @@ class OraclePP:
         else:
             return None
 
-    def act_pp(self, pos, theta):
+    def act_pp(self, obs):
+        pose_th = obs[2]
+        pos = np.array(obs[0:2], dtype=np.float)
+
         lookahead_point = self._get_current_waypoint(pos)
+
+        self.aim_pts.append(lookahead_point[0:2])
 
         if lookahead_point is None:
             return [0, 4.0]
 
-        speed, steering_angle = pure_pursuit_utils.get_actuation(theta, lookahead_point, pos, self.lookahead, self.wheelbase)
+        speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
 
         # speed = 4
         speed = calculate_speed(steering_angle)
@@ -61,13 +72,6 @@ class OraclePP:
 
     def reset_lap(self):
         self.aim_pts.clear()
-
-
-class Oracle(OraclePP):
-    def __init__(self, sim_conf):
-        OraclePP.__init__(self, sim_conf)
-        self.sim_conf = sim_conf # kept for optimisation
-        self.n_beams = 10
 
     def plan_track(self, env_map):
         track = []
@@ -115,6 +119,9 @@ class Oracle(OraclePP):
         vs = np.array(new_vs)
         self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
 
+    # def load_forest_pts(self, env_map):
+
+
     def plan_forest(self, env_map):
         # load center pts
         start_x = env_map.start_pose[0]
@@ -145,72 +152,77 @@ class Oracle(OraclePP):
 
         return waypoints
 
-    def plot_plan(self, env_map, t_pts, ws, waypoints=None):
-        env_map.render_map(4)
 
-        plt.figure(4)
-        env_map.render_wpts(t_pts)
-        env_map.render_wpts(waypoints)
-        # env_map.render_aim_pts(t_pts)
+class SafetyCar(SafetyPP):
+    def __init__(self, sim_conf):
+        SafetyPP.__init__(self, sim_conf)
+        self.sim_conf = sim_conf # kept for optimisation
+        self.n_beams = 1000
 
-        rs = t_pts[:, 0] - ws[:, 0]
-        r_pts = np.stack([rs, t_pts[:, 1]], axis=1)
-        xs, ys = env_map.convert_positions(r_pts)
-        plt.plot(xs, ys, 'b')
+        safety_f = 0.9
+        self.max_a = sim_conf.max_a * safety_f
+        self.max_steer = sim_conf.max_steer
 
-        ls = t_pts[:, 0] + ws[:, 1]
-        l_pts = np.stack([ls, t_pts[:, 1]], axis=1)
-        xs, ys = env_map.convert_positions(l_pts)
-        plt.plot(xs, ys, 'b')
-
-        plt.show()
+        self.vis = LidarViz(1000)
 
     def plan_act(self, obs):
-        pos = np.array(obs['state'][0:2])
-        theta = obs['state'][2]
-        return self.act_pp(pos, theta)
+        pp_action = self.act_pp(obs)
+
+        action = self.run_safety_check(obs, pp_action)
+
+        return action 
+
+    def check_collision(self, scan, current_speed, proposed_steer):
+        d_stop = current_speed**2 / (2*self.max_a) * 2
+
+        d_th = np.pi/len(scan)
+        bubble = 50 # beams around important one
+        zero_pt = len(scan)/2
+        steer_idx = int(proposed_steer / d_th + zero_pt)
+
+        idxs = np.arange(steer_idx-bubble, steer_idx+bubble, 1)
+        # min_range = np.argmin(scan[idxs])
+        min_range = np.min(scan[idxs])
+
+        print(f"MinR: {min_range} --> d_stop: {d_stop}")
+
+        if min_range < d_stop: # collision
+            return True
+        return False
+
+    def run_safety_check(self, obs, pp_action):
+        proposed_steer = pp_action[0]
+        scan = obs[7:-1]
+        current_speed = obs[3]
+
+        n_steps = 8
+        d_step = self.max_steer/n_steps
+        n_steer = proposed_steer
+        p_steer = proposed_steer
+        new_steer = -1
+        if self.check_collision(scan, current_speed, proposed_steer):
+            for i in range(n_steps):
+                n_steer = max(proposed_steer - i * d_step, -self.max_steer)
+                p_steer = min(proposed_steer + i * d_step, self.max_steer)
+
+                if not self.check_collision(scan, current_speed, n_steer):
+                    new_steer = n_steer
+                    break 
+                if not self.check_collision(scan, current_speed, p_steer):
+                    new_steer = p_steer
+                    break 
+            if new_steer == -1:
+                action = np.array([proposed_steer, 0])
+            else:
+                action = np.array([new_steer, current_speed])
+            print(f"Old steer: {proposed_steer} --> New Steer: {new_steer} (V: {current_speed})")
+
+            self.vis.add_step(scan, new_steer)
+            return action
+        else:
+            self.vis.add_step(scan, proposed_steer)
+            return pp_action
+
         
 
-
-# @njit
-#TODO: pass dt to it so that I can njit it.
-def find_true_widths2(t_pts, max_width, check_scan_location):
-    tx = t_pts[:, 0]
-    ty = t_pts[:, 1]
-
-    stp_sze = 0.1
-    N = len(t_pts)
-    ws = np.zeros((N, 2))
-    for i in range(N):
-        pt = np.array([tx[i], ty[i]])
-
-        #TODO: update the check to use the dt value. ame as lidar scan
-        if not check_scan_location(pt):
-            j = stp_sze
-            s_pt = pt + [j, 0]
-            while not check_scan_location(s_pt) and j < max_width:
-                j += stp_sze
-                s_pt = pt + [j, 0]
-            ws[i, 1] = j 
-
-            j = stp_sze
-            s_pt = pt - np.array([j, 0])
-            while not check_scan_location(s_pt) and j < max_width:
-                j += stp_sze
-                s_pt = pt - np.array([j, 0])
-            ws[i, 0] = j
-        else:
-            for j in np.linspace(0, max_width, 10):
-                p_pt = pt + [j, 0]
-                n_pt = pt - [j, 0]
-                if not check_scan_location(p_pt):
-                    ws[i, 0] = -j 
-                    ws[i, 1] = max_width
-                    break
-                elif not check_scan_location(n_pt):
-                    ws[i, 0] = max_width
-                    ws[i, 1] = -j
-                    break 
-
-    return ws
 

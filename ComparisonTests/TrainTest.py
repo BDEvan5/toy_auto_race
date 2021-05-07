@@ -42,7 +42,6 @@ def train_vehicle(env, vehicle, steps):
     print(f"Finished Training: {vehicle.name}")
 
 
-
 """General test function"""
 def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=False, vis=False):
     crashes = 0
@@ -55,7 +54,6 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
-            # a = vehicle.act_ten(state)
             s_p, r, done, _ = env.step_plan(a)
             state = s_p
             # env.render(False)
@@ -64,6 +62,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             # env.history.show_forces()
             env.render(wait=False, name=vehicle.name)
             if wait:
+                vehicle.history.save_nn_output()
                 env.render(wait=True)
 
         if r == -1:
@@ -151,8 +150,8 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
     done, score = False, 0.0
 
     state = env.reset(add_obs)
-    # wpts = vehicle.plan_track(env.env_map)
-    wpts = vehicle.plan_no_obs(env.env_map)
+    wpts = vehicle.plan_track(env.env_map)
+    # wpts = vehicle.plan_no_obs(env.env_map)
     for i in range(laps):
         while not done:
             a = vehicle.plan_act(state)
@@ -165,7 +164,8 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
             # env.history.show_history()
             # env.history.show_forces()
             env.render(wait=False)
-            env.env_map.render_wpts(wpts)
+            # vehicle.vis.play_visulisation()
+            # env.env_map.render_wpts(wpts)
             # env.env_map.render_aim_pts(vehicle.aim_pts)
             if wait:
                 plt.show()
@@ -181,9 +181,9 @@ def test_oracle_track(env, vehicle, show=False, laps=100, add_obs=True, wait=Fal
             lap_times.append(env.steps)
             lap_times.append(env.steps)
         state = env.reset(add_obs)
-        # wpts = vehicle.plan_track(env.env_map)
-        wpts = vehicle.plan_no_obs(env.env_map)
-        plt.show()
+        wpts = vehicle.plan_track(env.env_map)
+        # wpts = vehicle.plan_no_obs(env.env_map)
+        # plt.show()
         done = False
 
     print(f"Crashes: {crashes}")
@@ -343,7 +343,6 @@ class TestVehicles(TestData):
 
         if show:
             # vehicle.show_vehicle_history()
-            # env.show_history()
             # env.history.show_history()
             if wait:
                 env.render(wait=True, name=vehicle.name)

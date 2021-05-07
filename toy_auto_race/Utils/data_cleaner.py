@@ -3,16 +3,17 @@ import toy_auto_race.Utils.LibFunctions as lib
 import csv 
 from matplotlib import pyplot as plt
 
-def save_csv_data(rewards, path):
+def save_csv_data(rewards, path, l):
     data = []
+    data.append(['x', 'y'])
     for i in range(len(rewards)):
-        data.append([i, rewards[i]])
+        data.append([i*l, rewards[i]])
     with open(path, 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerows(data)
 
 def get_moving_avg(vehicle_name, show=False):
-    path = 'Vehicles/' + vehicle_name + "/training_rewards.csv"
+    path = 'Vehicles/' + vehicle_name + "/training_data.csv"
     smoothpath = 'Vehicles/' + vehicle_name + f"/TrainingData.csv"
     rewards = []
     with open(path, 'r') as csvfile:
@@ -32,7 +33,7 @@ def get_moving_avg(vehicle_name, show=False):
         new_rewards.append(avg)
     smooth_rewards = np.array(new_rewards)
 
-    save_csv_data(smooth_rewards, smoothpath)
+    save_csv_data(smooth_rewards, smoothpath, l)
 
     if show:
         lib.plot_no_avg(rewards, figure_n=1)
@@ -42,4 +43,4 @@ def get_moving_avg(vehicle_name, show=False):
 
 # get_moving_avg('ModSteer_porto_fin2', True)
 # get_moving_avg('ModRefDis_porto_fin2', True)
-get_moving_avg('ModCenterDis_porto_s1', True)
+get_moving_avg('ModForest_nr6', True)

@@ -3,15 +3,9 @@ Testing Complete
 Map name:  
 -----------------------------------------------------
 -----------------------------------------------------
-Vehicle: Follow the Race Gap
-Crashes: 5.0 --> Completes 95.0
-% Finished = 95.00
-Avg lap times: 2823.9473684210525
-No Obs Time: 3009.0
------------------------------------------------------
-Vehicle: Mod_race_track_1
-Crashes: 100.0 --> Completes 0.0
-% Finished = 0.00
-Avg lap times: 0.0
-No Obs Time: 793.0
+Vehicle: Mod_race_track_3
+Crashes: 12.0 --> Completes 88.0
+% Finished = 88.00
+Avg lap times: 3093.125
+No Obs Time: 2877.0
 -----------------------------------------------------

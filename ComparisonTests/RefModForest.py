@@ -56,8 +56,9 @@ def train_repeatability():
 
 
 def test_mod_forest():
-    env = ForestSim(map_name_f)
-    vehicle = ModVehicleTest(mod_name_f, map_name_f, env.sim_conf)
+    sim_conf = lib.load_conf("std_config")
+    env = ForestSim(map_name_f, sim_conf)
+    vehicle = ModVehicleTest(mod_name_f, map_name_f, sim_conf)
 
     test_single_vehicle(env, vehicle, True, 100, wait=False)
 

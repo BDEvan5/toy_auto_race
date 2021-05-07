@@ -11,8 +11,9 @@ class TrainHistory():
         self.path = '/Vehicles/' + self.agent_name 
 
         # training data
-        self.lengths = []
-        self.rewards = [] 
+        self.ptr = 0
+        self.lengths = np.zeros(10000)
+        self.rewards = np.zeros(10000) 
         self.t_counter = 0 # total steps
         
         # espisode data
@@ -34,18 +35,19 @@ class TrainHistory():
 
     def add_step_data(self, new_r):
         self.ep_reward += new_r
-        self.ep_rewards.append(new_r)
+        # self.ep_rewards.append(new_r)
         self.ep_counter += 1
         self.t_counter += 1 
 
     def lap_done(self, show_reward=False):
-        self.lengths.append(self.ep_counter)
-        self.rewards.append(self.ep_reward)
+        self.lengths[self.ptr] = self.ep_counter
+        self.rewards[self.ptr] = self.ep_reward
+        self.ptr += 1
 
         if show_reward:
             plt.figure(8)
             plt.clf()
-            plt.plot(self.ep_rewards)
+            plt.plot(self.ep_rewards[0:self.ptr])
             plt.plot(self.ep_rewards, 'x', markersize=10)
             plt.title(f"Ep rewards: total: {self.ep_reward:.4f}")
             plt.ylim([-1.1, 1.5])
@@ -53,18 +55,18 @@ class TrainHistory():
 
         self.ep_counter = 0
         self.ep_reward = 0
-        self.ep_rewards = []
+        # self.ep_rewards = []
 
 
     def print_update(self, plot_reward=True):
-        if len(self.rewards) < 5:
+        if self.ptr < 5:
             return
-        mean = np.mean(self.rewards)
+        mean = np.mean(self.rewards[0:self.ptr])
         score = self.rewards[-1]
-        print(f"Run: {self.t_counter} --> Score: {score:.2f} --> Mean: {mean:.2f} --> ")
+        print(f"Run: {self.t_counter} --> Score: {score:.2f} --> Mean: {mean:.2f}  ")
         
         if plot_reward:
-            lib.plot(self.rewards, figure_n=2)
+            lib.plot(self.rewards[0:self.ptr], figure_n=2)
 
     def save_csv_data(self):
         data = []
