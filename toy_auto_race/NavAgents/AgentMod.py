@@ -1,33 +1,39 @@
-from os import name
-from numba.core.decorators import njit
+import os
+import shutil
+from numba import njit
 import numpy as np 
 import csv
 from matplotlib import pyplot as plt
 
-from toy_auto_race.TD3 import TD3
-from toy_auto_race.Utils import LibFunctions as lib
-from toy_auto_race.Utils.HistoryStructs import TrainHistory
-from toy_auto_race.lidar_viz import LidarViz, LidarVizMod
-from toy_auto_race.Utils.csv_data_helpers import save_csv_data
-from toy_auto_race.speed_utils import calculate_speed
-from toy_auto_race.Utils import pure_pursuit_utils
+from ReferenceModification.PlannerUtils import pure_pursuit_utils 
+from ReferenceModification.PlannerUtils.TD3 import TD3 
+import ReferenceModification.LibFunctions as lib 
+from ReferenceModification.PlannerUtils.speed_utils import calculate_speed
 
 
-class ModPP:
-    def __init__(self, sim_conf) -> None:
+
+class BaseMod:
+    def __init__(self, agent_name, map_name, sim_conf) -> None:
         self.path_name = None
 
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
-        self.max_steer = sim_conf.max_steer
 
+        #TODO: move to config file
         self.v_gain = 0.5
         self.lookahead = 0.8
         self.max_reacquire = 20
+        self.range_finder_scale = 5 #TODO: move to config files
+        self.distance_scale = 20 # max meters for scaling
 
         self.waypoints = None
         self.vs = None
 
-        self.aim_pts = []
+        self.name = agent_name
+        self.n_beams = sim_conf.n_beams
+        self.max_v = sim_conf.max_v
+        self.max_steer = sim_conf.max_steer
+
+        self._load_csv_track(map_name)
 
     def _get_current_waypoint(self, position):
         lookahead_distance = self.lookahead
@@ -49,69 +55,17 @@ class ModPP:
         else:
             return None
 
-    def act_pp(self, obs):
-        pose_th = obs[2]
-        pos = np.array(obs[0:2], dtype=np.float)
-
+    def act_pp(self, pos, theta):
         lookahead_point = self._get_current_waypoint(pos)
-
-        self.aim_pts.append(lookahead_point[0:2])
 
         if lookahead_point is None:
             return [0, 4.0]
 
-        speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
-        steering_angle = np.clip(steering_angle, -self.max_steer, self.max_steer)
+        speed, steering_angle = pure_pursuit_utils.get_actuation(theta, lookahead_point, pos, self.lookahead, self.wheelbase)
 
-        # speed = 4
         speed = calculate_speed(steering_angle)
 
         return [steering_angle, speed]
-
-    def reset_lap(self):
-        self.aim_pts.clear()
-
-
-class ModHistory:
-    def __init__(self) -> None:
-        self.mod_history = []
-        self.pp_history = []
-        self.reward_history = []
-        self.critic_history = []
-
-    def add_step(self, pp, nn, c_val=None):
-        self.pp_history.append(pp)
-        self.mod_history.append(nn)
-        self.critic_history.append(c_val)
-
-    def save_nn_output(self):
-        save_csv_data(self.critic_history, 'Vehicles/nn_output.csv')
-        plt.figure(5)
-        plt.plot(self.mod_history)
-        plt.pause(0.0001)
-        plt.figure(6)
-        plt.plot(self.pp_history)
-        plt.pause(0.0001)
-
-        self.mod_history.clear()
-        self.pp_history.clear()
-        self.critic_history.clear()
-
-
-class BaseMod(ModPP):
-    def __init__(self, agent_name, map_name, sim_conf) -> None:
-        super().__init__(sim_conf)
-        self.name = agent_name
-        self.n_beams = sim_conf.n_beams
-        self.max_v = sim_conf.max_v
-        self.max_steer = sim_conf.max_steer
-        self.range_finder_scale = 5 #TODO: move to config files
-
-        self.history = ModHistory()
-
-        self.distance_scale = 20 # max meters for scaling
-
-        self._load_csv_track(map_name)
 
     def transform_obs(self, obs, pp_action):
         """
@@ -124,15 +78,16 @@ class BaseMod(ModPP):
         Returns:
             nn_obs: observation vector for neural network
         """
-        cur_v = [obs[3]/self.max_v]
-        cur_d = [obs[4]/self.max_steer]
-        # vr_scale = [(pp_action[1])/self.max_v] # this is probably irrelevant?
-        target_angle = [obs[5]/self.max_steer]
+        state = obs['state']
+        cur_v = [state[3]/self.max_v]
+        cur_d = [state[4]/self.max_steer]
+        # vr_scale = [(pp_action[1])/self.max_v]
+        angle = [lib.get_bearing(state[0:2], [1, 21])/self.max_steer]
         dr_scale = [pp_action[0]/self.max_steer]
 
-        scan = obs[7:-1] / self.range_finder_scale
+        scan = np.array(obs['scan']) / self.range_finder_scale
 
-        nn_obs = np.concatenate([cur_v, cur_d, target_angle, dr_scale, scan])
+        nn_obs = np.concatenate([cur_v, cur_d, dr_scale, angle, scan])
 
         return nn_obs
 
@@ -148,7 +103,7 @@ class BaseMod(ModPP):
         Returns:
             d_new: modified steering reference
         """
-        d_new = d_ref + self.max_steer * nn_action[0] 
+        d_new = d_ref + self.max_steer * nn_action[0]
         d_new = np.clip(d_new, -self.max_steer, self.max_steer)
 
         return d_new
@@ -210,75 +165,99 @@ class ModVehicleTrain(BaseMod):
         h_size = h_size
         self.agent.try_load(load, h_size, self.path)
 
-        self.state = None
+        self.observation = None
         self.nn_state = None
         self.nn_act = None
         self.action = None
 
-        self.t_his = TrainHistory(agent_name, load)
+        self.current_ep_reward = 0
+        self.reward_ptr = 0
+        self.ep_rewards = np.zeros(5000) # max 5000 eps
+        self.step_counter = 0
 
-    def set_reward_fcn(self, r_fcn):
-        self.reward_fcn = r_fcn
+        self.init_file_struct()
 
+    def init_file_struct(self):
+        path = os.getcwd() + '/' + self.path
+        if os.path.exists(path):
+            try:
+                os.rmdir(path)
+            except:
+                shutil.rmtree(path)
+        os.mkdir(path)
+        
     def plan_act(self, obs):
-        pp_action = super().act_pp(obs)
+        position = obs['state'][0:2]
+        theta = obs['state'][2]
+        pp_action = self.act_pp(position, theta)
         nn_obs = self.transform_obs(obs, pp_action)
         self.add_memory_entry(obs, nn_obs)
 
-        self.state = obs
+        self.observation = obs
         nn_action = self.agent.act(nn_obs)
         self.nn_act = nn_action
-
-        # critic_val = self.agent.get_critic_value(nn_obs, nn_action)
-        # self.history.add_step(pp_action[0], nn_action[0]*self.max_steer, critic_val)
         self.nn_state = nn_obs
+        self.step_counter += 1
 
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        # speed = 4
+
         speed = calculate_speed(steering_angle)
         self.action = np.array([steering_angle, speed])
 
         return self.action
 
     def add_memory_entry(self, s_prime, nn_s_prime):
-        if self.state is not None:
+        if self.observation is not None:
             reward = self.calculate_reward(s_prime)
-
-            self.t_his.add_step_data(reward)
-
-            # mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, False)
-            # self.agent.replay_buffer.add(mem_entry)
 
             self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, False)
 
     def calculate_reward(self, s_prime):
-        reward = (s_prime[6] - self.state[6]) 
-        
+        reward = s_prime['progress'] - self.observation['progress']
+        reward += s_prime['reward']
+        self.current_ep_reward += reward
         return reward
-
-
 
     def done_entry(self, s_prime):
         """
         To be called when ep is done.
         """
-        pp_action = super().act_pp(s_prime)
+        position = s_prime['state'][0:2]
+        theta = s_prime['state'][2]
+        pp_action = self.act_pp(position, theta)
         nn_s_prime = self.transform_obs(s_prime, pp_action)
-        reward = s_prime[-1] + self.calculate_reward(s_prime)
+        reward = self.calculate_reward(s_prime)
 
-        self.t_his.add_step_data(reward)
-        self.t_his.lap_done(False)
-        # self.t_his.lap_done(True)
-        if self.t_his.ptr % 10 == 0:
-            self.t_his.print_update(True)
+        self.ep_rewards[self.reward_ptr] = self.current_ep_reward
+        self.current_ep_reward = 0 # reset
+        self.reward_ptr += 1
+        if self.reward_ptr % 10 == 0:
+            self.print_update(True)
             self.agent.save(self.path)
-        self.state = None
-        # self.history.save_nn_output()
-
-        # mem_entry = (self.nn_state, self.nn_act, nn_s_prime, reward, True)
-        # self.agent.replay_buffer.add(mem_entry)
+        self.observation = None
 
         self.agent.replay_buffer.add(self.nn_state, self.nn_act, nn_s_prime, reward, True)
+
+    def print_update(self, plot_reward=True):
+        if self.reward_ptr < 5:
+            return
+        mean = np.mean(self.ep_rewards[max(0, self.reward_ptr-101):self.reward_ptr-1])
+        print(f"Run: {self.step_counter} --> 100 ep Mean: {mean:.2f}  ")
+        
+        if plot_reward:
+            lib.plot(self.ep_rewards[0:self.reward_ptr], 20, figure_n=2)
+
+    def save_csv_data(self):
+        data = []
+        for i in range(len(self.ep_rewards)):
+            data.append([i, self.ep_rewards[i]])
+        full_name = self.path + '/training_data.csv'
+        with open(full_name, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(data)
+
+        plt.figure(2)
+        plt.savefig(self.path + "/training_rewards.png")
 
 
 class ModVehicleTest(BaseMod):
@@ -305,22 +284,16 @@ class ModVehicleTest(BaseMod):
         # self.vis = LidarVizMod(10)
 
     def plan_act(self, obs):
-        pp_action = super().act_pp(obs)
+        position = obs['state'][0:2]
+        theta = obs['state'][2]
+        pp_action = self.act_pp(position, theta)
         nn_obs = self.transform_obs(obs, pp_action)
 
         nn_action = self.agent.act(nn_obs, noise=0)
-        # nn_action = [0]
         self.nn_act = nn_action
 
-        critic_val = self.agent.get_critic_value(nn_obs, nn_action)
-        self.history.add_step(pp_action[0], nn_action[0]*self.max_steer, critic_val)
-
         steering_angle = self.modify_references(self.nn_act, pp_action[0])
-        # speed = 4
         speed = calculate_speed(steering_angle)
         action = np.array([steering_angle, speed])
-
-        # pp = pp_action[0]/self.max_steer
-        # self.vis.add_step(nn_obs[4:], pp, nn_action)
 
         return action

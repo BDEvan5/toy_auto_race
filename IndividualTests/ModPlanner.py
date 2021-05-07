@@ -55,8 +55,9 @@ def test_mod_track():
 if __name__ == "__main__":
     
     train_mod_f()
-    train_mod_track()
-    test_mod_track()
+
+    # train_mod_track()
+    # test_mod_track()
 
     test_mod_forest()
 

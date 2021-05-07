@@ -3,23 +3,19 @@ from numba import njit
 from matplotlib import pyplot as plt
 import csv
 
-from toy_auto_race.TrajectoryPlanner import Max_velocity, Max_velocity_conf, MinCurvatureTrajectoryForest, MinCurvatureTrajectory, ObsAvoidTraj
-import toy_auto_race.Utils.LibFunctions as lib
+from ReferenceModification.PlannerUtils.TrajectoryPlanner import MinCurvatureTrajectory
 
-from toy_auto_race.speed_utils import calculate_speed
-from toy_auto_race.Utils import pure_pursuit_utils
+import ReferenceModification.LibFunctions as lib
+
+from ReferenceModification.PlannerUtils.speed_utils import calculate_speed
+from ReferenceModification.PlannerUtils import pure_pursuit_utils
 
 
 class OraclePP:
     def __init__(self, sim_conf) -> None:
         self.name = "Oracle Path Follower"
-        self.path_name = None
 
-        # mu = sim_conf.mu
-        # g = sim_conf.g
-        # self.m = sim_conf.m
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
-        # self.f_max = mu * self.m * g #* safety_f
 
         self.v_gain = 0.5
         self.lookahead = 0.8
@@ -50,18 +46,13 @@ class OraclePP:
         else:
             return None
 
-    def act_pp(self, obs):
-        pose_th = obs[2]
-        pos = np.array(obs[0:2], dtype=np.float)
-
+    def act_pp(self, pos, theta):
         lookahead_point = self._get_current_waypoint(pos)
-
-        self.aim_pts.append(lookahead_point[0:2])
 
         if lookahead_point is None:
             return [0, 4.0]
 
-        speed, steering_angle = pure_pursuit_utils.get_actuation(pose_th, lookahead_point, pos, self.lookahead, self.wheelbase)
+        speed, steering_angle = pure_pursuit_utils.get_actuation(theta, lookahead_point, pos, self.lookahead, self.wheelbase)
 
         # speed = 4
         speed = calculate_speed(steering_angle)
@@ -175,7 +166,9 @@ class Oracle(OraclePP):
         plt.show()
 
     def plan_act(self, obs):
-        return self.act_pp(obs)
+        pos = np.array(obs['state'][0:2])
+        theta = obs['state'][2]
+        return self.act_pp(pos, theta)
         
 
 

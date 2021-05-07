@@ -1,6 +1,6 @@
 
 from toy_auto_race.Utils import LibFunctions as lib 
-from toy_auto_race.NavAgents.FollowTheGap import ForestFGM, TrackFGM
+from toy_auto_race.NavAgents.FollowTheGap import ForestFGM
 
 from toy_f110 import ForestSim, TrackSim
 from TrainTest import test_single_vehicle
@@ -16,7 +16,7 @@ def run_follow_the_gap_forest():
     vehicle = ForestFGM()
 
     # test_single_vehicle(env, vehicle, True, 10, False, vis=True)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    test_single_vehicle(env, vehicle, False, 100, add_obs=True)
 
 
 def run_follow_the_gap_track():
@@ -25,14 +25,14 @@ def run_follow_the_gap_track():
     vehicle = TrackFGM()
 
     # test_single_vehicle(env, vehicle, True, 10, False)
-    test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
+    test_single_vehicle(env, vehicle, True, 100, add_obs=True)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=True, wait=False)
     # test_single_vehicle(env, vehicle, True, 100, add_obs=True, vis=False)
 
 
 if __name__ =="__main__":
     run_follow_the_gap_forest()
-    run_follow_the_gap_track
+    # run_follow_the_gap_track()
 
 
 

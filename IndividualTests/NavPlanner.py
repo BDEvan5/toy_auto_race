@@ -34,21 +34,21 @@ def train_nav_track():
 def test_nav_forest():
     sim_conf = lib.load_conf("std_config")
     env = ForestSim(map_name_forest, sim_conf)
-    vehicle = NavTestVehicle(nav_name_f, map_name_forest, sim_conf)
+    vehicle = NavTestVehicle(nav_name_f, sim_conf)
 
     test_single_vehicle(env, vehicle, True, 100, wait=False)
 
-def test_mod():
+def test_nav_track():
     sim_conf = lib.load_conf("race_config")
     env = TrackSim(map_name_track, sim_conf)
-    vehicle = NavTestVehicle(nav_name_track, map_name_track, env.sim_conf)
+    vehicle = NavTestVehicle(nav_name_track, sim_conf)
 
     test_single_vehicle(env, vehicle, False, 100, wait=True, vis=False, add_obs=False)
 
 
 if __name__ == "__main__":
     
-    train_nav_forest()
+    # train_nav_forest()
 
     test_nav_forest()
 
