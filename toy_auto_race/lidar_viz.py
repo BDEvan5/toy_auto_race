@@ -215,7 +215,7 @@ def plot_lidar_col_vals(scan, col_vals, action=None, wait=False):
         ys = [-0.2, -0.2]
         plt.plot(xs, ys, 'r', linewidth=5)
 
-        angle = action * 0.4 
+        angle = action 
         xs = [0, np.sin(angle) * 1.2]
         ys = [0, np.cos(angle) * 1.2]
         plt.plot(xs, ys, 'g', linewidth=2)
