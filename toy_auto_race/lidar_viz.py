@@ -1,6 +1,6 @@
+from numba import njit
 import numpy as np
 from matplotlib import pyplot as plt
-from numpy.core.numeric import zeros_like
 
 
 class LidarViz:
@@ -140,6 +140,89 @@ class LidarVizMod:
 
         plt.pause(0.01)
         
+@njit(cache=True)
+def get_trigs(n_beams, fov=np.pi):
+    angles = np.empty(n_beams)
+    for i in range(n_beams):
+        angles[i] = -fov/2 + fov/(n_beams-1) * i
+    sines = np.sin(angles)
+    cosines = np.cos(angles)
 
+    return sines, cosines
 
+def plot_lidar(scan, action=None, wait=False):
+
+    max_range = max(scan)
+    ranges = scan / max_range
+
+    plt.figure(2)
+    plt.clf()
+
+    plt.xlim([-1.2, 1.2])
+    plt.ylim([-0.5, 1.2])
+
+    n_beams = len(scan)
+    sines, cosines = get_trigs(n_beams)
+
+    for i in range(n_beams):
+        xs = [0, sines[i] * ranges[i]]
+        ys = [0, cosines[i] * ranges[i]]
+        plt.plot(xs, ys, 'b')
+
+    xs = [0, action]
+    ys = [-0.2, -0.2]
+    plt.plot(xs, ys, 'r', linewidth=5)
+
+    if action is not None:
+        angle = action * 0.4 
+        xs = [0, np.sin(angle) * 1.2]
+        ys = [0, np.cos(angle) * 1.2]
+        plt.plot(xs, ys, 'g', linewidth=2)
+
+    # plt.text(0, -0.3, f"{number}")
+
+    plt.pause(0.0001)
+    if wait:
+        plt.show()
+
+def plot_lidar_col_vals(scan, col_vals, action=None, wait=False):
+
+    # max_range = max(scan)
+    # ranges = scan / max_range
+    ranges = scan 
+
+    plt.figure(2)
+    plt.clf()
+
+    plt.xlim([-5, 5])
+    plt.ylim([-2, 11])
+
+    n_beams = len(scan)
+    sines, cosines = get_trigs(n_beams)
+
+    for i in range(n_beams):
+        xs = [0, sines[i] * ranges[i]]
+        ys = [0, cosines[i] * ranges[i]]
+        plt.plot(xs, ys, 'b')
+
+    for i in range(n_beams):
+        xs = [0, sines[i] * col_vals[i]]
+        ys = [0, cosines[i] * col_vals[i]]
+        plt.plot(xs, ys, 'r')
+
+    if action is not None:
+        xs = [0, action]
+        ys = [-0.2, -0.2]
+        plt.plot(xs, ys, 'r', linewidth=5)
+
+        angle = action * 0.4 
+        xs = [0, np.sin(angle) * 1.2]
+        ys = [0, np.cos(angle) * 1.2]
+        plt.plot(xs, ys, 'g', linewidth=2)
+
+    # plt.text(0, -0.3, f"{number}")
+
+    plt.pause(0.0001)
+    if wait:
+        plt.show()
 

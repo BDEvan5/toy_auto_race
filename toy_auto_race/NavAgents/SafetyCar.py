@@ -3,13 +3,12 @@ from numba import njit
 from matplotlib import pyplot as plt
 import csv
 
-from toy_auto_race.TrajectoryPlanner import Max_velocity, Max_velocity_conf, MinCurvatureTrajectoryForest, MinCurvatureTrajectory, ObsAvoidTraj
 import toy_auto_race.Utils.LibFunctions as lib
 
-from toy_auto_race.speed_utils import calculate_speed
+from toy_auto_race.speed_utils import calculate_speed, calculate_safe_speed
 from toy_auto_race.Utils import pure_pursuit_utils
 
-from toy_auto_race.lidar_viz import LidarViz
+from toy_auto_race.lidar_viz import *
 
 
 
@@ -242,6 +241,10 @@ class SafetyCar(SafetyPP):
         self.old_steers = []
         self.new_steers = []
 
+        self.last_scan = None
+        self.action = None
+        self.col_vals = None
+
     def plan_act(self, obs):
         state = obs['state']
         pp_action = self.act_pp(state)
@@ -253,24 +256,44 @@ class SafetyCar(SafetyPP):
     def check_collision(self, scan, current_speed, proposed_steer):
         d_stop = current_speed**2 / (2*self.max_a) * 2
 
-        d_th = np.pi/len(scan)
-        bubble = 50 # beams around important one
-        zero_pt = len(scan)/2
-        steer_idx = int(proposed_steer / d_th + zero_pt)
+        # d_th = np.pi/len(scan)
+        # bubble = 25 # beams around important one
+        # zero_pt = len(scan)/2
+        # steer_idx = int(proposed_steer / d_th + zero_pt)
 
-        idxs = np.arange(steer_idx-bubble, steer_idx+bubble, 1)
-        # min_range = np.argmin(scan[idxs])
-        min_range = np.min(scan[idxs])
+        # idxs = np.arange(steer_idx-bubble, steer_idx+bubble, 1)
+        # min_range = np.min(scan[idxs])
 
         # print(f"MinR: {min_range} --> d_stop: {d_stop}")
 
-        if min_range < d_stop: # collision
-            return True
+        n_beams = len(scan)
+        fov = np.pi
+        angles = np.empty(n_beams)
+        for i in range(n_beams):
+            angles[i] =  fov/(n_beams-1) * i
+        car_width = 0.15
+        collision_values = np.empty(len(scan))
+        # sines, cosines = get_trigs(len(scan))
+        for i in range(len(scan)):
+            collision_values[i] = min(car_width / abs(np.cos(angles[i] + proposed_steer)), d_stop)
+            # note that it is capped at d_stop because we would never need more than that.
+        self.col_vals = collision_values
+        for i in range(n_beams):
+            if scan[i] < collision_values[i]:
+                print(f"Col detect i: {i} > scan: {scan[i]:.4f} --> col val: {collision_values[i]:.4f}")
+                return True
+
+        # plot_lidar(collision_values, wait=True)
+
+        # if min_range < d_stop: # collision
+        #     return True
         return False
 
     def run_safety_check(self, obs, pp_action):
         scan = obs['scan']
         state = obs['state']
+
+        self.last_scan = scan
 
         if self.check_collision(scan, state[3], pp_action[0]):
             action = self.prevent_collision(scan, state, pp_action)
@@ -282,59 +305,80 @@ class SafetyCar(SafetyPP):
         self.old_steers.append(pp_action[0])
         self.new_steers.append(action[0])
 
+        self.action = action
+
         return action
 
     def prevent_collision(self, scan, state, proposed_action):
         """
         This function is called if a collision is detected. It takes the current scan, state and pp action and returns an action that will ensure no crash. 
         """
+        new_steer = self.run_lateral_search(scan, state, proposed_action)
+        if not new_steer: # it returns false if no safe val is found
+            print(f"No safe option")
+            new_steer = self.find_a_gap(scan)
+            self.check_collision(scan, state[3], proposed_action[0])
+            plot_lidar_col_vals(scan, self.col_vals, action=new_steer, wait=True)
+
+        range_idx = int((new_steer + np.pi/2) / np.pi * 1000)
+        range_val = scan[range_idx]
+        new_speed = calculate_safe_speed(new_steer, range_val)
+        action = np.array([new_steer, new_speed])
+        print(f"Old steer: {proposed_action[0]:.4f} --> New Steer: {new_steer:.4f} (V: {state[3]:.4f})")
+
+        return action
+
+
+    def run_lateral_search(self, scan, state, proposed_action):
         proposed_steer = proposed_action[0]
         current_speed = state[3]
-        n_steps = 8
+        n_steps = 12
         d_step = self.max_steer/n_steps
-        n_steer = proposed_steer
-        p_steer = proposed_steer
+        n_steers = []
+        p_steers = []
         new_steer = -1
-        for i in range(n_steps):
+        for i in range(1, n_steps):
             n_steer = max(proposed_steer - i * d_step, -self.max_steer)
             p_steer = min(proposed_steer + i * d_step, self.max_steer)
-
+            p_steers.append(p_steer)
+            n_steers.append(n_steer)
             if not self.check_collision(scan, current_speed, n_steer):
                 new_steer = n_steer
                 break 
             if not self.check_collision(scan, current_speed, p_steer):
                 new_steer = p_steer
                 break 
+        print(f"P steer: {p_steers}")
+        print(f"N steer: {n_steers}")
+        
+        if new_steer == -1:
+            return False 
+        return new_steer
 
+    def find_a_gap(self, scan):
         # no safe option
         # the best we can do is follow the gap
-        if new_steer == -1:
-            print(f"No safe option")
 
-            d_th = np.pi/len(scan)
+        d_th = np.pi/len(scan)
 
-            bubble = 125 # beams around center that are driveable
-            zero_pt = int(len(scan)/2)
+        bubble = 125 # beams around center that are driveable
+        zero_pt = int(len(scan)/2)
 
-            idxs = np.arange(zero_pt-bubble, zero_pt+bubble, 1)
-            d_scan = scan[idxs]
-            fgm_bubble = 20
-            min_range_idx = np.argmin(d_scan)
-            min_range_idx = np.clip(min_range_idx, 0, bubble*2-1)
-            zero_idxs = np.arange(max(min_range_idx-fgm_bubble, 0), min(min_range_idx+fgm_bubble, bubble*2), 1)
-            d_scan[zero_idxs] = np.zeros_like(d_scan[zero_idxs])
-            d_scan = np.convolve(d_scan, np.ones(20), 'same') / 20
-            max_range_idx = np.argmax(d_scan)
+        idxs = np.arange(zero_pt-bubble, zero_pt+bubble, 1)
+        d_scan = scan[idxs]
+        # fgm_bubble = 20
+        # min_range_idx = np.argmin(d_scan)
+        # min_range_idx = np.clip(min_range_idx, 0, bubble*2-1)
+        # zero_idxs = np.arange(max(min_range_idx-fgm_bubble, 0), min(min_range_idx+fgm_bubble, bubble*2), 1)
+        # d_scan[zero_idxs] = np.zeros_like(d_scan[zero_idxs])
 
-            new_steer = (max_range_idx - bubble) * d_th
-            # new_steer = (max_range_idx + zero_pt - bubble) * d_th
+        d_scan = np.convolve(d_scan, np.ones(20), 'same') / 20
+        max_range_idx = np.argmax(d_scan)
 
-        new_speed = calculate_speed(new_steer)
-        action = np.array([new_steer, new_speed])
-        print(f"Old steer: {proposed_steer:.4f} --> New Steer: {new_steer:.4f} (V: {current_speed:.4f})")
+        new_steer = (max_range_idx - bubble) * d_th
+        # new_steer = (max_range_idx + zero_pt - bubble) * d_th
 
-        return action
-
+        return new_steer
 
     def plan(self, env_map):
         super().plan(env_map)
@@ -342,6 +386,8 @@ class SafetyCar(SafetyPP):
         self.new_steers.clear()
 
     def show_history(self, wait=False):
+        plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+
         plt.figure(1)
         plt.clf()
         plt.plot(self.old_steers)
