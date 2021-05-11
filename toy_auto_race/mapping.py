@@ -121,7 +121,8 @@ class PreMap:
             loc = [x, y]
             search_list.append(loc)
 
-        pt = start = np.array([self.conf.sx, self.conf.sy])
+        # pt = start = np.array([self.conf.sx, self.conf.sy])
+        pt = start = np.zeros(2)
         self.cline = [pt]
         th = self.stheta
         while (lib.get_distance(pt, start) > d_search/2 or len(self.cline) < 10) and len(self.cline) < 500:
@@ -310,7 +311,7 @@ class PreMap:
         tx = self.cline[:, 0]
         ty = self.cline[:, 1]
 
-        sf = 0.9 # safety factor
+        sf = 0.7 # safety factor
         nws, pws = [], []
 
         for i in range(self.N):
@@ -752,10 +753,11 @@ class ForestPreMap:
 
 
 def run_pre_map():
-    fname = "config_test"
+    # fname = "config_test"
+    fname = "std_config"
     conf = lib.load_conf(fname)
     # map_name = "example_map"
-    map_name = "race_track"
+    map_name = "porto"
     
 
     pre_map = PreMap(conf, map_name)

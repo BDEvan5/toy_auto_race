@@ -205,8 +205,8 @@ class SafetyCar(SafetyPP):
                 new_steer = (max_range_idx - bubble) * d_th
                 # new_steer = (max_range_idx + zero_pt - bubble) * d_th
 
-            
-            action = np.array([new_steer, current_speed])
+            new_speed = calculate_speed(new_steer)
+            action = np.array([new_steer, new_speed])
             print(f"Old steer: {proposed_steer:.4f} --> New Steer: {new_steer:.4f} (V: {current_speed:.4f})")
 
         else:
