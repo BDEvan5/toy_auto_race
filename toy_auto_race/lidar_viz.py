@@ -152,15 +152,15 @@ def get_trigs(n_beams, fov=np.pi):
 
 def plot_lidar(scan, action=None, wait=False):
 
-    max_range = max(scan)
-    ranges = scan / max_range
+    # max_range = max(scan)
+    # ranges = scan / max_range
+    ranges = scan
 
-    plt.figure(2)
+    plt.figure(3)
     plt.clf()
 
-    plt.xlim([-1.2, 1.2])
-    plt.ylim([-0.5, 1.2])
-
+    plt.xlim([-5, 5])
+    plt.ylim([-2, 11])
     n_beams = len(scan)
     sines, cosines = get_trigs(n_beams)
 

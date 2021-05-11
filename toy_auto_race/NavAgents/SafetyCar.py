@@ -245,6 +245,220 @@ class SafetyCar(SafetyPP):
         self.action = None
         self.col_vals = None
 
+        self.fov = np.pi
+        self.dth = self.fov / (self.n_beams-1)
+        self.center_idx = int(self.n_beams/2)
+
+    def plan_act(self, obs):
+        state = obs['state']
+        pp_action = self.act_pp(state)
+
+        action = self.run_safety_check(obs, pp_action)
+
+        return action 
+
+    def check_collision(self, scan, current_speed, proposed_steer):
+        d_stop = current_speed**2 / (2*self.max_a) * 2
+
+        # d_th = np.pi/len(scan)
+        # bubble = 25 # beams around important one
+        # zero_pt = len(scan)/2
+        # steer_idx = int(proposed_steer / d_th + zero_pt)
+
+        # idxs = np.arange(steer_idx-bubble, steer_idx+bubble, 1)
+        # min_range = np.min(scan[idxs])
+
+        # print(f"MinR: {min_range} --> d_stop: {d_stop}")
+
+        n_beams = len(scan)
+        fov = np.pi
+        angles = np.empty(n_beams)
+        for i in range(n_beams):
+            angles[i] =  fov/(n_beams-1) * i
+        car_width = 0.15
+        collision_values = np.empty(len(scan))
+        # sines, cosines = get_trigs(len(scan))
+        for i in range(len(scan)):
+            collision_values[i] = min(car_width / abs(np.cos(angles[i] + proposed_steer)), d_stop)
+            # note that it is capped at d_stop because we would never need more than that.
+        self.col_vals = collision_values
+        for i in range(n_beams):
+            if scan[i] < collision_values[i]:
+                print(f"Col detect i: {i} > scan: {scan[i]:.4f} --> col val: {collision_values[i]:.4f}")
+                return True
+
+        # plot_lidar(collision_values, wait=True)
+
+        # if min_range < d_stop: # collision
+        #     return True
+        return False
+
+    def run_safety_check(self, obs, pp_action):
+        scan = obs['scan']
+        state = obs['state']
+
+        self.last_scan = scan
+
+        action = self.prevent_collision(scan, state, pp_action)
+        # if self.check_collision(scan, state[3], pp_action[0]):
+        #     action = self.prevent_collision(scan, state, pp_action)
+
+        # else:
+        #     action = pp_action
+
+        self.vis.add_step(scan, action[0])
+        self.old_steers.append(pp_action[0])
+        self.new_steers.append(action[0])
+
+        self.action = action
+
+        return action
+
+    def prevent_collision(self, scan, state, proposed_action):
+        """
+        This function is called if a collision is detected. It takes the current scan, state and pp action and returns an action that will ensure no crash. 
+        """
+        new_steer = self.find_best_gap(scan, state)
+        new_steer = np.clip(new_steer, -self.max_steer, self.max_steer)
+        speed = calculate_speed(new_steer)
+        action = np.array([new_steer, speed])
+
+        if not new_steer:
+            print(f"Return zero speed")
+            action = np.array([0, 0])
+
+        return action
+
+    def find_best_gap(self, scan, state):
+        d_stop = max(state[3]**2 / (2*self.max_a) * 2, 1)
+
+        plot_lidar(scan)
+
+        idxs = scan > d_stop
+        new_idxs = []
+        for i in range(self.n_beams):
+            if idxs[i]:
+                new_idxs.append(i)
+        idxs = np.array(new_idxs)
+        if len(idxs) < 2:
+            return False # no possibility
+
+        starts = []
+        ends = []
+        starts.append(idxs[0])
+        for i in range(1, len(idxs)):
+            if idxs[i] == idxs[i-1] + 1:
+                continue
+            ends.append(idxs[i-1])
+            starts.append(idxs[i])
+        ends.append(idxs[-1])
+
+        n_gaps = len(starts)
+        widths = []
+
+        for i in range(n_gaps):
+            if ends[i] - starts[i] < 10:
+                widths.append(0)
+                continue
+            w = self.calculate_safe_width(scan, starts[i], ends[i], d_stop)
+            widths.append(w)
+
+        widths = np.array(widths)
+        # print(f"Widths: {widths}")
+        best_gap = np.argmax(widths)
+        center_idx = (starts[best_gap] + ends[best_gap])/2
+
+        new_steer = (center_idx - self.center_idx) * self.dth 
+
+        return new_steer
+
+    def calculate_safe_width(self, scan, start_i, end_i, d_stop):
+        center = int((start_i + end_i) /2)
+        n_gap = end_i - start_i
+        print(f"Looking between [{start_i}, {end_i}], n_gap: {n_gap}, center: {center}, o_d_stop: {d_stop}")
+        abs_max_gap = 200 
+        if n_gap > abs_max_gap:
+            n_gap = abs_max_gap
+            half_i = int(abs_max_gap/2)
+            max_lahed = 4
+            d_stop = min(scan[center-half_i], scan[center+half_i], max_lahed)
+            print(f"Changed [{center-half_i}, {center+half_i}], n_gap: {n_gap}, center: {center}, d_stop: {d_stop}")
+
+        half_i = int(n_gap/2)
+
+        max_w = d_stop * np.sin(self.dth) * n_gap / 2 # over 2 because w is defined as half
+        max_w = min(max_w, min(scan[center-half_i:center+half_i]))
+
+        n_searches = int(n_gap / 10)
+        for i in range(n_searches):
+            w = max_w * (1-i/n_searches)
+            if self.check_w_clear(scan, center, w, d_stop):
+                print(f"Width {i} = {max_w} -w found as: {w}")
+                plot_lidar_col_vals(scan, self.col_vals, wait=False)
+                return w 
+
+        return 0 # no gap
+
+    def check_w_clear(self, scan, gap_center_idx, w, d_stop):
+        center_angle = (gap_center_idx - self.center_idx) * self.dth
+        # d_max = max(scan)
+
+        angles = np.empty(self.n_beams)
+        for i in range(self.n_beams):
+            angles[i] =  self.fov/(self.n_beams-1) * i
+
+        collision_values = np.empty(len(scan))
+        for i in range(len(scan)):
+            collision_values[i] = min(w / abs(np.cos(angles[i] + center_angle)), d_stop)
+        self.col_vals = collision_values
+
+        for i in range(self.n_beams):
+            if scan[i] < collision_values[i]:
+                return False 
+
+        return True
+
+
+    def plan(self, env_map):
+        super().plan(env_map)
+        self.old_steers.clear()
+        self.new_steers.clear()
+
+    def show_history(self, wait=False):
+        plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+
+        plt.figure(1)
+        plt.clf()
+        plt.plot(self.old_steers)
+        plt.plot(self.new_steers)
+        plt.legend(['Old', 'New'])
+        plt.title('Old and New Steering')
+        plt.ylim([-0.5, 0.5])
+
+        plt.pause(0.0001)
+        if wait:
+            plt.show()
+
+
+
+class SafetyCar2(SafetyPP):
+    def __init__(self, sim_conf):
+        SafetyPP.__init__(self, sim_conf)
+        self.sim_conf = sim_conf # kept for optimisation
+        self.n_beams = 1000
+
+        safety_f = 0.9
+        self.max_a = sim_conf.max_a * safety_f
+        self.max_steer = sim_conf.max_steer
+
+        self.vis = LidarViz(1000)
+        self.old_steers = []
+        self.new_steers = []
+
+        self.last_scan = None
+        self.action = None
+        self.col_vals = None
+
     def plan_act(self, obs):
         state = obs['state']
         pp_action = self.act_pp(state)
