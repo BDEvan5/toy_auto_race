@@ -306,6 +306,9 @@ class SafetyCar(SafetyPP):
 
         return action
 
+    def find_widths(self, scan, speed, angle):
+        
+
     def find_new_angle(self, scan, speed, old_angle):
         n_searches = 10
         step = 0.08
