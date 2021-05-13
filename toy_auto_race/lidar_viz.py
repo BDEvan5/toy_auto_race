@@ -150,13 +150,13 @@ def get_trigs(n_beams, fov=np.pi):
 
     return sines, cosines
 
-def plot_lidar(scan, action=None, wait=False):
+def plot_lidar(scan, action=None, wait=False, fig_n=3):
 
     # max_range = max(scan)
     # ranges = scan / max_range
     ranges = scan
 
-    plt.figure(3)
+    plt.figure(fig_n)
     plt.clf()
 
     plt.xlim([-5, 5])
@@ -185,13 +185,13 @@ def plot_lidar(scan, action=None, wait=False):
     if wait:
         plt.show()
 
-def plot_lidar_col_vals(scan, col_vals, action=None, wait=False):
+def plot_lidar_col_vals(scan, col_vals, action=None, wait=False, fig_n=2):
 
     # max_range = max(scan)
     # ranges = scan / max_range
     ranges = scan 
 
-    plt.figure(2)
+    plt.figure(fig_n)
     plt.clf()
 
     plt.xlim([-5, 5])

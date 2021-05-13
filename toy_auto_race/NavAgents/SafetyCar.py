@@ -123,7 +123,7 @@ def find_max_gap(free_space_ranges):
 
 class SafetyPP:
     def __init__(self, sim_conf) -> None:
-        self.name = "Oracle Path Follower"
+        self.name = "Safety Car"
         self.path_name = None
 
         # mu = sim_conf.mu
@@ -186,24 +186,25 @@ class SafetyPP:
         self.aim_pts.clear()
 
     def plan(self, env_map):
-        track = []
-        filename = 'maps/' + env_map.map_name + "_opti.csv"
-        with open(filename, 'r') as csvfile:
-            csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
-        
-            for lines in csvFile:  
-                track.append(lines)
+        if self.waypoints is None:
+            track = []
+            filename = 'maps/' + env_map.map_name + "_opti.csv"
+            with open(filename, 'r') as csvfile:
+                csvFile = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  
+            
+                for lines in csvFile:  
+                    track.append(lines)
 
-        track = np.array(track)
-        print(f"Track Loaded: {filename}")
+            track = np.array(track)
+            print(f"Track Loaded: {filename}")
 
-        wpts = track[:, 1:3]
-        vs = track[:, 5]
+            wpts = track[:, 1:3]
+            vs = track[:, 5]
 
-        self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
-        self.expand_wpts()
+            self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
+            self.expand_wpts()
 
-        return self.waypoints[:, 0:2]
+            return self.waypoints[:, 0:2]
 
     def expand_wpts(self):
         n = 5 # number of pts per orig pt
@@ -233,6 +234,114 @@ class SafetyPP:
 
 
 class SafetyCar(SafetyPP):
+    def __init__(self, sim_conf):
+        SafetyPP.__init__(self, sim_conf)
+        self.sim_conf = sim_conf # kept for optimisation
+        self.n_beams = 1000
+
+        safety_f = 0.9
+        self.max_a = sim_conf.max_a * safety_f
+        self.max_steer = sim_conf.max_steer
+
+        self.vis = LidarViz(1000)
+        self.old_steers = []
+        self.new_steers = []
+
+        self.last_scan = None
+        self.action = None
+        self.col_vals = None
+
+        self.fov = np.pi
+        self.dth = self.fov / (self.n_beams-1)
+        self.center_idx = int(self.n_beams/2)
+
+        self.fgm = ForestFGM()
+
+        self.angles = np.empty(self.n_beams)
+        for i in range(self.n_beams):
+            self.angles[i] =  self.fov/(self.n_beams-1) * i
+
+    def plan_act(self, obs):
+        state = obs['state']
+        pp_action = self.act_pp(state)
+
+        action = self.run_safety_check(obs, pp_action)
+
+        return action 
+
+    def check_corridor_clear(self, scan, speed, angle):
+        w = 0.15 #width each side
+        max_d_stop = 5
+
+        d_stop = speed**2 / (2*self.max_a) * 3
+        d_stop = min(max_d_stop, d_stop)
+
+        collision_values = np.empty(len(scan))
+        for i in range(len(scan)):
+            collision_values[i] = min(w / abs(np.cos(self.angles[i] - angle)), d_stop)
+        self.col_vals = collision_values
+
+        for i in range(self.n_beams):
+            if scan[i] < collision_values[i]:
+                return False 
+
+        return True
+
+    def run_safety_check(self, obs, pp_action):
+        scan = obs['scan']
+        state = obs['state']
+
+        self.last_scan = scan
+
+        if not self.check_corridor_clear(scan, state[3], pp_action[0]):
+
+            action = self.prevent_collision(scan, state, pp_action)
+
+        else:
+            action = pp_action
+
+        self.vis.add_step(scan, action[0])
+        self.old_steers.append(pp_action[0])
+        self.new_steers.append(action[0])
+
+        self.action = action
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+
+        return action
+
+    def prevent_collision(self, scan, state, proposed_action):
+        steering_angle = self.fgm.process_lidar(scan)
+        steering_angle = steering_angle * np.pi / 180
+
+        speed = calculate_speed(steering_angle)
+
+        action = np.array([steering_angle, speed])
+
+        return action
+
+    def plan(self, env_map):
+        super().plan(env_map)
+        self.old_steers.clear()
+        self.new_steers.clear()
+
+    def show_history(self, wait=False):
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+
+        plt.figure(1)
+        plt.clf()
+        plt.plot(self.old_steers)
+        plt.plot(self.new_steers)
+        plt.legend(['Old', 'New'])
+        plt.title('Old and New Steering')
+        plt.ylim([-0.5, 0.5])
+
+        plt.pause(0.0001)
+        if wait:
+            plt.show()
+
+
+
+class SafetyCar5(SafetyPP):
     def __init__(self, sim_conf):
         SafetyPP.__init__(self, sim_conf)
         self.sim_conf = sim_conf # kept for optimisation
@@ -302,11 +411,11 @@ class SafetyCar(SafetyPP):
         self.new_steers.append(action[0])
 
         self.action = action
-        plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
 
         return action
 
-    def find_widths(self, scan, speed, angle):
+    # def find_widths(self, scan, speed, angle):
         
 
     def find_new_angle(self, scan, speed, old_angle):
@@ -326,36 +435,33 @@ class SafetyCar(SafetyPP):
     def prevent_collision(self, scan, state, proposed_action):
         old_angle = proposed_action[0]
         speed = state[3]
-        
-        new_angle = self.find_new_angle(scan, speed, old_angle)
 
-
-
-        while new_angle is None and speed > 1:
-            print(f"Problem: no angle found")
-            self.check_corridor_clear(scan, speed, old_angle)
-            plot_lidar_col_vals(scan, self.col_vals, wait=True)
-
-            speed = speed / 2
+        new_angle = None
+        while speed > 1:
             new_angle = self.find_new_angle(scan, speed, old_angle)
-            action = np.array([new_angle, speed])
 
-            return action
-
-        if abs(new_angle) > self.max_steer:
+            if new_angle is not None:
+                speed = calculate_speed(new_angle) 
+                break 
+        
+            print(f"Problem: no angle found")
             speed = speed / 2
+        
+        if new_angle is None: # search didn't break
+            print(f"Accept defeat and die")
+            return np.array([0, 0]) # accept defeat
+
+        if abs(new_angle) > self.max_steer: # this is impossible since I only search in possible steering places
+            # I think this is meant to be for if the steering angle is too big for the current speed, then the speed should be reduced.
+            speed = speed / 2
+            new_angle = np.clip(new_angle, -self.max_steer, self.max_steer)
             action = np.array([new_angle, speed])
             print(f"Angle was too fast. Old: {old_angle} --> New: {new_angle}")
 
             return action
 
-        if new_angle is None:
-            print(f"Accept defeat and die")
-            return np.array([0, 0]) # accept defeat
-
         print(f"Angle Changed: Old: {old_angle} --> New: {new_angle}")
 
-        speed = calculate_speed(new_angle)
         action = np.array([new_angle, speed])
 
         return action
@@ -367,7 +473,7 @@ class SafetyCar(SafetyPP):
         self.new_steers.clear()
 
     def show_history(self, wait=False):
-        plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
 
         plt.figure(1)
         plt.clf()
