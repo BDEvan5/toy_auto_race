@@ -231,7 +231,7 @@ class SafetyCar(SafetyPP):
         plt.plot()
 
 
-        plt.pause(0.8)
+        # plt.pause(0.8)
         plt.show()
 
     def show_lidar(self, wait=False):
@@ -282,16 +282,12 @@ def convert_scan_xy(scan, fov=np.pi):
 def get_feasible_projection():
     n_pts = 50
     delta_max = 0.4 
-    speed = 6 #TODO: input variable
     wheelbase = 0.33
     x_max = 1
 
     xs = np.empty(n_pts)
     thetas = np.empty(n_pts)
-    ts = np.empty(n_pts)
 
-    # alpha = np.arcsin(np.sqrt(np.tan(delta_max)*x_max/(2*wheelbase)))
-    # l_d = x_max / np.sin(alpha)
     alpha = np.pi/4
     l_d = 1.1 # max value
     y_max = l_d * np.cos(alpha)
