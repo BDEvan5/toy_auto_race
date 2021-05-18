@@ -190,32 +190,31 @@ class SafetyCar(SafetyPP):
 
         xs, ys = convert_scan_xy(scan)
 
-        deltas = self.map_scan_to_delta(scan)
-        vs = self.calculate_envelope(scan)
+        deltas, vs = self.calculate_envelope(scan)
 
-        self.plot_lidar_line(xs, ys, deltas, vs)
+        self.plot_lidar_line(xs, ys, deltas, vs, pp_action, state)
 
         return pp_action
 
-    def map_scan_to_delta(self, scan):
-        xs, ys = convert_scan_xy(scan)
-        angles = get_angles()
-        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/scan)
-
-        deltas = np.clip(deltas, -self.max_steer, self.max_steer)
-
-        return deltas
 
     def calculate_envelope(self, scan):
+        angles = get_angles()
+        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/scan)
+        deltas = np.clip(deltas, -self.max_steer, self.max_steer)
+
         vs = np.sqrt(scan*2*self.max_a)
         vs = np.clip(vs, 0, self.max_v)
-        return vs
 
-    def plot_lidar_line(self, xs, ys, deltas, vs, fig_n=1):
+        return deltas, vs
+
+    def plot_lidar_line(self, xs, ys, deltas, vs, pp_action, state, fig_n=1):
         plt.figure(fig_n)
         plt.clf()
         plt.title("Lidar line")
         plt.plot(xs, ys, '-+')
+
+        xs, ys = get_feasible_projection()
+        plt.plot(xs, ys, '--')
 
         plt.pause(0.0001)
 
@@ -223,9 +222,17 @@ class SafetyCar(SafetyPP):
         plt.clf()
         plt.title("Control Envelope")
         plt.plot(deltas, vs)
+        plt.plot(pp_action[0], pp_action[1], '+', markersize=18)
+        speed = state[3]
+        plt.plot(state[4], speed, '*', markersize=18)
 
-        plt.pause(0.2)
-        # plt.show()
+        plt.legend(['Safety env', 'pp', 'state', 'feasible'])
+
+        plt.plot()
+
+
+        plt.pause(0.8)
+        plt.show()
 
     def show_lidar(self, wait=False):
         # plot_lidar_col_vals(self.last_scan, self.col_vals, self.o_action[0], False, fig_n=2)
@@ -270,4 +277,50 @@ def convert_scan_xy(scan, fov=np.pi):
     xs = scan * sines
     ys = scan * cosines    
     return xs, ys
+
+# @njit(cache=True)
+def get_feasible_projection():
+    n_pts = 50
+    delta_max = 0.4 
+    speed = 6 #TODO: input variable
+    wheelbase = 0.33
+    x_max = 1
+
+    xs = np.empty(n_pts)
+    thetas = np.empty(n_pts)
+    ts = np.empty(n_pts)
+
+    # alpha = np.arcsin(np.sqrt(np.tan(delta_max)*x_max/(2*wheelbase)))
+    # l_d = x_max / np.sin(alpha)
+    alpha = np.pi/4
+    l_d = 1.1 # max value
+    y_max = l_d * np.cos(alpha)
+
+    ys = np.linspace(0, y_max, n_pts)
+
+    thetas[0] = 0
+    for i in range(1, n_pts):
+        thetas[i] = thetas[i-1] +  np.tan(delta_max) * (ys[i] - ys[i-1]) / (wheelbase * np.cos(thetas[i-1]))
+
+    ts[0] = 0
+    for i in range(1, n_pts):
+        ts[i] = (ys[i] - ys[i-1]) /(speed * np.cos(thetas[i-1]))
+
+    xs[0] = 0
+    for i in range(1, n_pts):
+        xs[i] = xs[i-1] + ts[i-1] * np.sin(thetas[i-1]) * speed
+
+    # xs[0] = 0
+    # for i in range(1, n_pts):
+    #     xs[i] = xs[i-1] + (ys[i] - ys[i-1]) * np.tan(thetas[i-1]) 
+    
+    # xs[-1] = x_max 
+
+    # xs = np.hstack([-xs, xs])
+    # ys = np.hstack([ys[::-1], ys])
+
+    return xs, ys
+
+
+
 
