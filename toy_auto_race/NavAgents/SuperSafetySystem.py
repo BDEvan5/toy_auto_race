@@ -21,12 +21,9 @@ class SafetyPP:
         self.name = "Safety Car"
         self.path_name = None
 
-        # mu = sim_conf.mu
-        # g = sim_conf.g
-        # self.m = sim_conf.m
         self.wheelbase = sim_conf.l_f + sim_conf.l_r
-        # self.f_max = mu * self.m * g #* safety_f
         self.max_steer = sim_conf.max_steer
+        self.max_v = sim_conf.max_v
 
         self.v_gain = 0.5
         self.lookahead = 0.8
@@ -127,6 +124,7 @@ class SafetyPP:
         vs = np.array(new_vs)
         self.waypoints = np.concatenate([wpts, vs[:, None]], axis=-1)
 
+
 class SafetyCar(SafetyPP):
     def __init__(self, sim_conf):
         SafetyPP.__init__(self, sim_conf)
@@ -190,83 +188,52 @@ class SafetyCar(SafetyPP):
         scan = obs['scan']
         state = obs['state']
 
-        o_proj_state = get_projected_state(state, pp_action)
-        # proj_state = [theta, velocity]
+        xs, ys = convert_scan_xy(scan)
 
-        if self.check_coridor_free(scan, o_proj_state):
-            return pp_action
-        
-        self.o_col_vals = self.col_vals
-        self.o_action = pp_action
-        self.last_scan = scan
-        # unsafe
-        
-        action = self.find_safe_action(scan, state, pp_action)
-        self.new_action = action
+        deltas = self.map_scan_to_delta(scan)
+        vs = self.calculate_envelope(scan)
 
-        return action 
+        self.plot_lidar_line(xs, ys, deltas, vs)
 
-        # if unsafe:
-            # find next best option
-            # select a lhd distance, and check if there is enough width.
+        return pp_action
 
-    def check_coridor_free(self, scan, proj_state):
-        w = 0.15 #width each side
-        max_d_stop = 4 #TODO: move to config file
-        speed = proj_state[1]
-        angle = proj_state[0]
+    def map_scan_to_delta(self, scan):
+        xs, ys = convert_scan_xy(scan)
+        angles = get_angles()
+        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/scan)
 
-        d_stop = speed**2 / (2*self.max_a) * 2
-        d_stop = min(max_d_stop, d_stop)
+        deltas = np.clip(deltas, -self.max_steer, self.max_steer)
 
-        collision_values = w / abs(np.cos(self.angles - np.ones_like(self.angles)*angle))
-        collision_values = np.clip(collision_values, 0, d_stop)
-        self.col_vals = collision_values
+        return deltas
 
-        output = np.greater(collision_values, scan)
-        if output.any():
-            # plot_lidar_col_vals(scan, collision_values, angle, False, fig_n=2)
-            return False
+    def calculate_envelope(self, scan):
+        vs = np.sqrt(scan*2*self.max_a)
+        vs = np.clip(vs, 0, self.max_v)
+        return vs
 
-        return True
+    def plot_lidar_line(self, xs, ys, deltas, vs, fig_n=1):
+        plt.figure(fig_n)
+        plt.clf()
+        plt.title("Lidar line")
+        plt.plot(xs, ys, '-+')
 
-    def find_safe_action(self, scan, state, o_action):
-        new_steer = self.find_safe_steer(scan, state, o_action)
+        plt.pause(0.0001)
 
-        while new_steer is None:  # if no steer found
-            o_action[1] = o_action[1] / 2
-            new_steer = self.find_safe_steer(scan, state, o_action)
+        plt.figure(fig_n+1)
+        plt.clf()
+        plt.title("Control Envelope")
+        plt.plot(deltas, vs)
 
-            if o_action[1] < 1:
-                print(f"Admit defeat")
-                return np.array([0, 0])
-
-        action = np.array([new_steer, o_action[1]])
-        
-        return action
-
-    def find_safe_steer(self, scan, state, o_action):
-        n_searches = 10
-        step = 0.08
-        for i in range(1, n_searches):
-            p_angle = min(o_action[0] + i * step, self.max_steer)
-            proj_state = get_projected_state(state, np.array([o_action[1], p_angle]))
-            if self.check_coridor_free(scan, proj_state):
-               return p_angle
-
-            n_angle = max(o_action[0] - i * step, -self.max_steer)
-            proj_state = get_projected_state(state, np.array([o_action[1], n_angle]))
-            if self.check_coridor_free(scan, proj_state):
-               return n_angle
-        return None
+        plt.pause(0.2)
+        # plt.show()
 
     def show_lidar(self, wait=False):
-        plot_lidar_col_vals(self.last_scan, self.col_vals, self.o_action[0], False, fig_n=2)
-        plt.title("Old Lidar")
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.o_action[0], False, fig_n=2)
+        # plt.title("Old Lidar")
 
 
-        plot_lidar_col_vals(self.last_scan, self.col_vals, self.new_action[0], False, fig_n=5)
-        plt.title("New Lidar action")
+        # plot_lidar_col_vals(self.last_scan, self.col_vals, self.new_action[0], False, fig_n=5)
+        # plt.title("New Lidar action")
 
         if wait:
             plt.show()
@@ -281,73 +248,26 @@ def convert_idx_angle(idx):
     return (idx - 500) * np.pi / 999
 
 @njit(cache=True)
-def get_projected_state(state, action):
-    for i in range(10):
-        u = control_system(state, action)
-        state = update_kinematic_state(state, u, 0.01)
-    return state[2:4]    
+def get_angles(n_beams=1000, fov=np.pi):
+    angles = np.empty(n_beams)
+    for i in range(n_beams):
+        angles[i] = -fov/2 + fov/(n_beams-1) * i
+    return angles
 
 @njit(cache=True)
-def update_kinematic_state(x, u, dt, whlb=0.33, max_steer=0.4, max_v=7):
-    """
-    Updates the kinematic state according to bicycle model
+def get_trigs(n_beams, fov=np.pi):
+    angles = np.empty(n_beams)
+    for i in range(n_beams):
+        angles[i] = -fov/2 + fov/(n_beams-1) * i
+    sines = np.sin(angles)
+    cosines = np.cos(angles)
 
-    Args:
-        X: State, x, y, theta, velocity, steering
-        u: control action, d_dot, a
-    Returns
-        new_state: updated state of vehicle
-    """
-    dx = np.array([x[3]*np.sin(x[2]), # x
-                x[3]*np.cos(x[2]), # y
-                x[3]/whlb * np.tan(x[4]), # theta
-                u[1], # velocity
-                u[0]]) # steering
-
-    new_state = x + dx * dt 
-
-    # check limits
-    new_state[4] = min(new_state[4], max_steer)
-    new_state[4] = max(new_state[4], -max_steer)
-    new_state[3] = min(new_state[3], max_v)
-
-    return new_state
+    return sines, cosines
 
 @njit(cache=True)
-def control_system(state, action, max_v=7, max_steer=0.4, max_a=8.5, max_d_dot=3.2):
-    """
-    Generates acceleration and steering velocity commands to follow a reference
-    Note: the controller gains are hand tuned in the fcn
+def convert_scan_xy(scan, fov=np.pi):
+    sines, cosines = get_trigs(len(scan))
+    xs = scan * sines
+    ys = scan * cosines    
+    return xs, ys
 
-    Args:
-        v_ref: the reference velocity to be followed
-        d_ref: reference steering to be followed
-
-    Returns:
-        a: acceleration
-        d_dot: the change in delta = steering velocity
-    """
-    # clip action
-    v_ref = min(action[1], max_v)
-    d_ref = max(action[0], -max_steer)
-    d_ref = min(action[0], max_steer)
-
-    kp_a = 10
-    a = (v_ref-state[3])*kp_a
-    
-    kp_delta = 40
-    d_dot = (d_ref-state[4])*kp_delta
-
-    # clip actions
-    a = min(a, max_a)
-    a = max(a, -max_a)
-    d_dot = min(d_dot, max_d_dot)
-    d_dot = max(d_dot, -max_d_dot)
-    
-    u = np.array([d_dot, a])
-
-    return u
-    
-
-
-    
