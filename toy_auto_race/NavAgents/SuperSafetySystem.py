@@ -302,22 +302,14 @@ def get_feasible_projection():
     for i in range(1, n_pts):
         thetas[i] = thetas[i-1] +  np.tan(delta_max) * (ys[i] - ys[i-1]) / (wheelbase * np.cos(thetas[i-1]))
 
-    ts[0] = 0
+    xs[0] = 0 # eliminate t from equations
     for i in range(1, n_pts):
-        ts[i] = (ys[i] - ys[i-1]) /(speed * np.cos(thetas[i-1]))
-
-    xs[0] = 0
-    for i in range(1, n_pts):
-        xs[i] = xs[i-1] + ts[i-1] * np.sin(thetas[i-1]) * speed
-
-    # xs[0] = 0
-    # for i in range(1, n_pts):
-    #     xs[i] = xs[i-1] + (ys[i] - ys[i-1]) * np.tan(thetas[i-1]) 
+        xs[i] = xs[i-1] + (ys[i] - ys[i-1]) * np.tan(thetas[i-1]) 
     
-    # xs[-1] = x_max 
+    xs[-1] = x_max 
 
-    # xs = np.hstack([-xs, xs])
-    # ys = np.hstack([ys[::-1], ys])
+    xs = np.hstack([-xs[::-1], xs])
+    ys = np.hstack([ys[::-1], ys])
 
     return xs, ys
 
