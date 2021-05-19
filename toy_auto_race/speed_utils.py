@@ -9,7 +9,7 @@ def calculate_speed(delta):
     g = 9.81
     l_d = 0.329
     f_s = 0.5
-    max_v = 6
+    max_v = 5
 
     if abs(delta) < 0.06:
         return max_v

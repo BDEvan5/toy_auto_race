@@ -27,7 +27,7 @@ class SafetyPP:
         self.max_v = sim_conf.max_v
 
         self.v_gain = 0.5
-        self.lookahead = 0.8
+        self.lookahead = 1.6
         self.max_reacquire = 20
 
         self.waypoints = None
@@ -198,11 +198,11 @@ class SafetyCar(SafetyPP):
 
         action = self.modify_action(deltas, vs, pp_action, state)
         while action is None: # if it can't find an angle, reduce speed and try again.
-            print(f"No action found: retry")
+            # print(f"No action found: retry")
             pp_action[1] = pp_action[1] * 0.95
             action = self.modify_action(deltas, vs, pp_action, state)
 
-        self.plot_lidar_line(scan, deltas, vs, pp_action, action, state)
+        # self.plot_lidar_line(scan, deltas, vs, pp_action, action, state)
 
         # if action[0] != pp_action[0]:
         #     plt.show()
@@ -219,7 +219,7 @@ class SafetyCar(SafetyPP):
             # add extra condition for if it is equal to search both spaces
 
             if state[4] == pp_action[0]:
-                print(f"Searching both spaces")
+                # print(f"Searching both spaces")
                 for i in range(1, n_search):
                     p_act = np.array([pp_action[0] + d_delta * i, pp_action[1]])
                     if check_action_safe(p_act, deltas, vs):
@@ -230,21 +230,21 @@ class SafetyCar(SafetyPP):
                         new_action = n_act
                         break
             elif state[4] > pp_action[0]:
-                print(f"Searching positive delta space")
+                # print(f"Searching positive delta space")
                 for i in range(1, n_search):
                     p_act = np.array([pp_action[0] + d_delta * i, pp_action[1]])
                     if check_action_safe(p_act, deltas, vs):
                         new_action = p_act
                         break
             else:
-                print(f"Searching negative delta space")
+                # print(f"Searching negative delta space")
                 for i in range(1, n_search):
                     n_act = np.array([pp_action[0] - d_delta * i, pp_action[1]]) 
                     if check_action_safe(n_act, deltas, vs):
                         new_action = n_act
                         break
         
-            print(f"Action unsafe: ({pp_action}) --> modify to ({new_action})")
+            # print(f"Action unsafe: ({pp_action}) --> modify to ({new_action})")
             return new_action
         return pp_action
                 
@@ -270,6 +270,19 @@ class SafetyCar(SafetyPP):
         plt.ylim([0, 10])
         plt.title("Lidar line")
         plt.plot(xs, ys, '-+')
+
+        delta = action[0]
+        for i in range(50):
+            l_d = i * 5
+            alpha = np.arcsin(l_d * np.tan(delta) / (2*self.wheelbase))
+            x, y = polar_to_xy(l_d, alpha)
+            if check_scan_location(xs, ys, x, y) or i == 50 -1:
+                break 
+        
+        xss = [0, x]
+        yss = [0, y]
+        plt.plot(xss, yss)
+
 
         xs, ys = get_feasible_projection()
         plt.plot(xs, ys, '--')
@@ -305,7 +318,7 @@ class SafetyCar(SafetyPP):
         # plt.plot()
 
 
-        plt.pause(0.001)
+        plt.pause(0.1)
         # plt.show()
 
     def show_lidar(self, wait=False):
@@ -395,7 +408,7 @@ def find_v_idx(deltas, action, vs):
 
     return v_idx
 
-# @njit(cache=True)
+@njit(cache=True)
 def check_action_safe(pp_action, deltas, vs):
     # pp_action[0] *= 0.95 # makes sure it is within range
     v_idx = find_v_idx(deltas, pp_action, vs)
@@ -438,11 +451,12 @@ def polar_to_xy(r, theta):
     y = r * np.cos(theta) 
     return x, y
 
+# @njit
 def create_envelope(scan):
     n_ds = 500 
     max_steer = 0.4 
     max_a = 4
-    max_v = 7
+    max_v = 5
     L = 0.33
     deltas = np.linspace(-max_steer, max_steer, n_ds)
     xs, ys = convert_scan_xy(scan)
@@ -456,6 +470,8 @@ def create_envelope(scan):
     for j, delta in enumerate(deltas):
         for i in range(n_search):
             l_d = i * s 
+            if l_d * np.tan(delta)*0.98 >= 2*L:
+                l_d = 2*L / np.tan(delta)
             alpha = np.arcsin(l_d * np.tan(delta) / (2*L))
             x, y = polar_to_xy(l_d, alpha)
             if check_scan_location(xs, ys, x, y) or i == n_search -1:
