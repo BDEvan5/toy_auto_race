@@ -158,6 +158,7 @@ class SafetyCar(SafetyPP):
         state = obs['state']
         pp_action = self.act_pp(state)
 
+        pp_action[1] = max(pp_action[1], state[3])
         action = self.run_safety_check(obs, pp_action)
 
         self.old_steers.append(pp_action[0])
@@ -174,7 +175,7 @@ class SafetyCar(SafetyPP):
     def show_history(self, wait=False):
         # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
 
-        plt.figure(1)
+        plt.figure(5)
         plt.clf()
         plt.plot(self.old_steers)
         plt.plot(self.new_steers)
@@ -190,19 +191,21 @@ class SafetyCar(SafetyPP):
 
         # check if current corridor is safe
         scan = obs['scan']
+        scan *= 0.95
         state = obs['state']
 
         deltas, vs = self.calculate_envelope(scan)
 
         action = self.modify_action(deltas, vs, pp_action, state)
         while action is None: # if it can't find an angle, reduce speed and try again.
-            pp_action[1] = pp_action[1] * 0.75
+            print(f"No action found: retry")
+            pp_action[1] = pp_action[1] * 0.95
             action = self.modify_action(deltas, vs, pp_action, state)
 
         self.plot_lidar_line(scan, deltas, vs, pp_action, action, state)
 
-        if action[0] != pp_action[0]:
-            plt.show()
+        # if action[0] != pp_action[0]:
+        #     plt.show()
 
         return action
 
@@ -213,7 +216,20 @@ class SafetyCar(SafetyPP):
             n_search = 20 
             d_delta = self.max_steer / n_search 
 
-            if state[4] > pp_action[0]:
+            # add extra condition for if it is equal to search both spaces
+
+            if state[4] == pp_action[0]:
+                print(f"Searching both spaces")
+                for i in range(1, n_search):
+                    p_act = np.array([pp_action[0] + d_delta * i, pp_action[1]])
+                    if check_action_safe(p_act, deltas, vs):
+                        new_action = p_act
+                        break
+                    n_act = np.array([pp_action[0] - d_delta * i, pp_action[1]]) 
+                    if check_action_safe(n_act, deltas, vs):
+                        new_action = n_act
+                        break
+            elif state[4] > pp_action[0]:
                 print(f"Searching positive delta space")
                 for i in range(1, n_search):
                     p_act = np.array([pp_action[0] + d_delta * i, pp_action[1]])
@@ -234,15 +250,17 @@ class SafetyCar(SafetyPP):
                 
 
     def calculate_envelope(self, scan):
-        angles = get_angles()
-        l_d = 4
-        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/l_d)
-        deltas = np.clip(deltas, -self.max_steer, self.max_steer)
+        # angles = get_angles()
+        # l_d = 4
+        # deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/l_d)
+        # deltas = np.clip(deltas, -self.max_steer, self.max_steer)
 
-        vs = np.sqrt(scan*2*self.max_a)
-        vs = np.clip(vs, 0, self.max_v)
+        # vs = np.sqrt(scan*2*self.max_a)
+        # vs = np.clip(vs, 0, self.max_v)
 
-        return deltas, vs
+        # return deltas, vs
+
+        return create_envelope(scan)
 
     def plot_lidar_line(self, scan, deltas, vs, pp_action, action, state, fig_n=1):
         xs, ys = convert_scan_xy(scan)
@@ -287,7 +305,7 @@ class SafetyCar(SafetyPP):
         # plt.plot()
 
 
-        plt.pause(0.5)
+        plt.pause(0.001)
         # plt.show()
 
     def show_lidar(self, wait=False):
@@ -367,11 +385,13 @@ def get_feasible_projection():
 
 @njit(cache=True)
 def find_v_idx(deltas, action, vs):
+    action[0] = min(action[0], deltas[-5])
+    action[0] = max(action[0], deltas[5])
     for i in range(len(deltas)):
         if action[0] < deltas[i]:
             idx = i 
             break 
-    v_idx = np.mean(vs[idx:idx+2])
+    v_idx = np.min(vs[idx-2:idx+4]) # take min value to check arround current value as well
 
     return v_idx
 
@@ -380,7 +400,8 @@ def check_action_safe(pp_action, deltas, vs):
     # pp_action[0] *= 0.95 # makes sure it is within range
     v_idx = find_v_idx(deltas, pp_action, vs)
 
-    if pp_action[1] > v_idx:
+    eps = 0.5
+    if v_idx - pp_action[1] < eps:
         return False 
 
     # add check for crossing verticle lines
@@ -388,4 +409,75 @@ def check_action_safe(pp_action, deltas, vs):
 
     return True
 
+# @njit(cache=True)
+# def check_scan_location(xs, ys, x, y):
+#     for i in range(len(xs)):
+#         if x < xs[i]:
+#             idx = i 
+#             break 
+#     y_idx = np.mean(ys[idx:idx+2])
+#     if y > y_idx:
+#         return True # occupied
+#     return False  # empty
 
+# @njit(cache=True)
+def check_scan_location(xs, ys, x, y):
+    distances = np.abs(xs - np.ones_like(xs) * x)   
+    idxs = np.argpartition(distances, 5)
+    idxs = idxs[:5] 
+
+    y_min = np.min(ys[idxs])
+
+    if y > y_min:
+        return True # occupied
+    return False  # empty
+
+@njit(cache=True)
+def polar_to_xy(r, theta):
+    x = r * np.sin(theta)
+    y = r * np.cos(theta) 
+    return x, y
+
+def create_envelope(scan):
+    n_ds = 500 
+    max_steer = 0.4 
+    max_a = 4
+    max_v = 7
+    L = 0.33
+    deltas = np.linspace(-max_steer, max_steer, n_ds)
+    xs, ys = convert_scan_xy(scan)
+
+    n_search = 100
+    s = 10 / n_search # resolution 5cm, max len, 5m
+    #TODO: in future use variable s with dt. 
+    l_ds = np.zeros_like(deltas)
+    alphas = np.zeros_like(deltas)
+
+    for j, delta in enumerate(deltas):
+        for i in range(n_search):
+            l_d = i * s 
+            alpha = np.arcsin(l_d * np.tan(delta) / (2*L))
+            x, y = polar_to_xy(l_d, alpha)
+            if check_scan_location(xs, ys, x, y) or i == n_search -1:
+                l_ds[j] = l_d 
+                alphas[j] = alpha
+                break 
+
+    # plt.figure(3)
+    # plt.clf()
+    # plt.title(' lengths for pp')
+    # n_beams = len(alphas)
+
+    # for i in range(n_beams):
+    #     xs = [0, np.sin(alphas[i]) * l_ds[i]]
+    #     ys = [0, np.cos(alphas[i]) * l_ds[i]]
+    #     plt.plot(xs, ys, 'b')
+
+    # plt.pause(0.0001)
+
+    vs = np.sqrt(l_ds*2*max_a)
+    vs = np.clip(vs, 0, max_v)
+
+    return deltas, vs
+
+        
