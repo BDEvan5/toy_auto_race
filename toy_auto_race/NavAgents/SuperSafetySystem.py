@@ -1,4 +1,5 @@
 
+from numba.core.types.npytypes import NestedArray
 import numpy as np
 from numba import njit
 from matplotlib import pyplot as plt
@@ -72,7 +73,7 @@ class SafetyPP:
         # speed = 4
         speed = calculate_speed(steering_angle)
 
-        return [steering_angle, speed]
+        return np.array([steering_angle, speed])
 
     def reset_lap(self):
         self.aim_pts.clear()
@@ -159,6 +160,9 @@ class SafetyCar(SafetyPP):
 
         action = self.run_safety_check(obs, pp_action)
 
+        self.old_steers.append(pp_action[0])
+        self.new_steers.append(action[0])
+
         return action 
 
 
@@ -188,18 +192,51 @@ class SafetyCar(SafetyPP):
         scan = obs['scan']
         state = obs['state']
 
-        xs, ys = convert_scan_xy(scan)
-
         deltas, vs = self.calculate_envelope(scan)
 
-        self.plot_lidar_line(xs, ys, deltas, vs, pp_action, state)
+        action = self.modify_action(deltas, vs, pp_action, state)
+        while action is None: # if it can't find an angle, reduce speed and try again.
+            pp_action[1] = pp_action[1] * 0.75
+            action = self.modify_action(deltas, vs, pp_action, state)
 
+        self.plot_lidar_line(scan, deltas, vs, pp_action, action, state)
+
+        if action[0] != pp_action[0]:
+            plt.show()
+
+        return action
+
+    def modify_action(self, deltas, vs, pp_action, state):
+        new_action = None
+        if not check_action_safe(pp_action, deltas, vs):
+            # action must be Changed
+            n_search = 20 
+            d_delta = self.max_steer / n_search 
+
+            if state[4] > pp_action[0]:
+                print(f"Searching positive delta space")
+                for i in range(1, n_search):
+                    p_act = np.array([pp_action[0] + d_delta * i, pp_action[1]])
+                    if check_action_safe(p_act, deltas, vs):
+                        new_action = p_act
+                        break
+            else:
+                print(f"Searching negative delta space")
+                for i in range(1, n_search):
+                    n_act = np.array([pp_action[0] - d_delta * i, pp_action[1]]) 
+                    if check_action_safe(n_act, deltas, vs):
+                        new_action = n_act
+                        break
+        
+            print(f"Action unsafe: ({pp_action}) --> modify to ({new_action})")
+            return new_action
         return pp_action
-
+                
 
     def calculate_envelope(self, scan):
         angles = get_angles()
-        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/scan)
+        l_d = 4
+        deltas = np.arctan(2 * self.wheelbase * np.sin(angles)/l_d)
         deltas = np.clip(deltas, -self.max_steer, self.max_steer)
 
         vs = np.sqrt(scan*2*self.max_a)
@@ -207,9 +244,12 @@ class SafetyCar(SafetyPP):
 
         return deltas, vs
 
-    def plot_lidar_line(self, xs, ys, deltas, vs, pp_action, state, fig_n=1):
+    def plot_lidar_line(self, scan, deltas, vs, pp_action, action, state, fig_n=1):
+        xs, ys = convert_scan_xy(scan)
+
         plt.figure(fig_n)
         plt.clf()
+        plt.ylim([0, 10])
         plt.title("Lidar line")
         plt.plot(xs, ys, '-+')
 
@@ -220,19 +260,35 @@ class SafetyCar(SafetyPP):
 
         plt.figure(fig_n+1)
         plt.clf()
+        plt.xlim([-0.4, 0.4])
+        plt.ylim([0, 7.2])
         plt.title("Control Envelope")
         plt.plot(deltas, vs)
-        plt.plot(pp_action[0], pp_action[1], '+', markersize=18)
+
+        # pp action 
+        plt.plot(pp_action[0], pp_action[1], '+', markersize=18, color='b')
+        
+        # normal action 
+        plt.plot(action[0], action[1], '+', markersize=18, color='r')
+
+        # state
         speed = state[3]
         plt.plot(state[4], speed, '*', markersize=18)
 
-        plt.legend(['Safety env', 'pp', 'state', 'feasible'])
+        w = 0.32
+        h = 0.8
+        x = state[4] - w
+        y = speed - h
+        rectangle = plt.Rectangle((x, y), 2*w, 2*h, fc=(1, 1, 1), ec='blue')
+        plt.gca().add_patch(rectangle)
 
-        plt.plot()
+        plt.legend(['Safety env', 'pp', 'action', 'state', 'feasible'])
+
+        # plt.plot()
 
 
-        # plt.pause(0.8)
-        plt.show()
+        plt.pause(0.5)
+        # plt.show()
 
     def show_lidar(self, wait=False):
         # plot_lidar_col_vals(self.last_scan, self.col_vals, self.o_action[0], False, fig_n=2)
@@ -309,6 +365,27 @@ def get_feasible_projection():
 
     return xs, ys
 
+@njit(cache=True)
+def find_v_idx(deltas, action, vs):
+    for i in range(len(deltas)):
+        if action[0] < deltas[i]:
+            idx = i 
+            break 
+    v_idx = np.mean(vs[idx:idx+2])
 
+    return v_idx
+
+# @njit(cache=True)
+def check_action_safe(pp_action, deltas, vs):
+    # pp_action[0] *= 0.95 # makes sure it is within range
+    v_idx = find_v_idx(deltas, pp_action, vs)
+
+    if pp_action[1] > v_idx:
+        return False 
+
+    # add check for crossing verticle lines
+    # if 
+
+    return True
 
 
