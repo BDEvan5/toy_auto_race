@@ -185,6 +185,9 @@ class SafetyCar(SafetyPP):
         plt.pause(0.0001)
         if wait:
             plt.show()
+        
+    def show_lidar(self):
+        pass
 
     def run_safety_check(self, obs, pp_action):
 
@@ -197,9 +200,10 @@ class SafetyCar(SafetyPP):
         d = state[4]
         dw_vs, dw_ds = build_dynamic_window(v, d, self.max_v, self.max_steer, self.max_a, self.max_d_dot, 0.1)
 
-        valid_window = check_dw(dw_vs, dw_ds, self.max_a, scan)
+        valid_window, end_pts = check_dw(dw_vs, dw_ds, self.max_a, scan)
 
         self.plot_valid_window(dw_vs, dw_ds, valid_window)
+        self.plot_lidar_scan(scan, end_pts)
 
         return pp_action
 
@@ -208,8 +212,9 @@ class SafetyCar(SafetyPP):
         plt.clf()
         plt.title("Valid window")
 
-        plt.xlim([dw_ds[0], dw_ds[-1]])
-        plt.ylim([dw_vs[0], dw_vs[-1]])
+        sf = 1.1
+        plt.xlim([dw_ds[0]*sf, dw_ds[-1]*sf])
+        plt.ylim([dw_vs[0]/sf, dw_vs[-1]*sf])
 
         for i, v in enumerate(dw_vs):
             for j, d in enumerate(dw_ds):
@@ -220,9 +225,25 @@ class SafetyCar(SafetyPP):
 
         # plt.show()
         plt.pause(0.0001)
-                    
-    def show_lidar(self):
-        pass
+
+
+    def plot_lidar_scan(self, scan, end_pts):
+        plt.figure(2)
+        plt.clf()
+        plt.title('Lidar Scan')
+        xs, ys = convert_scan_xy(scan)
+
+        plt.ylim([0, 10])
+        plt.plot(xs, ys, '-+')
+
+        xs = end_pts[:, :, 0].flatten()
+        ys = end_pts[:, :, 1].flatten()
+        for x, y in zip(xs, ys):
+            x_p = [0, x]
+            y_p = [0, y]
+            plt.plot(x_p, y_p, '--')
+
+        plt.pause(0.0001)
 
 @njit(cache=True) 
 def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
@@ -239,27 +260,32 @@ def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
 
     return vs, ds
 
-@jit(cache=True)
+# @jit(cache=True)
 def check_dw(dw_vs, dw_ds, max_a, scan):
 
     dt = 0.1
     n_steps = 10 
     valids = np.empty((len(dw_vs), len(dw_ds)))
+    end_pts = np.empty((len(dw_vs), len(dw_ds), 2))
     for i, v in enumerate(dw_vs):
         for j, d in enumerate(dw_ds):
             t_xs, t_ys = predict_trajectory(v, d, n_steps, dt)
             safe = check_trajcetory_safe(t_xs, t_ys, scan)
 
             valids[i, j] = safe 
+            end_pts[i, j, 0] = t_xs[-1]
+            end_pts[i, j, 1] = t_ys[-1]
 
-    return valids 
+    return valids, end_pts
 
-@njit(cache=True)
+# @njit(cache=True)
 def predict_trajectory(v, d, n_steps, dt):
     L = 0.33
-    xs = ys = np.empty(n_steps)
+    xs = np.empty(n_steps)
+    ys = np.empty(n_steps)
     theta = 0 
-    xs[0] = ys[0] = 0
+    xs[0] = 0
+    ys[0] = 0
     for i in range(1, n_steps):
         theta += dt * v / L * np.tan(d)
         xs[i] = xs[i-1] + v * np.sin(theta) * dt 
