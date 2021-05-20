@@ -202,12 +202,38 @@ class SafetyCar(SafetyPP):
 
         valid_window, end_pts = check_dw(dw_vs, dw_ds, self.max_a, scan)
 
-        self.plot_valid_window(dw_vs, dw_ds, valid_window)
+        new_action = self.modify_action(pp_action, valid_window, dw_vs, dw_ds)
+
+        self.plot_valid_window(dw_vs, dw_ds, valid_window, pp_action, new_action)
         self.plot_lidar_scan(scan, end_pts)
 
-        return pp_action
+        return new_action
 
-    def plot_valid_window(self, dw_vs, dw_ds, valid_window):
+    def modify_action(self, pp_action, valid_window, dw_vs, dw_ds):
+        v_idx, d_idx = action_to_ind(pp_action, dw_vs, dw_ds)
+        if check_action_safe(valid_window, v_idx, d_idx):
+            return pp_action 
+        else: 
+            v_idx, d_idx = self.find_new_action(valid_window, v_idx, d_idx)
+            new_action = np.array([dw_ds[d_idx], dw_vs[v_idx]])
+            return new_action
+
+    def find_new_action(self, valid_window, v_idx, d_idx):
+        # start searching for
+        d_size = len(valid_window[0])
+        while True:
+            for i in range(len(valid_window[0])): # search d space
+                p_d = min(d_size-1, d_idx+i)
+                if check_action_safe(valid_window, v_idx, p_d):
+                    return v_idx, d_idx 
+                n_d = max(0, d_idx-i)
+                if check_action_safe(valid_window, v_idx, n_d):
+                    return v_idx, d_idx 
+            v_idx -= 1 # reduce vidx and try argpartition
+            print(f"Reducing V_idx: {v_idx}")
+
+
+    def plot_valid_window(self, dw_vs, dw_ds, valid_window, pp_action, new_action):
         plt.figure(1)
         plt.clf()
         plt.title("Valid window")
@@ -219,9 +245,12 @@ class SafetyCar(SafetyPP):
         for i, v in enumerate(dw_vs):
             for j, d in enumerate(dw_ds):
                 if valid_window[i, j]:
-                    plt.plot(d, v, '+', color='green', markersize=18)
+                    plt.plot(d, v, '+', color='green', markersize=14)
                 else:
-                    plt.plot(d, v, '+', color='red', markersize=18)
+                    plt.plot(d, v, '+', color='red', markersize=14)
+
+        plt.plot(pp_action[0], pp_action[1], 'x', color='red', markersize=18)
+        plt.plot(new_action[0], new_action[1], 'x', color='green', markersize=18)
 
         # plt.show()
         plt.pause(0.0001)
@@ -244,6 +273,7 @@ class SafetyCar(SafetyPP):
             plt.plot(x_p, y_p, '--')
 
         plt.pause(0.0001)
+        # plt.show()
 
 @njit(cache=True) 
 def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
@@ -264,7 +294,7 @@ def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
 def check_dw(dw_vs, dw_ds, max_a, scan):
 
     dt = 0.1
-    n_steps = 10 
+    n_steps = 2
     valids = np.empty((len(dw_vs), len(dw_ds)))
     end_pts = np.empty((len(dw_vs), len(dw_ds), 2))
     for i, v in enumerate(dw_vs):
@@ -331,9 +361,17 @@ def convert_scan_xy(scan, fov=np.pi):
     ys = scan * cosines    
     return xs, ys
 
+@njit(cache=True)
+def check_action_safe(valid_window, v_idx, d_idx):
+    if valid_window[v_idx-1:v_idx+2, d_idx-1:d_idx+2].all():
+        return True 
+    return False
 
-
-
+@njit(cache=True)
+def action_to_ind(action, dw_vs, dw_ds):
+    d_idx = int(round(action[0] / (dw_ds[-1] - dw_ds[0]) / 49) + 25)
+    v_idx = int(round(action[0] / (dw_vs[-1] - dw_vs[0]) / 19))
+    return v_idx, d_idx
 
 
 
