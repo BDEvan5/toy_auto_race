@@ -1,5 +1,4 @@
 
-from numba.core.types.npytypes import NestedArray
 import numpy as np
 from numba import njit
 from matplotlib import pyplot as plt

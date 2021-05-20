@@ -3,7 +3,8 @@ from toy_auto_race.Utils import LibFunctions as lib
 from toy_f110 import ForestSim
 # from toy_auto_race.NavAgents.SafetyCar import SafetyCar
 # from toy_auto_race.NavAgents.SafetyEnvelope import SafetyCar
-from toy_auto_race.NavAgents.SuperSafetySystem import SafetyCar
+# from toy_auto_race.NavAgents.SuperSafetySystem import SafetyCar
+from toy_auto_race.NavAgents.DynamicWindow import SafetyCar
 
 from TrainTest import *
 
