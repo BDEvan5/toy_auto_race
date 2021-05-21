@@ -757,7 +757,7 @@ def run_pre_map():
     fname = "std_config"
     conf = lib.load_conf(fname)
     # map_name = "example_map"
-    map_name = "porto"
+    map_name = "torino"
     
 
     pre_map = PreMap(conf, map_name)
