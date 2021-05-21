@@ -274,7 +274,9 @@ class SafetyCar(SafetyPP):
         plt.title('Lidar Scan')
         xs, ys = convert_scan_xy(scan)
 
-        plt.ylim([0, 10])
+        # plt.ylim([0, 10])
+        plt.xlim([-1.5, 1.5])
+        plt.ylim([0, 3])
         plt.plot(xs, ys, '-+')
 
         xs = end_pts[:, 0].flatten()
@@ -301,12 +303,12 @@ def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
 @jit(cache=True)
 def check_dw(dw_ds, scan, o_d):
     dt = 0.1
-    n_steps = 5
+    n_steps = 2
     valids = np.empty( len(dw_ds))
     end_pts = np.empty((len(dw_ds), 2))
     for j, d in enumerate(dw_ds):
-        t_xs, t_ys = predict_trajectory(d, n_steps, dt, o_d)
-        safe = check_trajcetory_safe(t_xs, t_ys, scan)
+        t_xs, t_ys, th = predict_trajectory(d, n_steps, dt, o_d)
+        safe = check_trajcetory_safe(t_xs, t_ys, th, scan)
 
         valids[j] = safe 
         end_pts[j, 0] = t_xs[-1]
@@ -314,7 +316,7 @@ def check_dw(dw_ds, scan, o_d):
 
     return valids, end_pts
 
-@njit(cache=True)
+# @njit(cache=True)
 def predict_trajectory(d, n_steps, dt, o_d, v=3):
     xs = np.zeros(n_steps)
     ys = np.zeros(n_steps)
@@ -326,20 +328,38 @@ def predict_trajectory(d, n_steps, dt, o_d, v=3):
             x = update_kinematic_state(x, u, dt/10)
         xs[i] = x[0]
         ys[i] = x[1]
-
-        # theta += dt * v / L * np.tan(d)
-        # xs[i] = xs[i-1] + v * np.sin(theta) * dt 
-        # ys[i] = ys[i-1] + v * np.cos(theta) * dt 
     
-    return xs, ys
+    return xs, ys, x[2]
 
+# @njit(cache=True)
+def check_pt_feasible(x, y, th, scan):
+    n_pts = 50
+    angles = np.linspace(-np.pi/4, np.pi/4, n_pts)
+    safes = np.zeros(n_pts)
+    d_stop = 2
+    for i, a in enumerate(angles):
+        x_s = x + np.sin(a+th) * d_stop
+        y_s = y + np.cos(a+th) * d_stop
+        safes[i] = check_pt_safe(x_s, y_s, scan)
+
+    max_n = 0
+    for s in safes:
+        if s:
+            max_n += 1
+        else:
+            max_n = 0 
+        if max_n > 3:
+            return True 
+    return False
 
 
 @jit(cache=True)
-def check_trajcetory_safe(t_xs, t_ys, scan):
+def check_trajcetory_safe(t_xs, t_ys, th, scan):
     for x, y in zip(t_xs, t_ys):
         if not check_pt_safe(x, y, scan):
             return False 
+    if not check_pt_feasible(t_xs[-1], t_ys[-1], th, scan):
+        return False
     return True
 
 @njit(cache=True)
