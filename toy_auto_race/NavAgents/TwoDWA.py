@@ -201,21 +201,25 @@ class SafetyCar(SafetyPP):
         d = state[4]
         dw_ds = build_dynamic_window(v, d, self.max_v, self.max_steer, self.max_a, self.max_d_dot, 0.1)
 
-        valid_window, end_pts = check_dw(dw_ds, scan, d)
+
+        x_pts, y_pts = segment_lidar_scan(scan)
+        x_pts, y_pts = create_safety_cones(x_pts, y_pts)
+        rs, ths = convert_xys_rths(x_pts, y_pts)
+
+        valid_window, end_pts = check_dw_clean(dw_ds, rs, ths, d)
 
         new_action = self.modify_action(pp_action, valid_window, dw_ds)
 
         self.plot_valid_window(dw_ds, valid_window, pp_action, new_action)
-        self.plot_lidar_scan(scan, end_pts)
+        # self.plot_lidar_scan(scan, end_pts)
+        self.plot_lidar_scan_clean(x_pts, y_pts, end_pts)
 
-        segment_lidar_scan(scan)
-
-
+        plt.show()
         if not valid_window.any():
             plt.show()
 
-        # if new_action[0] != pp_action[0]:
-        #     plt.show()
+        if new_action[0] != pp_action[0]:
+            plt.show()
 
         return new_action
 
@@ -293,6 +297,26 @@ class SafetyCar(SafetyPP):
         plt.pause(0.0001)
         # plt.show()
 
+    def plot_lidar_scan_clean(self, xs, ys, end_pts):
+        plt.figure(2)
+        plt.clf()
+        plt.title('Lidar Scan')
+
+        plt.ylim([0, 10])
+        # plt.xlim([-1.5, 1.5])
+        # plt.ylim([0, 3])
+        plt.plot(xs, ys, '-+')
+
+        xs = end_pts[:, 0].flatten()
+        ys = end_pts[:, 1].flatten()
+        for x, y in zip(xs, ys):
+            x_p = [0, x]
+            y_p = [0, y]
+            plt.plot(x_p, y_p, '--')
+
+        plt.pause(0.0001)
+        # plt.show()
+
 
 
 # @njit(cache=True)
@@ -300,10 +324,8 @@ def segment_lidar_scan(scan):
     """ 
     Takes a lidar scan and reduces it to a set of points that make straight lines 
     """
-    # sines, cosines = get_trigs(len(scan))
     xs, ys = convert_scan_xy(scan)
     diffs = np.sqrt((xs[1:]-xs[:-1])**2 + (ys[1:]-ys[:-1])**2)
-    # diffs = np.abs(scan[1:] - scan[:-1]) 
     i_pts = [0]
     d_thresh = 0.3
     for i in range(len(diffs)):
@@ -316,19 +338,14 @@ def segment_lidar_scan(scan):
     x_pts = xs[i_pts]
     y_pts = ys[i_pts]
 
-    create_safety_cones(x_pts, y_pts)
-
     return x_pts, y_pts
 
-
-
+# @njit(cache=True) 
 def create_safety_cones(x_pts, y_pts):
     N = len(x_pts)
     L = 0.33
     max_steer = 0.4
 
-    x_plot = []
-    y_plot = []
     new_x = x_pts
     new_y = y_pts
 
@@ -336,27 +353,19 @@ def create_safety_cones(x_pts, y_pts):
     n_new_pts = 0
     for i in range(N-1):
         if abs(y_pts[i] - y_pts[i+1]) < y_thresh:
-            # assume horizontal line
-            w = (x_pts[i+1] - x_pts[i])/2 # is abs needed?
+            w = (x_pts[i+1] - x_pts[i])/2 
             l_d = np.sqrt(w * 2 * L / np.tan(max_steer))
             d = np.sqrt(l_d **2 - w**2)
 
             x = x_pts[i] + w
             y = (y_pts[i] + y_pts[i+1])/2 - d * 2
 
-            x_plot.append(x)
-            y_plot.append(y)
-
             new_x = np.insert(new_x, i+1+n_new_pts, x)
             new_y = np.insert(new_y, i+1+n_new_pts, y)
             n_new_pts += 1
 
-    plt.figure(3)
-    # plt.plot(x_pts, y_pts, '+-')
-    plt.plot(new_x, new_y, '+-')
-    # plt.plot(x_plot, y_plot, '+', markersize=20)
+    return new_x, new_y
 
-    plt.show()
 
 @njit(cache=True) 
 def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
@@ -385,7 +394,24 @@ def check_dw(dw_ds, scan, o_d):
 
     return valids, end_pts
 
-# @njit(cache=True)
+@jit(cache=True)
+def check_dw_clean(dw_ds, rs, ths, o_d):
+    dt = 0.1
+    n_steps = 2
+    valids = np.empty( len(dw_ds))
+    end_pts = np.empty((len(dw_ds), 2))
+    for j, d in enumerate(dw_ds):
+        t_xs, t_ys, th = predict_trajectory(d, n_steps, dt, o_d)
+        # safe = check_trajcetory_safe(t_xs, t_ys, th, rs, ths)
+        safe = check_trajcetory_safe_clean(t_xs, t_ys, rs, ths)
+
+        valids[j] = safe 
+        end_pts[j, 0] = t_xs[-1]
+        end_pts[j, 1] = t_ys[-1]
+
+    return valids, end_pts
+
+@njit(cache=True)
 def predict_trajectory(d, n_steps, dt, o_d, v=3):
     xs = np.zeros(n_steps)
     ys = np.zeros(n_steps)
@@ -400,7 +426,7 @@ def predict_trajectory(d, n_steps, dt, o_d, v=3):
     
     return xs, ys, x[2]
 
-# @njit(cache=True)
+@njit(cache=True)
 def check_pt_feasible(x, y, th, scan):
     n_pts = 50
     angles = np.linspace(-np.pi/4, np.pi/4, n_pts)
@@ -443,6 +469,37 @@ def check_pt_safe(x, y, scan):
     if ld > min_idx: # average four scans
         return False 
     return True  # ld shorter than scan.
+
+@njit(cache=True)
+def convert_xys_rths(xs, ys):
+    rs = np.sqrt(np.power(xs, 2) + np.power(ys, 2))
+    ths = np.arctan(xs/ys)
+
+    return rs, ths
+
+
+@jit(cache=True)
+def check_trajcetory_safe_clean(t_xs, t_ys, rs, ths):
+    for x, y in zip(t_xs, t_ys):
+        if not check_pt_safe_clean(x, y, rs, ths):
+            return False 
+    return True
+
+@njit(cache=True)
+def check_pt_safe_clean(x, y, rs, ths):
+    angle = np.arctan(x/y) # range -90, 90
+    dths = np.abs(ths - angle*np.ones_like(ths))
+    idx = np.argmin(dths)
+    dths[idx] = np.inf 
+    idx2 = np.argmin(dths)
+
+
+    r = (x**2 + y**2)**0.5
+    r_max = min(rs[idx], rs[idx2])
+    if r > r_max:
+        return False 
+    else:
+        return True 
 
 
 
