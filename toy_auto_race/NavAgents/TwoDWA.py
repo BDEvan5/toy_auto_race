@@ -313,14 +313,50 @@ def segment_lidar_scan(scan):
     i_pts.append(len(scan)-1)
 
     i_pts = np.array(i_pts)
-    x_plot = xs[i_pts]
-    y_plot = ys[i_pts]
+    x_pts = xs[i_pts]
+    y_pts = ys[i_pts]
+
+    create_safety_cones(x_pts, y_pts)
+
+    return x_pts, y_pts
+
+
+
+def create_safety_cones(x_pts, y_pts):
+    N = len(x_pts)
+    L = 0.33
+    max_steer = 0.4
+
+    x_plot = []
+    y_plot = []
+    new_x = x_pts
+    new_y = y_pts
+
+    y_thresh = 0.1
+    n_new_pts = 0
+    for i in range(N-1):
+        if abs(y_pts[i] - y_pts[i+1]) < y_thresh:
+            # assume horizontal line
+            w = (x_pts[i+1] - x_pts[i])/2 # is abs needed?
+            l_d = np.sqrt(w * 2 * L / np.tan(max_steer))
+            d = np.sqrt(l_d **2 - w**2)
+
+            x = x_pts[i] + w
+            y = (y_pts[i] + y_pts[i+1])/2 - d * 2
+
+            x_plot.append(x)
+            y_plot.append(y)
+
+            new_x = np.insert(new_x, i+1+n_new_pts, x)
+            new_y = np.insert(new_y, i+1+n_new_pts, y)
+            n_new_pts += 1
 
     plt.figure(3)
-    plt.plot(x_plot, y_plot, '+-')
+    # plt.plot(x_pts, y_pts, '+-')
+    plt.plot(new_x, new_y, '+-')
+    # plt.plot(x_plot, y_plot, '+', markersize=20)
 
     plt.show()
-
 
 @njit(cache=True) 
 def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
