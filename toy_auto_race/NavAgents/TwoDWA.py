@@ -196,6 +196,7 @@ class SafetyCar(SafetyPP):
         scan *= 0.95
         state = obs['state']
 
+
         v = state[3]
         d = state[4]
         dw_ds = build_dynamic_window(v, d, self.max_v, self.max_steer, self.max_a, self.max_d_dot, 0.1)
@@ -206,6 +207,9 @@ class SafetyCar(SafetyPP):
 
         self.plot_valid_window(dw_ds, valid_window, pp_action, new_action)
         self.plot_lidar_scan(scan, end_pts)
+
+        segment_lidar_scan(scan)
+
 
         if not valid_window.any():
             plt.show()
@@ -274,9 +278,9 @@ class SafetyCar(SafetyPP):
         plt.title('Lidar Scan')
         xs, ys = convert_scan_xy(scan)
 
-        # plt.ylim([0, 10])
-        plt.xlim([-1.5, 1.5])
-        plt.ylim([0, 3])
+        plt.ylim([0, 10])
+        # plt.xlim([-1.5, 1.5])
+        # plt.ylim([0, 3])
         plt.plot(xs, ys, '-+')
 
         xs = end_pts[:, 0].flatten()
@@ -288,6 +292,35 @@ class SafetyCar(SafetyPP):
 
         plt.pause(0.0001)
         # plt.show()
+
+
+
+# @njit(cache=True)
+def segment_lidar_scan(scan):
+    """ 
+    Takes a lidar scan and reduces it to a set of points that make straight lines 
+    """
+    # sines, cosines = get_trigs(len(scan))
+    xs, ys = convert_scan_xy(scan)
+    diffs = np.sqrt((xs[1:]-xs[:-1])**2 + (ys[1:]-ys[:-1])**2)
+    # diffs = np.abs(scan[1:] - scan[:-1]) 
+    i_pts = [0]
+    d_thresh = 0.3
+    for i in range(len(diffs)):
+        if diffs[i] > d_thresh:
+            i_pts.append(i)
+            i_pts.append(i+1)
+    i_pts.append(len(scan)-1)
+
+    i_pts = np.array(i_pts)
+    x_plot = xs[i_pts]
+    y_plot = ys[i_pts]
+
+    plt.figure(3)
+    plt.plot(x_plot, y_plot, '+-')
+
+    plt.show()
+
 
 @njit(cache=True) 
 def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
@@ -336,7 +369,7 @@ def check_pt_feasible(x, y, th, scan):
     n_pts = 50
     angles = np.linspace(-np.pi/4, np.pi/4, n_pts)
     safes = np.zeros(n_pts)
-    d_stop = 2
+    d_stop = 2.5
     for i, a in enumerate(angles):
         x_s = x + np.sin(a+th) * d_stop
         y_s = y + np.cos(a+th) * d_stop
@@ -348,7 +381,7 @@ def check_pt_feasible(x, y, th, scan):
             max_n += 1
         else:
             max_n = 0 
-        if max_n > 3:
+        if max_n > 1:
             return True 
     return False
 
