@@ -205,6 +205,7 @@ class SafetyCar(SafetyPP):
         x_pts, y_pts = segment_lidar_scan(scan)
         x_pts, y_pts = create_safety_cones(x_pts, y_pts)
         rs, ths = convert_xys_rths(x_pts, y_pts)
+        rs, ths = clean_r_list(rs, ths)
 
         valid_window, end_pts = check_dw_clean(dw_ds, rs, ths, d)
 
@@ -282,8 +283,7 @@ class SafetyCar(SafetyPP):
         plt.title('Lidar Scan')
         xs, ys = convert_scan_xy(scan)
 
-        plt.ylim([0, 10])
-        # plt.xlim([-1.5, 1.5])
+
         # plt.ylim([0, 3])
         plt.plot(xs, ys, '-+')
 
@@ -293,6 +293,9 @@ class SafetyCar(SafetyPP):
             x_p = [0, x]
             y_p = [0, y]
             plt.plot(x_p, y_p, '--')
+
+        plt.ylim([0, 10])
+        plt.xlim([-1.5, 1.5])
 
         plt.pause(0.0001)
         # plt.show()
@@ -303,6 +306,7 @@ class SafetyCar(SafetyPP):
         plt.title('Lidar Scan')
 
         plt.ylim([0, 10])
+        plt.xlim([-1.5, 1.5])
         # plt.xlim([-1.5, 1.5])
         # plt.ylim([0, 3])
         plt.plot(xs, ys, '-+')
@@ -318,6 +322,46 @@ class SafetyCar(SafetyPP):
         # plt.show()
 
 
+def clean_r_list(rs, ths):
+    center_idx = np.argmin(np.abs(ths))
+    new_ths, new_rs = [], []
+
+    cur_angle = ths[center_idx]
+    for i in range(center_idx-1, -1, -1):
+        cur_angle = min(cur_angle-0.01, ths[i])
+        new_ths.append(cur_angle)
+    new_ths.reverse()
+
+    new_ths.append(ths[center_idx])
+
+    cur_angle = ths[center_idx]
+    for i in range(center_idx+1, len(ths)):
+        if ths[i] < 0: 
+            ths[i] = np.pi + ths[i]
+        cur_angle = max(cur_angle+0.01, ths[i])
+        new_ths.append(cur_angle)
+
+    # for i in range(center_idx-1, 0, -1):
+    #     ths[i] = min(ths[i+1], ths[i])
+
+    # for i in range(center_idx-1, len(ths)-1):
+    #     ths[i] = max(ths[i], ths[i+1])
+
+    # TODO: change the r accordingly at some point too
+    return rs, np.array(new_ths) 
+
+    # new_rs, new_ths = [rs[0]], [ths[0]]
+    # for i in range(1, len(rs)-1):
+    #     t_i = ths[i]
+    #     o_t = new_ths[-1] 
+
+    #     if t_i > o_t and ths[i] < ths[i+1]:
+    #         new_rs.append(rs[i])
+    #         new_ths.append(ths[i])
+    # new_ths.append(ths[-1])
+    # new_rs.append(rs[-1])
+
+    # return np.array(new_rs), np.array(new_ths)
 
 # @njit(cache=True)
 def segment_lidar_scan(scan):
@@ -378,36 +422,26 @@ def build_dynamic_window(v, delta, max_v, max_steer, max_a, max_d_dot, dt):
 
     return ds
 
-@jit(cache=True)
-def check_dw(dw_ds, scan, o_d):
-    dt = 0.1
-    n_steps = 2
-    valids = np.empty( len(dw_ds))
-    end_pts = np.empty((len(dw_ds), 2))
-    for j, d in enumerate(dw_ds):
-        t_xs, t_ys, th = predict_trajectory(d, n_steps, dt, o_d)
-        safe = check_trajcetory_safe(t_xs, t_ys, th, scan)
 
-        valids[j] = safe 
-        end_pts[j, 0] = t_xs[-1]
-        end_pts[j, 1] = t_ys[-1]
-
-    return valids, end_pts
-
-@jit(cache=True)
+# @jit(cache=True)
 def check_dw_clean(dw_ds, rs, ths, o_d):
     dt = 0.1
     n_steps = 2
     valids = np.empty( len(dw_ds))
     end_pts = np.empty((len(dw_ds), 2))
+    xs, ys = convert_polar_xy(rs, ths) 
+    ms, cs = convert_xy_mc(xs, ys)
     for j, d in enumerate(dw_ds):
-        t_xs, t_ys, th = predict_trajectory(d, n_steps, dt, o_d)
-        # safe = check_trajcetory_safe(t_xs, t_ys, th, rs, ths)
-        safe = check_trajcetory_safe_clean(t_xs, t_ys, rs, ths)
+        t_xs, t_ys = predict_trajectory(d, n_steps, dt, o_d)
+        safe, pt = check_pt_safe_clean(t_xs[-1], t_ys[-1], ths, ms, cs)
 
         valids[j] = safe 
-        end_pts[j, 0] = t_xs[-1]
-        end_pts[j, 1] = t_ys[-1]
+        # end_pts[j, 0] = t_xs[-1]
+        # end_pts[j, 1] = t_ys[-1]
+
+        # add the intersection points
+        end_pts[j, 0] = pt[0]
+        end_pts[j, 1] = pt[1]
 
     return valids, end_pts
 
@@ -424,51 +458,9 @@ def predict_trajectory(d, n_steps, dt, o_d, v=3):
         xs[i] = x[0]
         ys[i] = x[1]
     
-    return xs, ys, x[2]
-
-@njit(cache=True)
-def check_pt_feasible(x, y, th, scan):
-    n_pts = 50
-    angles = np.linspace(-np.pi/4, np.pi/4, n_pts)
-    safes = np.zeros(n_pts)
-    d_stop = 2.5
-    for i, a in enumerate(angles):
-        x_s = x + np.sin(a+th) * d_stop
-        y_s = y + np.cos(a+th) * d_stop
-        safes[i] = check_pt_safe(x_s, y_s, scan)
-
-    max_n = 0
-    for s in safes:
-        if s:
-            max_n += 1
-        else:
-            max_n = 0 
-        if max_n > 1:
-            return True 
-    return False
+    return xs, ys
 
 
-@jit(cache=True)
-def check_trajcetory_safe(t_xs, t_ys, th, scan):
-    for x, y in zip(t_xs, t_ys):
-        if not check_pt_safe(x, y, scan):
-            return False 
-    if not check_pt_feasible(t_xs[-1], t_ys[-1], th, scan):
-        return False
-    return True
-
-@njit(cache=True)
-def check_pt_safe(x, y, scan):
-    angle = np.arctan(x/y) # range -90, 90
-    idx = int(angle / (np.pi / 999) + 500)
-    idx = min(max(10, idx), 990)
-    ld = (x**2 + y**2)**0.5
-
-    idxs = scan[idx-10:idx+10]
-    min_idx = np.min(idxs)
-    if ld > min_idx: # average four scans
-        return False 
-    return True  # ld shorter than scan.
 
 @njit(cache=True)
 def convert_xys_rths(xs, ys):
@@ -484,47 +476,49 @@ def convert_polar_xy(rs, ths):
 
     return xs, ys
 
-@jit(cache=True)
-def check_trajcetory_safe_clean(t_xs, t_ys, rs, ths):
-    for x, y in zip(t_xs, t_ys):
-        if not check_pt_safe_clean(x, y, rs, ths):
-            return False 
-    return True
-
 @njit(cache=True)
-def calculate_distance_polar_pts(rs, ths, idx1, idx2):
-    x1, y1 = convert_polar_xy(rs[idx1], ths[idx1])
-    x2, y2 = convert_polar_xy(rs[idx2], ths[idx2])
-    d = np.sqrt(np.power(x2 - x1, 2) + np.power(y2-y1, 2))
-    return d
+def convert_xy_mc(xs, ys):
+    ms = (ys[1:] - ys[:-1])/(xs[1:] - xs[:-1])
+    cs = ys[:-1] - ms * xs[:-1]
 
-#TODO: there is a problem in this function.
-#:TODO: write a test or something to fix it. Check the angle and that kind of stuff 
+    return ms, cs 
+
+
+# @jit(cache=True)
+# def check_trajcetory_safe_clean(t_xs, t_ys, ths, ms, cs):
+#     for x, y in zip(t_xs, t_ys):
+#         if not check_pt_safe_clean(x, y, ths, ms, cs):
+#             return False 
+#     return True
+
 # @njit(cache=True)
-def check_pt_safe_clean(x, y, rs, ths):
+def calculate_intersection(m, c, th):
+    m_r = np.tan(np.pi/2 - th)
+    x = c / (m_r - m)
+    y = m_r * x 
+
+    return np.array([x, y])
+
+# @njit(cache=True)
+def check_pt_safe_clean(x, y, ths, ms, cs):
     angle = np.arctan(x/y) # range -90, 90
-    dths = np.abs(ths - angle*np.ones_like(ths))
-    idx = np.argmin(dths)
-    dths[idx] = np.inf 
-    idx2 = np.argmin(dths)
+    dths = ths - angle*np.ones_like(ths)
+    idx = np.argmin(np.abs(dths))
+    if angle < ths[idx]:
+        # in this case, it is the previous segment
+        idx -= 1 
+
+    m = ms[idx]
+    c = cs[idx]
 
     r = (x**2 + y**2)**0.5
 
-    if ths[idx] * ths[idx2] < 0: # negative means one is pos and one neg
-        d = calculate_distance_polar_pts(rs, ths, idx, idx2)
-        theta = abs(lib.sub_angles_complex(ths[idx], ths[idx2]))
-        h = 2 / d * rs[idx] * rs[idx2] * np.sin(theta)
-        if r > h:
-            return False 
-        else:
-            return True
+    pt = calculate_intersection(m, c, angle)
+    r_intersection = np.sqrt(np.sum(np.power(pt, 2)))
 
-    r_max = min(rs[idx], rs[idx2])
-    if r > r_max:
-        return False 
-    else:
-        return True 
-
+    if r > r_intersection:
+        return False, pt  
+    return True, pt
 
 
 @njit(cache=True)
