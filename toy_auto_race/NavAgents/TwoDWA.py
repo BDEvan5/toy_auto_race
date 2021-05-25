@@ -477,6 +477,12 @@ def convert_xys_rths(xs, ys):
 
     return rs, ths
 
+@njit(cache=True)
+def convert_polar_xy(rs, ths):
+    xs = rs * np.sin(ths)
+    ys = rs * np.cos(ths)
+
+    return xs, ys
 
 @jit(cache=True)
 def check_trajcetory_safe_clean(t_xs, t_ys, rs, ths):
@@ -486,6 +492,15 @@ def check_trajcetory_safe_clean(t_xs, t_ys, rs, ths):
     return True
 
 @njit(cache=True)
+def calculate_distance_polar_pts(rs, ths, idx1, idx2):
+    x1, y1 = convert_polar_xy(rs[idx1], ths[idx1])
+    x2, y2 = convert_polar_xy(rs[idx2], ths[idx2])
+    d = np.sqrt(np.power(x2 - x1, 2) + np.power(y2-y1, 2))
+    return d
+
+#TODO: there is a problem in this function.
+#:TODO: write a test or something to fix it. Check the angle and that kind of stuff 
+# @njit(cache=True)
 def check_pt_safe_clean(x, y, rs, ths):
     angle = np.arctan(x/y) # range -90, 90
     dths = np.abs(ths - angle*np.ones_like(ths))
@@ -493,8 +508,17 @@ def check_pt_safe_clean(x, y, rs, ths):
     dths[idx] = np.inf 
     idx2 = np.argmin(dths)
 
-
     r = (x**2 + y**2)**0.5
+
+    if ths[idx] * ths[idx2] < 0: # negative means one is pos and one neg
+        d = calculate_distance_polar_pts(rs, ths, idx, idx2)
+        theta = abs(lib.sub_angles_complex(ths[idx], ths[idx2]))
+        h = 2 / d * rs[idx] * rs[idx2] * np.sin(theta)
+        if r > h:
+            return False 
+        else:
+            return True
+
     r_max = min(rs[idx], rs[idx2])
     if r > r_max:
         return False 
