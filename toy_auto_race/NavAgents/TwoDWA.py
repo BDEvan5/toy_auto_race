@@ -361,7 +361,7 @@ def create_safety_cones(x_pts, y_pts):
 
     y_thresh = 0.1
     n_new_pts = 0
-    x_buff = 0.1
+    x_buff = 0
     x_n = min(x_pts)
     x_p = max(x_pts)
     for i in range(N-1):
@@ -505,7 +505,7 @@ def convert_scan_xy(scan, fov=np.pi):
 
 # @njit(cache=True)
 def check_action_safe(valid_window, d_idx):
-    window = 3 
+    window = 5
     valids = valid_window[d_idx-window:d_idx+window]
     if valids.all():
         return True 
