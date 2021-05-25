@@ -15,7 +15,7 @@ def test_safety_system():
     env = ForestSim("forest2", sim_conf)
     vehicle = SafetyCar(sim_conf)
 
-    test_single_vehicle(env, vehicle, False, 100, wait=False)
+    test_single_vehicle(env, vehicle, True, 100, wait=False)
 
 
 def test_forest_system():

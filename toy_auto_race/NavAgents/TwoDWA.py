@@ -203,6 +203,7 @@ class SafetyCar(SafetyPP):
 
 
         x_pts, y_pts = segment_lidar_scan(scan)
+        x1, y1 = segment_lidar_scan(scan)
         x_pts, y_pts = create_safety_cones(x_pts, y_pts)
         rs, ths = convert_xys_rths(x_pts, y_pts)
         rs, ths = clean_r_list(rs, ths)
@@ -212,15 +213,15 @@ class SafetyCar(SafetyPP):
         new_action = self.modify_action(pp_action, valid_window, dw_ds)
 
         self.plot_valid_window(dw_ds, valid_window, pp_action, new_action)
-        # self.plot_lidar_scan(scan, end_pts)
-        self.plot_lidar_scan_clean(x_pts, y_pts, end_pts)
+        self.plot_lidar_scan_clean(x1, y1, end_pts, rs, ths)
+        # self.plot_lidar_scan_clean(x_pts, y_pts, end_pts, rs, ths)
 
         plt.show()
-        if not valid_window.any():
-            plt.show()
+        # if not valid_window.any():
+        #     plt.show()
 
-        if new_action[0] != pp_action[0]:
-            plt.show()
+        # if new_action[0] != pp_action[0]:
+        #     plt.show()
 
         return new_action
 
@@ -239,12 +240,7 @@ class SafetyCar(SafetyPP):
             return new_action
 
     def find_new_action(self, valid_window, d_idx):
-        # start searching for
-
         d_size = len(valid_window)
-        #TODO: change this to start the search at delta=0 which is neccesseraily the 25 idx
-        # d_idx = 25 # always start seatching in middle
-        # d_idx = np.argmin()
         for i in range(len(valid_window)): # search d space
             p_d = min(d_size-1, d_idx+i)
             if check_action_safe(valid_window, p_d):
@@ -266,41 +262,17 @@ class SafetyCar(SafetyPP):
 
         for j, d in enumerate(dw_ds):
             if valid_window[j]:
-                plt.plot(d, 1, '+', color='green', markersize=14)
+                plt.plot(d, 1, 'x', color='green', markersize=14)
             else:
-                plt.plot(d, 1, '+', color='red', markersize=14)
+                plt.plot(d, 1, 'x', color='red', markersize=14)
 
-        plt.plot(pp_action[0], 1, 'x', color='red', markersize=18)
-        plt.plot(new_action[0], 1, 'x', color='green', markersize=18)
+        plt.plot(pp_action[0], 1, '+', color='red', markersize=22)
+        plt.plot(new_action[0], 1, '*', color='green', markersize=16)
 
         # plt.show()
         plt.pause(0.0001)
 
-
-    def plot_lidar_scan(self, scan, end_pts):
-        plt.figure(2)
-        plt.clf()
-        plt.title('Lidar Scan')
-        xs, ys = convert_scan_xy(scan)
-
-
-        # plt.ylim([0, 3])
-        plt.plot(xs, ys, '-+')
-
-        xs = end_pts[:, 0].flatten()
-        ys = end_pts[:, 1].flatten()
-        for x, y in zip(xs, ys):
-            x_p = [0, x]
-            y_p = [0, y]
-            plt.plot(x_p, y_p, '--')
-
-        plt.ylim([0, 10])
-        plt.xlim([-1.5, 1.5])
-
-        plt.pause(0.0001)
-        # plt.show()
-
-    def plot_lidar_scan_clean(self, xs, ys, end_pts):
+    def plot_lidar_scan_clean(self, xs, ys, end_pts, rs, ths):
         plt.figure(2)
         plt.clf()
         plt.title('Lidar Scan')
@@ -310,6 +282,9 @@ class SafetyCar(SafetyPP):
         # plt.xlim([-1.5, 1.5])
         # plt.ylim([0, 3])
         plt.plot(xs, ys, '-+')
+
+        xs, ys = convert_polar_xy(rs, ths)
+        plt.plot(xs, ys, '-+', linewidth=2)
 
         xs = end_pts[:, 0].flatten()
         ys = end_pts[:, 1].flatten()
@@ -323,12 +298,15 @@ class SafetyCar(SafetyPP):
 
 
 def clean_r_list(rs, ths):
+    xs, ys = convert_polar_xy(rs, ths)
+    ms, cs = convert_xy_mc(xs, ys)
+    o_ths = np.copy(ths)
     center_idx = np.argmin(np.abs(ths))
     new_ths, new_rs = [], []
 
     cur_angle = ths[center_idx]
     for i in range(center_idx-1, -1, -1):
-        cur_angle = min(cur_angle-0.01, ths[i])
+        cur_angle = min(cur_angle-0.0001, ths[i])
         new_ths.append(cur_angle)
     new_ths.reverse()
 
@@ -338,30 +316,18 @@ def clean_r_list(rs, ths):
     for i in range(center_idx+1, len(ths)):
         if ths[i] < 0: 
             ths[i] = np.pi + ths[i]
-        cur_angle = max(cur_angle+0.01, ths[i])
+        cur_angle = max(cur_angle+0.0001, ths[i])
         new_ths.append(cur_angle)
 
-    # for i in range(center_idx-1, 0, -1):
-    #     ths[i] = min(ths[i+1], ths[i])
-
-    # for i in range(center_idx-1, len(ths)-1):
-    #     ths[i] = max(ths[i], ths[i+1])
+    for i in range(1, len(o_ths)):
+        if new_ths[i] != o_ths[i]:
+            r_pt = calculate_intersection(ms[i-1], cs[i-1], new_ths[i])
+            r = np.sqrt(np.sum(np.power(r_pt, 2)))
+            rs[i] = r 
 
     # TODO: change the r accordingly at some point too
     return rs, np.array(new_ths) 
 
-    # new_rs, new_ths = [rs[0]], [ths[0]]
-    # for i in range(1, len(rs)-1):
-    #     t_i = ths[i]
-    #     o_t = new_ths[-1] 
-
-    #     if t_i > o_t and ths[i] < ths[i+1]:
-    #         new_rs.append(rs[i])
-    #         new_ths.append(ths[i])
-    # new_ths.append(ths[-1])
-    # new_rs.append(rs[-1])
-
-    # return np.array(new_rs), np.array(new_ths)
 
 # @njit(cache=True)
 def segment_lidar_scan(scan):
@@ -395,6 +361,9 @@ def create_safety_cones(x_pts, y_pts):
 
     y_thresh = 0.1
     n_new_pts = 0
+    x_buff = 0.1
+    x_n = min(x_pts)
+    x_p = max(x_pts)
     for i in range(N-1):
         if abs(y_pts[i] - y_pts[i+1]) < y_thresh:
             w = (x_pts[i+1] - x_pts[i])/2 
@@ -404,6 +373,8 @@ def create_safety_cones(x_pts, y_pts):
             x = x_pts[i] + w
             y = (y_pts[i] + y_pts[i+1])/2 - d * 2
 
+            new_x[i+n_new_pts] = max(new_x[i+n_new_pts] - x_buff, x_n)
+            new_x[i+n_new_pts+1] = min(new_x[i+n_new_pts+1]+x_buff, x_p) 
             new_x = np.insert(new_x, i+1+n_new_pts, x)
             new_y = np.insert(new_y, i+1+n_new_pts, y)
             n_new_pts += 1
@@ -436,12 +407,12 @@ def check_dw_clean(dw_ds, rs, ths, o_d):
         safe, pt = check_pt_safe_clean(t_xs[-1], t_ys[-1], ths, ms, cs)
 
         valids[j] = safe 
-        # end_pts[j, 0] = t_xs[-1]
-        # end_pts[j, 1] = t_ys[-1]
+        end_pts[j, 0] = t_xs[-1]
+        end_pts[j, 1] = t_ys[-1]
 
         # add the intersection points
-        end_pts[j, 0] = pt[0]
-        end_pts[j, 1] = pt[1]
+        # end_pts[j, 0] = pt[0]
+        # end_pts[j, 1] = pt[1]
 
     return valids, end_pts
 
@@ -449,8 +420,9 @@ def check_dw_clean(dw_ds, rs, ths, o_d):
 def predict_trajectory(d, n_steps, dt, o_d, v=3):
     xs = np.zeros(n_steps)
     ys = np.zeros(n_steps)
-    x = np.array([0, 0, 0, 3, o_d])
-    ref = np.array([d, v])
+    speed = 3
+    x = np.array([0, 0, 0, speed, o_d])
+    ref = np.array([d, speed])
     for i in range(0, n_steps):
         for j in range(10):
             u = control_system(x, ref)
@@ -483,13 +455,6 @@ def convert_xy_mc(xs, ys):
 
     return ms, cs 
 
-
-# @jit(cache=True)
-# def check_trajcetory_safe_clean(t_xs, t_ys, ths, ms, cs):
-#     for x, y in zip(t_xs, t_ys):
-#         if not check_pt_safe_clean(x, y, ths, ms, cs):
-#             return False 
-#     return True
 
 # @njit(cache=True)
 def calculate_intersection(m, c, th):
@@ -538,10 +503,11 @@ def convert_scan_xy(scan, fov=np.pi):
     ys = scan * cosines    
     return xs, ys
 
-@njit(cache=True)
+# @njit(cache=True)
 def check_action_safe(valid_window, d_idx):
     window = 3 
-    if valid_window[d_idx-window:d_idx+window].all():
+    valids = valid_window[d_idx-window:d_idx+window]
+    if valids.all():
         return True 
     return False
 
