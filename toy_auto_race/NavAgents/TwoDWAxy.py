@@ -300,13 +300,32 @@ class SafetyCar(SafetyPP):
 
 
 def rectify_xy_pts(xs, ys):
+    x0s, y0s = np.copy(xs), np.copy(ys)
     N = len(xs)
-    for i in range(N-1):
-        if xs[i+1] < xs[i]:
-            xs[i] = xs[i+1] - 0.01
+    idx = np.count_nonzero(xs[xs<0])
+    cur_x = xs[idx]
+    for i in range(idx-1, -1, -1):
+        cur_x = min(xs[i], cur_x-0.01)
+        xs[i] = cur_x 
+
+        if x0s[i] != xs[i]:
+            ys[i-1] = interp_y(x0s, y0s, xs[i]+0.02)
+
+    cur_x = xs[idx]
+    for i in range(idx+1, N):
+        cur_x = max(xs[i], cur_x+0.01)
+        xs[i] = cur_x
+        if x0s[i] != xs[i]:
+            ys[i-1] = interp_y(x0s, y0s, xs[i]-0.02)
 
     return xs, ys
 
+@njit(cache=True)
+def interp_y(xs, ys, x):
+    idx = np.count_nonzero(xs[xs<x]) -1
+    y_bound = ys[idx] + (x - xs[idx]) * (ys[idx+1] - ys[idx]) / (xs[idx+1] - xs[idx])
+
+    return y_bound
 
 # @njit(cache=True)
 def segment_lidar_scan(scan):
@@ -393,7 +412,6 @@ def check_dw_clean(dw_ds, xs, ys, o_d):
     n_steps = 2
     valids = np.empty( len(dw_ds))
     end_pts = np.empty((len(dw_ds), 2))
-    ms, cs = convert_xy_mc(xs, ys)
     for j, d in enumerate(dw_ds):
         t_xs, t_ys = predict_trajectory(d, n_steps, dt, o_d)
         safe = check_pt_safe(t_xs[-1], t_ys[-1], xs, ys)
@@ -436,25 +454,10 @@ def convert_polar_xy(rs, ths):
 
     return xs, ys
 
-@njit(cache=True)
-def convert_xy_mc(xs, ys):
-    ms = (ys[1:] - ys[:-1])/(xs[1:] - xs[:-1])
-    cs = ys[:-1] - ms * xs[:-1]
-
-    return ms, cs 
-
-
-@njit(cache=True)
-def calculate_intersection(m, c, th):
-    m_r = np.tan(np.pi/2 - th)
-    x = c / (m_r - m)
-    y = m_r * x 
-
-    return np.array([x, y])
 
 # @njit(cache=True)
 def check_pt_safe(x, y, xs, ys):
-    idx = np.count_nonzero(xs[xs<x])
+    idx = np.count_nonzero(xs[xs<x]) -1
     y_bound = ys[idx] + (x - xs[idx]) * (ys[idx+1] - ys[idx]) / (xs[idx+1] - xs[idx])
     if y > y_bound:
         return False 
