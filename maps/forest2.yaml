@@ -4,7 +4,7 @@ forest_length: 25
 forest_width: 2
 start_pose: [1, 1, 0]
 end_y: 21
-obstacle_buffer: 3
+obstacle_buffer: 1
 
 n_obs: 6
 obs_size: 0.5

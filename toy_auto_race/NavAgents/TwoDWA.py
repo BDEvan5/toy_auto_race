@@ -131,6 +131,7 @@ class SafetyCar(SafetyPP):
         SafetyPP.__init__(self, sim_conf)
         self.sim_conf = sim_conf # kept for optimisation
         self.n_beams = 1000
+        self.step = 0
 
         safety_f = 0.9
         self.max_a = sim_conf.max_a * safety_f
@@ -157,6 +158,7 @@ class SafetyCar(SafetyPP):
     def plan_act(self, obs):
         state = obs['state']
         pp_action = self.act_pp(state)
+        self.step += 1
 
         # pp_action[1] = max(pp_action[1], state[3])
         action = self.run_safety_check(obs, pp_action)
@@ -170,6 +172,7 @@ class SafetyCar(SafetyPP):
         super().plan(env_map)
         self.old_steers.clear()
         self.new_steers.clear()
+        self.step = 0
 
     def show_history(self, wait=False):
         # plot_lidar_col_vals(self.last_scan, self.col_vals, self.action[0], False)
@@ -193,7 +196,7 @@ class SafetyCar(SafetyPP):
 
         # check if current corridor is safe
         scan = obs['scan']
-        scan *= 0.95
+        # scan *= 0.95
         state = obs['state']
 
 
@@ -202,17 +205,19 @@ class SafetyCar(SafetyPP):
         dw_ds = build_dynamic_window(v, d, self.max_v, self.max_steer, self.max_a, self.max_d_dot, 0.1)
 
 
-        x_pts, y_pts = segment_lidar_scan(scan)
-        x1, y1 = segment_lidar_scan(scan)
-        x_pts, y_pts = create_safety_cones(x_pts, y_pts)
-        rs, ths = convert_xys_rths(x_pts, y_pts)
-        rs, ths = clean_r_list(rs, ths)
+        rs, ths  = segment_lidar_scan(scan)
+        x1, y1 = convert_polar_xy(rs, ths)
+        rs, ths  = create_safety_cones(rs, ths )
+
+        # rs, ths = clean_r_list(rs, ths)
+        rs, ths = convexification(rs, ths)
 
         valid_window, end_pts = check_dw_clean(dw_ds, rs, ths, d)
 
         new_action = self.modify_action(pp_action, valid_window, dw_ds)
 
         self.plot_valid_window(dw_ds, valid_window, pp_action, new_action)
+
         self.plot_lidar_scan_clean(x1, y1, end_pts, rs, ths)
         # self.plot_lidar_scan_clean(x_pts, y_pts, end_pts, rs, ths)
 
@@ -275,7 +280,7 @@ class SafetyCar(SafetyPP):
     def plot_lidar_scan_clean(self, xs, ys, end_pts, rs, ths):
         plt.figure(2)
         plt.clf()
-        plt.title('Lidar Scan')
+        plt.title(f'Lidar Scan: {self.step}')
 
         plt.ylim([0, 10])
         plt.xlim([-1.5, 1.5])
@@ -297,42 +302,42 @@ class SafetyCar(SafetyPP):
         # plt.show()
 
 
-def clean_r_list(rs, ths):
+
+def convexification(rs, ths):
     xs, ys = convert_polar_xy(rs, ths)
     ms, cs = convert_xy_mc(xs, ys)
     o_ths = np.copy(ths)
-    center_idx = np.argmin(np.abs(ths))
-    new_ths, new_rs = [], []
 
-    cur_angle = ths[center_idx]
-    for i in range(center_idx-1, -1, -1):
+    idx1 = np.count_nonzero(xs[xs<0]) -1
+    idx2 = idx1 +1
+
+    N = len(ths)
+
+    cur_angle = ths[idx1]
+    for i in range(idx1-1, -1, -1):
         cur_angle = min(cur_angle-0.0001, ths[i])
-        new_ths.append(cur_angle)
-    new_ths.reverse()
-
-    new_ths.append(ths[center_idx])
-
-    cur_angle = ths[center_idx]
-    for i in range(center_idx+1, len(ths)):
-        if ths[i] < 0: 
-            ths[i] = np.pi + ths[i]
-        cur_angle = max(cur_angle+0.0001, ths[i])
-        new_ths.append(cur_angle)
-
-    for i in range(1, len(o_ths)):
-        if new_ths[i] != o_ths[i]:
-            r_pt = calculate_intersection(ms[i-1], cs[i-1], new_ths[i])
+        ths[i] = cur_angle
+        if ths[i] != o_ths[i]:
+            r_pt = calculate_intersection(ms[i-1], cs[i-1], ths[i])
             r = np.sqrt(np.sum(np.power(r_pt, 2)))
-            rs[i] = r 
+            rs[i] = r
 
-    # TODO: change the r accordingly at some point too
-    return rs, np.array(new_ths) 
-
+    cur_angle = ths[idx2]
+    for i in range(idx2+1, N):
+        cur_angle = max(cur_angle+0.0001, ths[i])
+        ths[i] = cur_angle
+        if ths[i] != o_ths[i] and i != N-1:
+            r_pt = calculate_intersection(ms[i], cs[i], ths[i])
+            r = np.sqrt(np.sum(np.power(r_pt, 2)))
+            rs[i] = r
+    
+    return rs, ths
 
 # @njit(cache=True)
 def segment_lidar_scan(scan):
     """ 
     Takes a lidar scan and reduces it to a set of points that make straight lines 
+    TODO: possibly change implmentation to work completely in r, ths 
     """
     xs, ys = convert_scan_xy(scan)
     diffs = np.sqrt((xs[1:]-xs[:-1])**2 + (ys[1:]-ys[:-1])**2)
@@ -344,14 +349,21 @@ def segment_lidar_scan(scan):
             i_pts.append(i+1)
     i_pts.append(len(scan)-1)
 
+    if len(i_pts) < 3:
+        i_pts.append(np.argmax(scan))
+        
+
     i_pts = np.array(i_pts)
     x_pts = xs[i_pts]
     y_pts = ys[i_pts]
 
-    return x_pts, y_pts
+    rs, ths = convert_xys_rths(x_pts, y_pts)
+
+    return rs, ths 
 
 # @njit(cache=True) 
-def create_safety_cones(x_pts, y_pts):
+def create_safety_cones_old(rs, ths):
+    x_pts, y_pts = convert_polar_xy(rs, ths)
     N = len(x_pts)
     L = 0.33
     max_steer = 0.4
@@ -372,14 +384,70 @@ def create_safety_cones(x_pts, y_pts):
 
             x = x_pts[i] + w
             y = (y_pts[i] + y_pts[i+1])/2 - d * 2
+            r, th = convert_xys_rths(x, y)
 
+            # changes the x, y vals accoridng to buffer pt
             new_x[i+n_new_pts] = max(new_x[i+n_new_pts] - x_buff, x_n)
             new_x[i+n_new_pts+1] = min(new_x[i+n_new_pts+1]+x_buff, x_p) 
+
+            # inserts a new point into the list 
+
             new_x = np.insert(new_x, i+1+n_new_pts, x)
             new_y = np.insert(new_y, i+1+n_new_pts, y)
             n_new_pts += 1
 
     return new_x, new_y
+
+# @njit(cache=True) 
+def create_safety_cones(rs, ths):
+    x_pts, y_pts = convert_polar_xy(rs, ths)
+    N = len(x_pts)
+    L = 0.33
+    max_steer = 0.4
+
+    y_thresh = 0.1
+    n_new_pts = 0
+    x_buff = 0.1
+    x_n = min(x_pts)
+    x_p = max(x_pts)
+    for i in range(N-1):
+        if abs(y_pts[i] - y_pts[i+1]) < y_thresh:
+            w = (x_pts[i+1] - x_pts[i])/2 
+            l_d = np.sqrt(w * 2 * L / np.tan(max_steer))
+            d = np.sqrt(l_d **2 - w**2)
+
+            x = x_pts[i] + w
+            y = (y_pts[i] + y_pts[i+1])/2 - d * 2
+            r, th = convert_xys_rths(x, y)
+            if y < 0:  # keep track of angle
+                th += np.pi
+
+            # changes the x, y vals accoridng to buffer pt
+            x1, x2 = x_pts[i:i+2]
+            y1, y2 = y_pts[i:i+2]
+            x1 = max(x1 - x_buff, x_n)
+            x2 = min(x2+x_buff, x_p) 
+            r1, th1 = convert_xys_rths(x1, y1)
+            rs[i+n_new_pts] = r1 
+            ths[i+n_new_pts] = th1
+            r2, th2 = convert_xys_rths(x2, y2)
+            rs[i+n_new_pts+1] = r2  
+            ths[i+n_new_pts+1] = th2
+
+            # inserts a new point into the list 
+            rs = np.insert(rs, i+1+n_new_pts, r)
+            ths = np.insert(ths, i+1+n_new_pts, th)
+
+            if th < 0: 
+                # look at previous angles
+                ths[i+n_new_pts] = min(ths[i+n_new_pts], th)
+            else:
+                # check the next pt
+                ths[i+n_new_pts+2] = max(ths[i+n_new_pts+2], th)
+
+            n_new_pts += 1
+
+    return rs, ths
 
 
 @njit(cache=True) 
@@ -407,12 +475,12 @@ def check_dw_clean(dw_ds, rs, ths, o_d):
         safe, pt = check_pt_safe_clean(t_xs[-1], t_ys[-1], ths, ms, cs)
 
         valids[j] = safe 
-        end_pts[j, 0] = t_xs[-1]
-        end_pts[j, 1] = t_ys[-1]
+        # end_pts[j, 0] = t_xs[-1]
+        # end_pts[j, 1] = t_ys[-1]
 
         # add the intersection points
-        # end_pts[j, 0] = pt[0]
-        # end_pts[j, 1] = pt[1]
+        end_pts[j, 0] = pt[0]
+        end_pts[j, 1] = pt[1]
 
     return valids, end_pts
 
@@ -456,7 +524,7 @@ def convert_xy_mc(xs, ys):
     return ms, cs 
 
 
-# @njit(cache=True)
+@njit(cache=True)
 def calculate_intersection(m, c, th):
     m_r = np.tan(np.pi/2 - th)
     x = c / (m_r - m)
@@ -497,7 +565,7 @@ def get_trigs(n_beams, fov=np.pi):
     return sines, cosines
 
 @njit(cache=True)
-def convert_scan_xy(scan, fov=np.pi):
+def convert_scan_xy(scan):
     sines, cosines = get_trigs(len(scan))
     xs = scan * sines
     ys = scan * cosines    
@@ -511,10 +579,9 @@ def check_action_safe(valid_window, d_idx):
         return True 
     return False
 
-@njit(cache=True)
+# @njit(cache=True)
 def action_to_ind(action, dw_ds):
-    d_idx = int(round(action[0] / ((dw_ds[-1] - dw_ds[0]) / 49)) + 25)
-    # v_idx = int(round(action[0] / (dw_vs[-1] - dw_vs[0]) / 19))
+    d_idx = np.count_nonzero(dw_ds[dw_ds<action[0]])
     return d_idx
 
 
