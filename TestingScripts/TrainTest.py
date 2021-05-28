@@ -58,7 +58,7 @@ def test_single_vehicle(env, vehicle, show=False, laps=100, add_obs=True, wait=F
             state = s_p
             # env.render(False)
         if show:
-            # env.history.show_history()
+            env.history.show_history()
             # env.history.show_forces()
             # vehicle.history.save_nn_output()
             env.render(wait=False, name=vehicle.name)

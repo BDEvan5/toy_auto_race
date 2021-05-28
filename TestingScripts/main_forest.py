@@ -13,7 +13,7 @@ from toy_f110 import ForestSim
 
 map_name = "forest2"
 nav_name = "Navforest_1"
-mod_name = "ModForest_t4"
+mod_name = "ModForest_1"
 # mod_name = "ModForest_nr6"
 # nav_name = "Navforest_nr5"
 repeat_name = "RepeatTest_1"
@@ -24,7 +24,7 @@ Training Functions
 """
 def train_nav():
     env = ForestSim(map_name)
-    vehicle = NavTrainVehicle(nav_name, env.sim_conf, h_size=500)
+    vehicle = NavTrainVehicle(nav_name, env.sim_conf, h_size=200)
 
     # train_vehicle(env, vehicle, 1000)
     train_vehicle(env, vehicle, 200000)
@@ -126,17 +126,17 @@ def test_repeat():
 
 if __name__ == "__main__":
     
-    train_mod()
+    # train_mod()
     # train_nav()
-    train_repeatability()
+    # train_repeatability()
 
     # test_nav()
     # test_follow_the_gap()
     # test_oracle()
-    # test_mod()
-    test_repeat()
-
-    big_test()
+    test_mod()
+    # test_repeat()
+# 
+    # big_test()
 
 
 
