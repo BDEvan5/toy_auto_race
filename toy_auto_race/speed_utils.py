@@ -17,3 +17,4 @@ def calculate_speed(delta):
     V = f_s * np.sqrt(b*g*l_d/np.tan(abs(delta)))
 
     return V
+## l_d: should rather be L
